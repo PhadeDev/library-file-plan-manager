@@ -107,14 +107,15 @@
   <tbody>
     <tr><td>Title</td><td>Single line of text</td><td>Built-in — the flow writes the library's display name into it automatically</td></tr>
     <tr><td>LibraryUrl</td><td>Single line of text</td><td>The real join key — a library's server-relative URL, survives display-name renames</td></tr>
-    <tr><td>Team</td><td>Single line of text</td><td>Top-level file-plan grouping</td></tr>
-    <tr><td>SubTeam</td><td>Single line of text</td><td>Optional nested grouping</td></tr>
+    <tr><td>Team</td><td>Choice</td><td>Top-level file-plan grouping. Fixed set — type in your known team names as the choices, no "Allow fill-in values"</td></tr>
+    <tr><td>SubTeam</td><td>Choice</td><td>Optional nested grouping. Tick <strong>"Allow fill-in values"</strong> — same pattern as the CAT column, so new sub-teams can be added on the fly without editing list settings</td></tr>
     <tr><td>DisplayName</td><td>Single line of text</td><td>Optional override; falls back to live library Title if blank</td></tr>
     <tr><td>SiteUrl</td><td>Single line of text</td><td>Which of your sites the library is on</td></tr>
     <tr><td>SortOrder</td><td>Number</td><td>Optional — controls order within a group</td></tr>
   </tbody>
 </table>
 <div class="warning">Mark every column <strong>Not Required</strong> in SharePoint. Type column names exactly as shown, no spaces — SharePoint silently converts spaces to <code>_x0020_</code> internally, and the flow's requests need the plain names to match exactly.</div>
+<div class="note">Team and SubTeam being Choice columns instead of plain text needs no flow changes — SharePoint's REST API writes a Choice value as a plain string either way, which is exactly what the flow already sends. The only difference shows up later in the Power App: instead of a free-text box on the Admin screen, Team and SubTeam become dropdowns bound to <code>Choices('LibraryFilePlan'.Team)</code> / <code>Choices('LibraryFilePlan'.SubTeam)</code> — no typo-driven duplicate groups in the file-plan view.</div>
 
 <h2>What the flow does</h2>
 <p>Triggered from Power Apps (or manually, for testing). Per library:</p>
