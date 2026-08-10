@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Library &amp; File Plan Manager — PowerApps</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: #0f0f1a;
+      color: #e8e8f0;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 40px 24px 80px;
+    }
+    h1 { font-size: 1.8rem; font-weight: 600; color: #c8b8ff; margin-bottom: 8px; }
+    .subtitle { color: #888; font-size: 0.95rem; margin-bottom: 8px; }
+    .buildstamp { font-size: 0.75rem; color: #666; font-family: 'Cascadia Code','Consolas',monospace; margin-bottom: 40px; }
+    h2 { font-size: 1.2rem; color: #a0c0e0; margin: 40px 0 16px; border-bottom: 1px solid #2a2a3a; padding-bottom: 8px; }
+    h3 { font-size: 1rem; color: #e8e8f0; margin: 24px 0 8px; }
+    p { color: #aaa; line-height: 1.6; margin-bottom: 12px; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-bottom: 24px; }
+    th { background: #1a1a2e; color: #c8b8ff; text-align: left; padding: 8px 12px; border: 1px solid #2a2a3a; }
+    td { padding: 8px 12px; border: 1px solid #2a2a3a; color: #d0d0e0; vertical-align: top; }
+    tr:nth-child(even) td { background: #131320; }
+    code { font-family: 'Cascadia Code','Consolas',monospace; background: #1a1a2e; padding: 1px 6px; border-radius: 4px; color: #c8d8f0; }
+    .code-block { position: relative; margin: 12px 0 24px; }
+    pre {
+      background: #1a1a2e;
+      color: #c8d8f0;
+      padding: 16px;
+      border-radius: 8px;
+      font-family: 'Cascadia Code', 'Consolas', monospace;
+      font-size: 0.82rem;
+      line-height: 1.55;
+      overflow-x: auto;
+      white-space: pre-wrap;
+    }
+    .copy-btn {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      padding: 4px 12px;
+      background: #7c4dff;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.78rem;
+      transition: background 0.15s;
+    }
+    .copy-btn:hover { background: #6a3de8; }
+    .copy-btn.ok { background: #2a7d4e; }
+    .screen-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; margin-top: 16px; }
+    .screen-card {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      background: #1a1a2e;
+      border: 1px solid #2a2a3a;
+      border-radius: 12px;
+      padding: 20px;
+      text-decoration: none;
+      color: inherit;
+      transition: border-color 0.15s, background 0.15s;
+    }
+    .screen-card:hover { border-color: #7c4dff; background: #1e1e35; }
+    .screen-number { font-size: 0.75rem; color: #666; margin-bottom: 8px; }
+    .screen-name { font-size: 1rem; font-weight: 600; color: #c8b8ff; margin-bottom: 6px; }
+    .screen-desc { font-size: 0.82rem; color: #888; line-height: 1.4; }
+    .screen-cta { margin-top: 16px; font-size: 0.82rem; color: #7c4dff; }
+    .note { background: #1a2a1a; border-left: 3px solid #2a7d4e; padding: 12px 16px; border-radius: 4px; font-size: 0.85rem; color: #aaa; margin: 16px 0; }
+    .warning { background: #2a1a1a; border-left: 3px solid #7d2a2a; padding: 12px 16px; border-radius: 4px; font-size: 0.85rem; color: #aaa; margin: 16px 0; }
+    .pending { background: #2a2410; border-left: 3px solid #a68a2a; padding: 12px 16px; border-radius: 4px; font-size: 0.85rem; color: #d0c090; margin: 16px 0; }
+    ol, ul { padding-left: 24px; color: #aaa; font-size: 0.9rem; line-height: 2; }
+    a.back { font-size: 0.82rem; color: #666; text-decoration: none; display: inline-block; margin-bottom: 32px; }
+    a.back:hover { color: #999; }
+    a.dl { color: #7c4dff; }
+    .pill { display: inline-block; background: #1a1a2e; border: 1px solid #2a2a3a; color: #a0c0e0; font-size: 0.72rem; padding: 3px 10px; border-radius: 20px; margin-right: 6px; }
+  </style>
+</head>
+<body>
+
+<a class="back" href="https://phaderon.github.io/PowerApps/">← Guide Library</a>
+<h1>Library &amp; File Plan Manager <span style="font-size:0.65em;font-weight:400;color:#666;vertical-align:middle;margin-left:8px;">v0.1 — setup phase</span></h1>
+<p class="subtitle">SharePoint permissions map (file-plan style, grouped by team) + an admin screen that creates document libraries correctly and registers them automatically, so nothing gets forgotten again.</p>
+<p class="buildstamp">Built 10 Aug 2026  13:47 BST</p>
+
+<div class="pending">This app has no Power Apps screens yet. Current phase: get the SharePoint list and the Power Automate flow working and tested. Screens get added here once that's confirmed — this page will grow.</div>
+
+<h2>Before You Start</h2>
+<ol>
+  <li>Create the <code>LibraryFilePlan</code> SharePoint list below (all columns, exact names, no spaces).</li>
+  <li>Import the <strong>Create Library (App)</strong> flow package (download below) via Power Automate → Import → Import Package (Legacy).</li>
+  <li>Test the flow manually before touching Power Apps at all — see the Testing section below.</li>
+  <li>Once both are confirmed working, the Power App screens (Browse/File-plan, Search, Admin: Create Library) get built and added here.</li>
+</ol>
+
+<h2>Download</h2>
+<p><a class="dl" href="https://github.com/PhadeDev/library-file-plan-manager/raw/main/flows/CreateLibraryApp_flow_import.zip">CreateLibraryApp_flow_import.zip</a> — the flow package, import via Power Automate → My flows → Import → Import Package (Legacy).</p>
+
+<h2>SharePoint List: <code>LibraryFilePlan</code></h2>
+<p>Location: your main site — <code>https://modgovuk.sharepoint.com/teams/1598/</code>. Site Contents → New → List → blank list, name it exactly <code>LibraryFilePlan</code>.</p>
+<table>
+  <thead><tr><th>Column name (exact, no spaces)</th><th>Type</th><th>Notes</th></tr></thead>
+  <tbody>
+    <tr><td>Title</td><td>Single line of text</td><td>Built-in — the flow writes the library's display name into it automatically</td></tr>
+    <tr><td>LibraryUrl</td><td>Single line of text</td><td>The real join key — a library's server-relative URL, survives display-name renames</td></tr>
+    <tr><td>Team</td><td>Single line of text</td><td>Top-level file-plan grouping</td></tr>
+    <tr><td>SubTeam</td><td>Single line of text</td><td>Optional nested grouping</td></tr>
+    <tr><td>DisplayName</td><td>Single line of text</td><td>Optional override; falls back to live library Title if blank</td></tr>
+    <tr><td>SiteUrl</td><td>Single line of text</td><td>Which of your sites the library is on</td></tr>
+    <tr><td>SortOrder</td><td>Number</td><td>Optional — controls order within a group</td></tr>
+  </tbody>
+</table>
+<div class="warning">Mark every column <strong>Not Required</strong> in SharePoint. Type column names exactly as shown, no spaces — SharePoint silently converts spaces to <code>_x0020_</code> internally, and the flow's requests need the plain names to match exactly.</div>
+
+<h2>What the flow does</h2>
+<p>Triggered from Power Apps (or manually, for testing). Per library:</p>
+<ol>
+  <li>Creates the library (<code>BaseTemplate 101</code>, <code>EnableFolderCreation: false</code>) using the technical name, with the correct sensitivity label depending on Normal vs Limited</li>
+  <li>Adds a <strong>CAT</strong> choice column (fill-in-your-own enabled, "Please select or create a category for these documents." default prompt)</li>
+  <li>Adds a <strong>Status</strong> choice column: Draft / Under Review / Reviewed / Published / Final / Superseded / Expired</li>
+  <li>Creates <strong>WiP</strong> view (default) — items without a retention label, grouped by CAT</li>
+  <li>Creates <strong>Records</strong> view — items with a retention label, grouped by CAT</li>
+  <li>Renames the library's Title to the pretty display name</li>
+  <li><strong>If Limited:</strong> breaks role inheritance completely (clean slate, nothing carried over from the parent site), then grants access only to the specific groups/levels supplied</li>
+  <li>Registers the new library into <code>LibraryFilePlan</code> automatically</li>
+</ol>
+
+<h2>Testing the flow</h2>
+<p>Power Automate → My flows → <strong>Create Library (App)</strong> → Test → Manually.</p>
+<h3>First test — plain library, no permission changes</h3>
+<table>
+  <thead><tr><th>Field</th><th>Value</th></tr></thead>
+  <tbody>
+    <tr><td>Site URL</td><td><code>https://modgovuk.sharepoint.com/teams/1598</code></td></tr>
+    <tr><td>Technical Name</td><td><code>ZZTest_Library</code></td></tr>
+    <tr><td>Display Name</td><td><code>ZZ Test Library</code></td></tr>
+    <tr><td>Is Limited</td><td>false / off</td></tr>
+    <tr><td>Team</td><td><code>Test</code></td></tr>
+    <tr><td>SubTeam, Categories, Permission Grants</td><td>leave blank</td></tr>
+  </tbody>
+</table>
+<p>After it runs, check: the library exists with CAT + Status columns and WiP/Records views; its Title shows the pretty name; a new row appeared in <code>LibraryFilePlan</code>.</p>
+
+<h3>Second test — Limited library, permission lockdown</h3>
+<table>
+  <thead><tr><th>Field</th><th>Value</th></tr></thead>
+  <tbody>
+    <tr><td>Technical Name</td><td><code>ZZTest_LTD_Library</code></td></tr>
+    <tr><td>Display Name</td><td><code>ZZ Test LTD Library</code></td></tr>
+    <tr><td>Is Limited</td><td>true / on</td></tr>
+    <tr><td>Permission Grants</td><td>one line per group: <code>GroupName|PermissionLevel</code>, e.g. <code>SG_Cdts-TrainSafeAssurance-LTD_MEM|Contribute</code></td></tr>
+  </tbody>
+</table>
+<div class="warning">This is the one part of the whole system that touches security directly. After running it, manually open Library Settings → Permissions for this document library on the test library and confirm only the groups you listed are there — nothing inherited, nothing extra. Don't skip this check the first time.</div>
+
+<div class="note">Clean-up: delete both test libraries and their two rows from <code>LibraryFilePlan</code> once both tests pass — they're throwaway, not meant to stay.</div>
+
+<h2>Screens</h2>
+<p>Not built yet. Coming next once the list and flow are confirmed working end to end: a Browse/File-plan screen (grouped by Team, expandable, with buttons to open each library), a Search screen (SharePoint group or nested AD group name, whole-site or per-site, with a loading spinner), and the Admin: Create Library screen that calls this flow.</p>
+
+<h2>Issues</h2>
+<p>Found a problem? <a href="https://github.com/PhadeDev/library-file-plan-manager/issues" style="color:#7c4dff">Report it here</a>.</p>
+
+</body>
+</html>
