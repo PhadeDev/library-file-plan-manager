@@ -159,10 +159,11 @@
   "SubTeam": "@{triggerBody()?['SubTeam']}",
   "DisplayName": "@{triggerBody()?['DisplayName']}",
   "SiteUrl": "@{triggerBody()?['SiteUrl']}",
-  "IsLimited": @{triggerBody()?['IsLimited']}
+  "IsLimited": @{if(equals(triggerBody()?['IsLimited'], true), 'true', 'false')}
 }</pre>
 </div>
-<div class="note">Only change from before: one extra line, <code>"IsLimited": @{triggerBody()?['IsLimited']}</code>, added at the end. Save the flow after pasting — no other actions need touching, and this doesn't require re-import.</div>
+<div class="warning">If you already pasted an earlier version of this and got <code>Action 'Create_FilePlan_Row' failed: Invalid JSON. A token was not recognized.</code> — that's a real Power Automate quirk: interpolating a boolean with <code>@{triggerBody()?['IsLimited']}</code> renders as <code>True</code>/<code>False</code> (capital, .NET-style), which isn't valid JSON. JSON needs lowercase <code>true</code>/<code>false</code>. The block above already has the fix — re-paste it in.</div>
+<div class="note">Only change from the original body: one extra line for <code>IsLimited</code>, added at the end. Save the flow after pasting — no other actions need touching, and this doesn't require re-import.</div>
 
 <h2>Limited Libraries — Two Fixed Groups, Nothing to Fill In</h2>
 <p>For a Limited library, the real-world sequence is: create the library locked down first, then email another team to get the actual access group created and added later. If <code>Break_Role_Inheritance</code> strips every permission with nothing left behind, nobody — including you — can get back in to add that group when it's ready.</p>
