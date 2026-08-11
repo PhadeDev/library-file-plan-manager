@@ -83,9 +83,9 @@
 <body>
 
 <a class="back" href="https://phaderon.github.io/PowerApps/">← Guide Library</a>
-<h1>Library &amp; File Plan Manager <span style="font-size:0.65em;font-weight:400;color:#666;vertical-align:middle;margin-left:8px;">v1.1</span></h1>
+<h1>Library &amp; File Plan Manager <span style="font-size:0.65em;font-weight:400;color:#666;vertical-align:middle;margin-left:8px;">v2.0</span></h1>
 <p class="subtitle">SharePoint permissions map (file-plan style, grouped by team) + an admin screen that creates document libraries correctly and registers them automatically, so nothing gets forgotten again.</p>
-<p class="buildstamp">Built 11 Aug 2026  11:26 BST</p>
+<p class="buildstamp">Built 11 Aug 2026  12:12 BST</p>
 
 <div class="pending">First screen is live below (File Plan browse). Still to come: Admin: Create Library (with a bulk queue), the permissions view/add/remove screen, and whole-site search by SG/DG group name — that last one needs a new "permission index" flow, not built yet.</div>
 
@@ -253,23 +253,25 @@ ClearCollect(
         SortOrder.Ascending
     )
 );
-ClearCollect(colExpandedKeys, Filter(Table({TeamName: "seed"}), false));
-Set(varClipboardPayload, "")</pre>
+Clear(colFlatSource);
+Collect(colFlatSource, AddColumns(colTeamGroups, RowType, "Team", SortKey, TeamName, RankInGroup, 0));
+Collect(colFlatSource, AddColumns(colFilePlanFiltered, RowType, "Library", SortKey, TeamName, RankInGroup, 1));
+ClearCollect(colExpandedKeys, Filter(Table({TeamName: "seed"}), false))</pre>
 </div>
-<div class="note">This loads the library list once at app start and builds the initial grouped-by-team view. The File Plan screen's search box rebuilds <code>colFilePlanFiltered</code>/<code>colTeamGroups</code> itself as you type — App.OnStart just needs to set them up once so the screen isn't blank before you've typed anything.</div>
-<div class="warning">v1.1 fix: the first version of this block set <code>colFilePlanFiltered</code> plainly, then added <code>TeamName</code>/<code>SubTeamName</code> separately inside the <code>colTeamGroups</code> step. Power Apps infers a collection's columns globally across the whole app, not per-call — since the search box's <code>OnChange</code> handler also adds those same two columns to <code>colFilePlanFiltered</code>, Studio treated them as already existing everywhere and threw <code>A column named 'TeamName' already exists</code>. Fix: add them only once, right where <code>colFilePlanFiltered</code> is first built, and let everything downstream just reference them — the block above already has this fixed.</div>
+<div class="note">This loads the library list once at app start and builds the initial grouped-by-team view. The File Plan screen's search box rebuilds all four collections itself as you type — App.OnStart just needs to set them up once so the screen isn't blank before you've typed anything.</div>
 
 <h3>3. Screens</h3>
 <p>New screen (blank) → open the link below → Copy YAML → paste into the new screen. Rename the screen to match the name shown (<code>scrFilePlan</code>) so later screens that navigate to it by name work correctly.</p>
 <div class="screen-grid">
-  <a class="screen-card" href="screens/scrFilePlan.html?v=1.3">
+  <a class="screen-card" href="screens/scrFilePlan.html?v=2.0">
     <div class="screen-number">Screen 1</div>
     <div class="screen-name">scrFilePlan</div>
     <div class="screen-desc">Read-only browse screen — search box, grouped-by-team collapsible list, Open and Copy link buttons per library, LTD badge on Limited libraries.</div>
     <div class="screen-cta">Copy YAML →</div>
   </a>
 </div>
-<div class="warning">v1.3 fix: expanding a Team didn't push anything below it down — the rows just overlapped, hiding whatever was underneath. Cause: the outer Team gallery used <code>Variant: Vertical</code>, which forces every row to the same fixed height regardless of what's inside it. Switched to <code>Variant: VariableHeight</code>, the variant built specifically for rows that need to grow/shrink (like an accordion). <strong>Because this changes an existing control's Variant, not just a property value, don't paste v1.3 over the existing screen — delete the whole <code>scrFilePlan</code> screen and paste fresh into a new blank one.</strong></div>
+<div class="warning">v2.0 is a full rebuild of the accordion mechanism, not a patch — <strong>delete the whole <code>scrFilePlan</code> screen and paste fresh into a new blank one</strong>, and re-paste App.OnStart in full (it now builds a fourth collection, <code>colFlatSource</code>).</div>
+<div class="note">v1.x used nested galleries (a Team gallery containing a Library gallery per row) with dynamically computed row heights, switching the outer gallery's Variant between Vertical and VariableHeight trying to get it to reflow correctly — it never did; expanding a Team just overlapped the rows below it. v2.0 throws that out and uses the pattern your own <code>sidebar.md</code> component (powerappsui.com) actually uses for its parent/child tree: <strong>one single flat gallery</strong>, every row the same fixed height, no nesting at all. A Team being "expanded" doesn't resize anything — it just changes which rows are included in the gallery's own <code>Items</code> formula (<code>Filter(colFlatSource, RowType = "Team" || TeamName in colExpandedKeys.TeamName)</code>). Since every visible row is the same height, the gallery reflows correctly by default — there's no per-row height math left to get wrong.</div>
 <div class="note">v1.2 fix: <code>Copy()</code> actually takes a plain text value directly — <code>Copy(varTenantHost & ThisItem.LibraryUrl)</code> — not a control reference. The v1.1 attempt (<code>Copy(txtClipboardStaging)</code>) errored with <code>Expecting a Text value instead</code>, which meant the whole hidden off-screen <code>Classic/TextInput</code> workaround wasn't needed at all — removed it, the Copy link button is now a single line.</div>
 <div class="note">Still to come, in order: <strong>Admin: Create Library</strong> (the form + bulk queue, calls the flow you've already tested — no new flow work needed), then a <strong>permissions view/add/remove screen</strong> and <strong>whole-site group search</strong> (both need a new "permission index" flow, not built yet).</div>
 
