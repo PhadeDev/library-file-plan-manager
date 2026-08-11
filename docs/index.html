@@ -177,18 +177,7 @@
 
 <h2>Site URL Now Defaults</h2>
 <p>Every test so far has been on the same site, so <strong>Site URL</strong> now has a default (<code>https://modgovuk.sharepoint.com/teams/1598</code>) and isn't required — leave it blank in Test and the flow fills it in itself. Same benefit carries into the Power App later: the Admin screen's call to this flow can skip Site URL entirely rather than showing it as a field.</p>
-<p>Trigger-only change, no new actions — hand-editable via the trigger's <strong>Code view</strong> tab (there's no separate "default value" box in the Parameters tab, only in this raw view). Click the <strong>When Power Apps calls a flow (V2)</strong> trigger → <strong>Code view</strong>.</p>
-<p>Find the <code>"SiteUrl"</code> block near the top and replace it with:</p>
-<div class="code-block">
-  <button class="copy-btn" onclick="copyPre(this)">Copy</button>
-  <pre>"SiteUrl": {
-  "type": "string",
-  "title": "Site URL",
-  "x-ms-content-hint": "TEXT",
-  "default": "https://modgovuk.sharepoint.com/teams/1598"
-},</pre>
-</div>
-<p>Then scroll further down to the <code>"required"</code> array in the same code view and delete <code>"SiteUrl",</code> from it, leaving <code>TechnicalName</code>, <code>DisplayName</code>, <code>Team</code>. Click out of the editor, then save the flow.</p>
+<div class="warning">Trigger schema changes (adding a default value, changing what's required) can't be hand-edited at all — the trigger's <strong>Code view</strong> is read-only, and its <strong>Parameters</strong> tab won't show inputs correctly for a flow whose trigger was originally hand-authored as raw JSON rather than built click-by-click in the designer. This one needs the delete + re-import below, same as the other structural changes.</div>
 
 <h2>Testing the flow</h2>
 <p>Power Automate → My flows → <strong>Create Library (App)</strong> → Test → Manually.</p>
