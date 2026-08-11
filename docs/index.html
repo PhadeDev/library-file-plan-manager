@@ -301,14 +301,14 @@ Set(varQueueDone, 0)</pre>
     <div class="screen-desc">Read-only browse screen — search box, grouped-by-team collapsible list, Open and Copy link buttons per library, LTD badge on Limited libraries.</div>
     <div class="screen-cta">Copy YAML →</div>
   </a>
-  <a class="screen-card" href="screens/scrAdminCreateLibrary.html?v=1.2">
+  <a class="screen-card" href="screens/scrAdminCreateLibrary.html?v=1.3">
     <div class="screen-number">Screen 2</div>
     <div class="screen-name">scrAdminCreateLibrary</div>
     <div class="screen-desc">Restricted to the admin email list. Fill in a library's details, Add to Queue as many times as needed, then Run Queue creates them all sequentially via the flow you've already tested, with a progress overlay.</div>
     <div class="screen-cta">Copy YAML →</div>
   </a>
 </div>
-<div class="warning">v1.2 fix on <code>btnRunQueue</code>'s OnSelect: <code>This function cannot be invoked within ForAll</code> — a real, documented Power Apps restriction: <code>Set()</code> can't be called from inside a <code>ForAll</code> loop body at all, regardless of what else the loop is doing. The per-item running counter (<code>Set(varQueueDone, varQueueDone + 1)</code>) was the only thing inside the loop besides the flow call, so it's removed — the overlay now shows a static "Creating N libraries..." message instead of a live X-of-Y count. Fix below — one existing button's formula, no new controls, no re-import needed for the screen.</div>
+<div class="warning">v1.3 fix on <code>btnRunQueue</code>'s OnSelect: <code>Make_Document_Library failed... dataset... may not be null or empty</code> — the same class of bug fixed earlier in the flow itself, but triggered a different way this time. <code>coalesce()</code> only substitutes its fallback for a genuine <code>null</code> — it does nothing for an empty string, because an empty string isn't null, it's just empty. The flow's manual Test panel leaves a skipped field truly blank (null), so <code>coalesce()</code> caught it there. But this screen's <code>.Run()</code> call was explicitly sending <code>SiteUrl: ""</code> — a real, present, non-null empty string — so <code>coalesce()</code> passed it straight through and <code>dataset</code> ended up empty again. Fixed by sending the real site URL directly instead of an empty string. Fix below — one existing button's formula, no new controls, no re-import needed for the screen.</div>
 <h3>btnRunQueue — OnSelect (fix only, full button formula below for reference)</h3>
 <div class="code-block">
   <button class="copy-btn" onclick="copyPre(this)">Copy</button>
@@ -321,7 +321,7 @@ ForAll(
         DisplayName,
         Team,
         {
-            SiteUrl: "",
+            SiteUrl: "https://modgovuk.sharepoint.com/teams/1598",
             IsLimited: IsLimited,
             Categories: Categories,
             SubTeam: SubTeam
@@ -338,11 +338,7 @@ Collect(colFlatSource, AddColumns(colFilePlanFiltered, RowType, "Library", SortK
 Notify(varQueueTotal & " librar" & If(varQueueTotal = 1, "y", "ies") & " created.", NotificationType.Success);
 Set(varQueueRunning, false)</pre>
 </div>
-<div class="note">Also update <code>lblOverlayText</code>'s Text property (same OnStart-adjacent screen, the overlay card shown while the queue runs) — it referenced <code>varQueueDone</code>, which no longer exists:</div>
-<div class="code-block">
-  <button class="copy-btn" onclick="copyPre(this)">Copy</button>
-  <pre>"Creating " & varQueueTotal & " librar" & If(varQueueTotal = 1, "y", "ies") & "..."</pre>
-</div>
+<div class="note">The earlier "This function cannot be invoked within ForAll" fix (v1.2) is unaffected — <code>lblOverlayText</code>'s Text property should already be updated from that step; no change to it needed for this one. Nothing to clean up from the failed run either — <code>Make_Document_Library</code> is the very first real action in the flow, so it failing means no library, no columns, no <code>LibraryFilePlan</code> row got created at all.</div>
 <div class="note"><strong>scrAdminCreateLibrary</strong>: restricted to <code>allan.hamilton775@mod.gov.uk</code> and <code>dan.smith391@mod.gov.uk</code> via <code>varIsAdmin</code> in App.OnStart — anyone else sees a plain "restricted" message instead of the form. Sub-Team is a free-text box here rather than a suggestion dropdown — Modern Combobox has a known Microsoft-acknowledged instability issue (documented in this Bible's <code>known-bad-patterns.md</code>) that wasn't worth risking on a field that's meant to allow new values anyway. The queue is entirely local (a Power Apps collection) until you hit Run — closing the app before running loses whatever's queued, nothing's written to SharePoint until then.</div>
 <div class="warning">v2.0 is a full rebuild of the accordion mechanism, not a patch — <strong>delete the whole <code>scrFilePlan</code> screen and paste fresh into a new blank one</strong>, and re-paste App.OnStart in full (it now builds a fourth collection, <code>colFlatSource</code>). If you already have v2.0 pasted, v2.1's changes are additive (new Clear button, existing controls' properties updated) so pasting v2.1 over the top should be fine.</div>
 <div class="note">v1.x used nested galleries (a Team gallery containing a Library gallery per row) with dynamically computed row heights, switching the outer gallery's Variant between Vertical and VariableHeight trying to get it to reflow correctly — it never did; expanding a Team just overlapped the rows below it. v2.0 throws that out and uses the pattern your own <code>sidebar.md</code> component (powerappsui.com) actually uses for its parent/child tree: <strong>one single flat gallery</strong>, every row the same fixed height, no nesting at all. A Team being "expanded" doesn't resize anything — it just changes which rows are included in the gallery's own <code>Items</code> formula (<code>Filter(colFlatSource, RowType = "Team" || TeamName in colExpandedKeys.TeamName)</code>). Since every visible row is the same height, the gallery reflows correctly by default — there's no per-row height math left to get wrong.</div>
