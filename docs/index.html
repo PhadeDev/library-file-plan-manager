@@ -126,35 +126,30 @@
   <li>Creates <strong>WiP</strong> view (default) — items without a retention label, grouped by CAT</li>
   <li>Creates <strong>Records</strong> view — items with a retention label, grouped by CAT</li>
   <li>Renames the library's Title to the pretty display name</li>
-  <li><strong>If Limited:</strong> breaks role inheritance completely (clean slate, nothing carried over from the parent site), grants <strong>SG_Cadets-Admin-Ltd_MEM</strong> and <strong>SG_IHUB</strong> Full Control automatically (always kept — see below), adds any extra groups/levels supplied in Permission Grants, then removes the flow-runner's own account (SharePoint auto-adds whoever breaks inheritance, as a lockout safety net — the flow strips that back out so only the intended groups remain)</li>
+  <li><strong>If Limited:</strong> breaks role inheritance completely (clean slate, nothing carried over from the parent site), grants <strong>SG_Cadets-Admin-Ltd_MEM</strong> and <strong>SG_IHUB</strong> Full Control automatically (fixed, nothing to fill in — see below), then removes the flow-runner's own account (SharePoint auto-adds whoever breaks inheritance, as a lockout safety net — the flow strips that back out so only the two intended groups remain)</li>
   <li>Registers the new library into <code>LibraryFilePlan</code> automatically</li>
 </ol>
 
 <h2>Known Import Bug — Fix Before Testing</h2>
-<div class="warning">If you test the flow and get <code>Action 'Select_Categories' failed... The template language function 'createArray' expects a comma separated list of parameters. The function was invoked with no parameters.</code> — this is a known bug in the imported flow, not something you did wrong. Fix both actions below before testing (or re-download the flow package above, which already has this fixed).</div>
-<p>In the flow designer: <strong>Edit</strong> the flow, click the <strong>Select_Categories</strong> action to expand it, click into its <strong>From</strong> box, select all and delete, then copy/paste the whole box below in as the replacement. Do the same for <strong>Select_Permission_Grants</strong> using the second box. Save the flow after both are done.</p>
+<div class="warning">If you test the flow and get <code>Action 'Select_Categories' failed... The template language function 'createArray' expects a comma separated list of parameters. The function was invoked with no parameters.</code> — this is a known bug in the imported flow, not something you did wrong. Fix the action below before testing (or re-download the flow package above, which already has this fixed).</div>
+<p>In the flow designer: <strong>Edit</strong> the flow, click the <strong>Select_Categories</strong> action to expand it, click into its <strong>From</strong> box, select all and delete, then copy/paste the box below in as the replacement. Save the flow after.</p>
 <h3>Select_Categories — From</h3>
 <div class="code-block">
   <button class="copy-btn" onclick="copyPre(this)">Copy</button>
   <pre>if(empty(trim(coalesce(triggerBody()?['Categories'], ''))), json('&#91;&#93;'), split(triggerBody()?['Categories'], '\n'))</pre>
 </div>
-<h3>Select_Permission_Grants — From</h3>
-<div class="code-block">
-  <button class="copy-btn" onclick="copyPre(this)">Copy</button>
-  <pre>if(empty(trim(coalesce(triggerBody()?['PermissionGrants'], ''))), json('&#91;&#93;'), split(triggerBody()?['PermissionGrants'], '\n'))</pre>
-</div>
-<div class="note">Both boxes are the same fix: the flow used <code>createArray()</code> with no arguments to mean "empty array" when a field is left blank, which isn't valid syntax. <code>json('&#91;&#93;')</code> is the correct way to write an empty array.</div>
+<div class="note">The flow used <code>createArray()</code> with no arguments to mean "empty array" when Categories is left blank, which isn't valid syntax. <code>json('&#91;&#93;')</code> is the correct way to write an empty array.</div>
 
-<h2>Limited Libraries — Two Always-Kept Groups</h2>
+<h2>Limited Libraries — Two Fixed Groups, Nothing to Fill In</h2>
 <p>For a Limited library, the real-world sequence is: create the library locked down first, then email another team to get the actual access group created and added later. If <code>Break_Role_Inheritance</code> strips every permission with nothing left behind, nobody — including you — can get back in to add that group when it's ready.</p>
-<p>To fix that without needing to know or remove every default SharePoint group by name, the flow now grants two fixed groups <strong>Full Control</strong> automatically on every Limited library, before anything from the Permission Grants field is applied:</p>
+<p>Since that other team owns every group that ever gets added, there's no field for it on this form at all — nothing to type, nothing to get wrong. Every Limited library automatically gets exactly these two groups at <strong>Full Control</strong>, and nothing else:</p>
 <ul>
   <li><code>SG_Cadets-Admin-Ltd_MEM</code> — Full Control</li>
   <li><code>SG_IHUB</code> — Full Control</li>
 </ul>
-<p>This isn't an "invert and remove the rest" — <code>copyroleassignments=false</code> already means nothing is inherited or copied in the first place, so there's nothing to enumerate or strip. The flow just adds these two straight after breaking inheritance, then layers on whatever you type in Permission Grants on top (which can now be left blank if the other team's group doesn't exist yet — access isn't lost either way).</p>
+<p>This isn't an "invert and remove the rest" — <code>copyroleassignments=false</code> already means nothing is inherited or copied in the first place, so there's nothing to enumerate or strip. The flow just grants these two straight after breaking inheritance. When the other team's group is ready, it gets added by hand in Library Settings → Permissions — that's a deliberate manual step owned by them, not something this flow does.</p>
 <p>One more wrinkle found during testing: SharePoint automatically adds whoever's account calls <code>breakroleinheritance</code> — in this case the flow's own connection identity — as a direct user with Full Control, as a built-in lockout safety net. That leaves a third, unwanted entry in the permissions list on top of the two SG groups. The flow now removes that automatic grant as its last step, so the final permissions list is exactly the two SG groups and nothing else.</p>
-<div class="warning">This changed which actions exist inside the flow (five new steps total across both changes), not just one field's content — it can't be patched by editing a single expression box like the fix above. <strong>Delete the flow you already imported and re-import the updated package</strong> from the download link at the top of this page, then redo both tests from scratch.</div>
+<div class="warning">This changed which actions exist inside the flow, not just one field's content — it can't be patched by editing a single expression box like the fix above. <strong>Delete the flow you already imported and re-import the updated package</strong> from the download link at the top of this page, then redo both tests from scratch.</div>
 
 <h2>Testing the flow</h2>
 <p>Power Automate → My flows → <strong>Create Library (App)</strong> → Test → Manually.</p>
@@ -167,7 +162,7 @@
     <tr><td>Display Name</td><td><code>ZZ Test Library</code></td></tr>
     <tr><td>Is Limited</td><td>false / off</td></tr>
     <tr><td>Team</td><td><code>Test</code></td></tr>
-    <tr><td>SubTeam, Categories, Permission Grants</td><td>leave blank</td></tr>
+    <tr><td>SubTeam, Categories</td><td>leave blank</td></tr>
   </tbody>
 </table>
 <p>After it runs, check: the library exists with CAT + Status columns and WiP/Records views; its Title shows the pretty name; a new row appeared in <code>LibraryFilePlan</code>.</p>
@@ -179,10 +174,9 @@
     <tr><td>Technical Name</td><td><code>ZZTest_LTD_Library</code></td></tr>
     <tr><td>Display Name</td><td><code>ZZ Test LTD Library</code></td></tr>
     <tr><td>Is Limited</td><td>true / on</td></tr>
-    <tr><td>Permission Grants</td><td>leave blank for this test — <code>SG_Cadets-Admin-Ltd_MEM</code> and <code>SG_IHUB</code> get added automatically. Only put something here if you also want a third group added, e.g. <code>SG_Cdts-TrainSafeAssurance-LTD_MEM|Contribute</code></td></tr>
   </tbody>
 </table>
-<div class="warning">This is the one part of the whole system that touches security directly. After running it, manually open Library Settings → Permissions for this document library on the test library and confirm <strong>only</strong> <code>SG_Cadets-Admin-Ltd_MEM</code> and <code>SG_IHUB</code> (plus anything you added above) are there — no inherited groups, no extra groups, and no direct user entry for whoever ran the flow. Don't skip this check the first time.</div>
+<div class="warning">This is the one part of the whole system that touches security directly. After running it, manually open Library Settings → Permissions for this document library on the test library and confirm <strong>only</strong> <code>SG_Cadets-Admin-Ltd_MEM</code> and <code>SG_IHUB</code> are there — no inherited groups, no extra groups, and no direct user entry for whoever ran the flow. Don't skip this check the first time.</div>
 
 <div class="note">Clean-up: delete both test libraries and their two rows from <code>LibraryFilePlan</code> once both tests pass — they're throwaway, not meant to stay.</div>
 
