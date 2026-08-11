@@ -130,6 +130,21 @@
   <li>Registers the new library into <code>LibraryFilePlan</code> automatically</li>
 </ol>
 
+<h2>Known Import Bug — Fix Before Testing</h2>
+<div class="warning">If you test the flow and get <code>Action 'Select_Categories' failed... The template language function 'createArray' expects a comma separated list of parameters. The function was invoked with no parameters.</code> — this is a known bug in the imported flow, not something you did wrong. Fix both actions below before testing (or re-download the flow package above, which already has this fixed).</div>
+<p>In the flow designer: <strong>Edit</strong> the flow, click the <strong>Select_Categories</strong> action to expand it, click into its <strong>From</strong> box, select all and delete, then copy/paste the whole box below in as the replacement. Do the same for <strong>Select_Permission_Grants</strong> using the second box. Save the flow after both are done.</p>
+<h3>Select_Categories — From</h3>
+<div class="code-block">
+  <button class="copy-btn" onclick="copyPre(this)">Copy</button>
+  <pre>if(empty(trim(coalesce(triggerBody()?['Categories'], ''))), json('&#91;&#93;'), split(triggerBody()?['Categories'], '\n'))</pre>
+</div>
+<h3>Select_Permission_Grants — From</h3>
+<div class="code-block">
+  <button class="copy-btn" onclick="copyPre(this)">Copy</button>
+  <pre>if(empty(trim(coalesce(triggerBody()?['PermissionGrants'], ''))), json('&#91;&#93;'), split(triggerBody()?['PermissionGrants'], '\n'))</pre>
+</div>
+<div class="note">Both boxes are the same fix: the flow used <code>createArray()</code> with no arguments to mean "empty array" when a field is left blank, which isn't valid syntax. <code>json('&#91;&#93;')</code> is the correct way to write an empty array.</div>
+
 <h2>Testing the flow</h2>
 <p>Power Automate → My flows → <strong>Create Library (App)</strong> → Test → Manually.</p>
 <h3>First test — plain library, no permission changes</h3>
@@ -166,5 +181,45 @@
 <h2>Issues</h2>
 <p>Found a problem? <a href="https://github.com/PhadeDev/library-file-plan-manager/issues" style="color:#7c4dff">Report it here</a>.</p>
 
+<script>
+async function copyPre(btn) {
+  const pre = btn.parentElement.querySelector('pre');
+  const text = pre.innerText;
+  const orig = btn.textContent;
+  const showOk = () => { btn.textContent = 'Copied!'; btn.classList.add('ok'); setTimeout(() => { btn.textContent = orig; btn.classList.remove('ok'); }, 2500); };
+  const showFail = () => {
+    const range = document.createRange();
+    range.selectNodeContents(pre);
+    const sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+    btn.textContent = 'Select + Ctrl+C';
+  };
+  try {
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(text);
+      showOk();
+      return;
+    }
+    throw new Error('no clipboard API');
+  } catch (e) {
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.focus();
+      ta.select();
+      const ok = document.execCommand('copy');
+      document.body.removeChild(ta);
+      if (ok) { showOk(); return; }
+      throw new Error('execCommand failed');
+    } catch (e2) {
+      showFail();
+    }
+  }
+}
+</script>
 </body>
 </html>
