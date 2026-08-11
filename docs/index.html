@@ -84,9 +84,9 @@
 <body>
 
 <a class="back" href="https://phaderon.github.io/PowerApps/">← Guide Library</a>
-<h1>Library &amp; File Plan Manager <span style="font-size:0.65em;font-weight:400;color:#666;vertical-align:middle;margin-left:8px;">v2.3</span></h1>
+<h1>Library &amp; File Plan Manager <span style="font-size:0.65em;font-weight:400;color:#666;vertical-align:middle;margin-left:8px;">v2.4</span></h1>
 <p class="subtitle">SharePoint permissions map (file-plan style, grouped by team) + an admin screen that creates document libraries correctly and registers them automatically, so nothing gets forgotten again.</p>
-<p class="buildstamp">Built 11 Aug 2026  12:51 BST</p>
+<p class="buildstamp">Built 11 Aug 2026  13:12 BST</p>
 
 <div class="pending">Two screens live below (File Plan browse, Admin: Create Library). Still to come: the whole-site group search screen and the permissions view/add/remove screen — the flow both depend on (permission index) is already built.</div>
 <p class="snippet-stamp">Every purple line like this one, directly above a copy box, shows the page version and the exact local time that specific box's content was last changed — not the page as a whole. If what you copied still errors after re-pasting, check this stamp against what's shown here before assuming the fix didn't take: refresh the page fully first (the stamp only updates once GitHub Pages has actually served the new version).</p>
@@ -107,13 +107,14 @@
 <h2>Backfill Existing Libraries</h2>
 <p><code>LibraryFilePlan</code> only tracks libraries created <em>after</em> this system existed — it starts empty, and won't have your existing ~500 libraries in it. This flow fixes that in one run: it scans every real document library on the site (skipping SharePoint's own system libraries — Site Assets, Style Library, Form Templates, Preservation Hold Library, and a few others), and for anything not already in <code>LibraryFilePlan</code>, adds a row with:</p>
 <ul>
-  <li><strong>LibraryUrl, DisplayName, Title, SiteUrl</strong> — filled in automatically, read straight off the real library</li>
+  <li><strong>LibraryUrl, PrettyName, Title, SiteUrl</strong> — filled in automatically, read straight off the real library</li>
   <li><strong>IsLimited</strong> — guessed automatically: <code>true</code> if the library already has broken permission inheritance (<code>HasUniqueRoleAssignments</code>), <code>false</code> if it's still inheriting normally. Since every Limited library your other flow creates breaks inheritance and every Normal one doesn't, this should be right for anything created by this system already — for libraries created some other way in the past, spot-check a few after running</li>
   <li><strong>Team, SubTeam</strong> — left <strong>blank</strong>. Only you know which team actually owns which library, so this is the one part left for you to fill in by hand, directly in the SharePoint list view (which supports quick-edit/grid view for fast bulk filling — much faster than opening each row individually)</li>
 </ul>
 <p>Safe to run more than once — it checks each library's <code>LibraryUrl</code> against what's already tracked first, so it only adds what's missing, never duplicates.</p>
 <div class="warning">This scans your whole library list — with ~500 libraries, expect this to take several minutes to run. It runs 20 libraries at a time in parallel (not one at a time) to keep this reasonable, but a whole-site scan is still a whole-site scan. Let it finish; don't re-run it while it's still going.</div>
 <div class="note">Import via Power Automate → My flows → Import → Import Package (Legacy), same as the other flow. Test → Manually, leave Site URL blank (defaults to the main site), Test. Once it's done, open <code>LibraryFilePlan</code> in SharePoint, switch to grid/quick-edit view, and fill in Team (and SubTeam where relevant) for every row.</div>
+<div class="warning">If you already imported an earlier version of this flow, it wrote to a column called <code>DisplayName</code>, which SharePoint silently drops writes to on this list (see the <code>PrettyName</code> note in the schema table above). Re-download and re-import this package to pick up the fix — low priority if you've already manually copied that data across to <code>PrettyName</code> yourself and don't expect to re-run this flow again soon.</div>
 
 <h2>SharePoint List: <code>PermissionIndex</code></h2>
 <p>Location: your main site, same as <code>LibraryFilePlan</code>. Site Contents → New → List → blank list, name it exactly <code>PermissionIndex</code>.</p>
@@ -148,13 +149,14 @@
     <tr><td>LibraryUrl</td><td>Single line of text</td><td>The real join key — a library's server-relative URL, survives display-name renames</td></tr>
     <tr><td>Team</td><td>Choice</td><td>Top-level file-plan grouping. Fixed set — type in your known team names as the choices, no "Allow fill-in values"</td></tr>
     <tr><td>SubTeam</td><td>Choice</td><td>Optional nested grouping. Tick <strong>"Allow fill-in values"</strong> — same pattern as the CAT column, so new sub-teams can be added on the fly without editing list settings</td></tr>
-    <tr><td>DisplayName</td><td>Single line of text</td><td>Optional override; falls back to live library Title if blank</td></tr>
+    <tr><td>PrettyName</td><td>Single line of text</td><td>Optional override; falls back to live library Title if blank</td></tr>
     <tr><td>SiteUrl</td><td>Single line of text</td><td>Which of your sites the library is on</td></tr>
     <tr><td>SortOrder</td><td>Number</td><td>Optional — controls order within a group</td></tr>
     <tr><td>IsLimited</td><td>Yes/No</td><td>True if the library was created as Limited. Lets you set conditional formatting on the list view to colour-code Limited rows</td></tr>
   </tbody>
 </table>
 <div class="warning">Mark every column <strong>Not Required</strong> in SharePoint. Type column names exactly as shown, no spaces — SharePoint silently converts spaces to <code>_x0020_</code> internally, and the flow's requests need the plain names to match exactly.</div>
+<div class="warning"><strong>If you already have a <code>DisplayName</code> column from an earlier version of this guide:</strong> confirmed live that SharePoint silently drops writes to a column with that exact name — right internal name, right type (Single line of text), value sent correctly in every test, and it just never saves, while every other field in the same request works fine. Working theory: this list also has two Person-or-Group columns (Created By, Modified By), and <code>DisplayName</code> is a standard reserved sub-property on Person fields in SharePoint's REST metadata — a custom column sharing that exact name can get silently shadowed. A plain rename won't fix it (SharePoint keeps a column's internal identifier fixed once created, regardless of what display label you give it later — same reason a library's URL survives a Title rename). Fix: add a new column named exactly <code>PrettyName</code> (shown above) instead, and leave the old <code>DisplayName</code> column alone/unused — safe to delete once you've copied any data across, nothing in the flow or app references it anymore after the fixes below.</div>
 <div class="note">If you already created this list before <code>IsLimited</code> was added: go to the list → <strong>+ Add column</strong> → <strong>Yes/No</strong> → name it exactly <code>IsLimited</code>. No need to recreate the list.</div>
 <div class="note">Team and SubTeam being Choice columns instead of plain text needs no flow changes — SharePoint's REST API writes a Choice value as a plain string either way, which is exactly what the flow already sends. The only difference shows up later in the Power App: instead of a free-text box on the Admin screen, Team and SubTeam become dropdowns bound to <code>Choices('LibraryFilePlan'.Team)</code> / <code>Choices('LibraryFilePlan'.SubTeam)</code> — no typo-driven duplicate groups in the file-plan view.</div>
 
@@ -189,7 +191,7 @@
   <li>In the flow designer: <strong>Edit</strong> the flow, click the <strong>Create_FilePlan_Row</strong> action to expand it, click into its <strong>Body</strong> box, select all and delete, then copy/paste the box below in as the replacement.</li>
 </ol>
 <h3>Create_FilePlan_Row — Body</h3>
-<p class="snippet-stamp">v0.1 — Updated 11 Aug 2026 10:47 BST</p>
+<p class="snippet-stamp">v2.4 — Updated 11 Aug 2026 13:12 BST</p>
 <div class="code-block">
   <button class="copy-btn" onclick="copyPre(this)">Copy</button>
   <pre>{
@@ -198,13 +200,13 @@
   "LibraryUrl": "@{body('Get_New_Library_Url')?['d']?['RootFolder']?['ServerRelativeUrl']}",
   "Team": "@{triggerBody()?['Team']}",
   "SubTeam": "@{triggerBody()?['SubTeam']}",
-  "DisplayName": "@{triggerBody()?['DisplayName']}",
+  "PrettyName": "@{triggerBody()?['DisplayName']}",
   "SiteUrl": "@{triggerBody()?['SiteUrl']}",
   "IsLimited": @{if(equals(triggerBody()?['IsLimited'], true), 'true', 'false')}
 }</pre>
 </div>
-<div class="warning">If you already pasted an earlier version of this and got <code>Action 'Create_FilePlan_Row' failed: Invalid JSON. A token was not recognized.</code> — that's a real Power Automate quirk: interpolating a boolean with <code>@{triggerBody()?['IsLimited']}</code> renders as <code>True</code>/<code>False</code> (capital, .NET-style), which isn't valid JSON. JSON needs lowercase <code>true</code>/<code>false</code>. The block above already has the fix — re-paste it in.</div>
-<div class="note">Only change from the original body: one extra line for <code>IsLimited</code>, added at the end. Save the flow after pasting — no other actions need touching, and this doesn't require re-import.</div>
+<div class="warning">Latest fix: the field name changed from <code>DisplayName</code> to <code>PrettyName</code> — confirmed live that SharePoint silently drops writes to a column named <code>DisplayName</code> on this list (see the schema table above for why). The value itself is unaffected — it's still populated from <code>triggerBody()?['DisplayName']</code>, the Power Apps trigger's own parameter name, which hasn't changed. Only the SharePoint column being written to is different.</div>
+<div class="note">If you already pasted an earlier version of this and got <code>Action 'Create_FilePlan_Row' failed: Invalid JSON. A token was not recognized.</code> — that was a separate, already-fixed issue: interpolating a boolean with <code>@{triggerBody()?['IsLimited']}</code> renders as <code>True</code>/<code>False</code> (capital, .NET-style), which isn't valid JSON. The block above already has both fixes. Save the flow after pasting — no other actions need touching, and this doesn't require re-import.</div>
 
 <h2>Limited Libraries — Two Fixed Groups, Nothing to Fill In</h2>
 <p>For a Limited library, the real-world sequence is: create the library locked down first, then email another team to get the actual access group created and added later. If <code>Break_Role_Inheritance</code> strips every permission with nothing left behind, nobody — including you — can get back in to add that group when it's ready.</p>
@@ -266,14 +268,14 @@
 
 <h3>2. App.OnStart</h3>
 <p>Select the <strong>App</strong> object (top of the tree, not any screen) → <strong>OnStart</strong> property → paste this in full, replacing whatever's there:</p>
-<p class="snippet-stamp">v2.1 — Updated 11 Aug 2026 12:26 BST</p>
+<p class="snippet-stamp">v2.4 — Updated 11 Aug 2026 13:12 BST</p>
 <div class="code-block">
   <button class="copy-btn" onclick="copyPre(this)">Copy</button>
   <pre>Set(varTenantHost, "https://modgovuk.sharepoint.com");
 ClearCollect(colFilePlan, 'LibraryFilePlan');
 ClearCollect(
     colFilePlanFiltered,
-    AddColumns(colFilePlan, TeamName, Team.Value, SubTeamName, Coalesce(SubTeam.Value, ""))
+    AddColumns(colFilePlan, TeamName, Team.Value, SubTeamName, Coalesce(SubTeam.Value, ""), EffectiveName, If(IsBlank(PrettyName) || PrettyName = "", Title, PrettyName))
 );
 ClearCollect(
     colTeamGroups,
@@ -296,63 +298,105 @@ Set(varQueueRunning, false);
 Set(varQueueTotal, 0);
 Set(varQueueDone, 0)</pre>
 </div>
-<div class="note">This loads the library list once at app start and builds the initial grouped-by-team view. The File Plan screen's search box rebuilds all four collections itself as you type — App.OnStart just needs to set them up once so the screen isn't blank before you've typed anything. <code>varIsAdmin</code> gates the Admin screen — edit the email list directly in this line if who's authorized ever changes.</div>
+<div class="note">This loads the library list once at app start and builds the initial grouped-by-team view. The File Plan screen's search box rebuilds all four collections itself as you type — App.OnStart just needs to set them up once so the screen isn't blank before you've typed anything. <code>varIsAdmin</code> gates the Admin screen — edit the email list directly in this line if who's authorized ever changes. <code>EffectiveName</code> is the fix for the <code>DisplayName</code>/<code>PrettyName</code> saga above — it's <code>PrettyName</code> when that's filled in, otherwise falls back to <code>Title</code>, which self-heals every library affected by the old bug (including ones already created) without needing any data migration.</div>
 
 <h3>3. Screens</h3>
 <p>New screen (blank) → open the link below → Copy YAML → paste into the new screen. Rename the screen to match the name shown (<code>scrFilePlan</code>) so later screens that navigate to it by name work correctly.</p>
 <div class="screen-grid">
-  <a class="screen-card" href="screens/scrFilePlan.html?v=2.1">
+  <a class="screen-card" href="screens/scrFilePlan.html?v=2.2">
     <div class="screen-number">Screen 1</div>
     <div class="screen-name">scrFilePlan</div>
     <div class="screen-desc">Read-only browse screen — search box, grouped-by-team collapsible list, Open and Copy link buttons per library, LTD badge on Limited libraries.</div>
     <div class="screen-cta">Copy YAML →</div>
   </a>
-  <a class="screen-card" href="screens/scrAdminCreateLibrary.html?v=1.3">
+  <a class="screen-card" href="screens/scrAdminCreateLibrary.html?v=1.4">
     <div class="screen-number">Screen 2</div>
     <div class="screen-name">scrAdminCreateLibrary</div>
     <div class="screen-desc">Restricted to the admin email list. Fill in a library's details, Add to Queue as many times as needed, then Run Queue creates them all sequentially via the flow you've already tested, with a progress overlay.</div>
     <div class="screen-cta">Copy YAML →</div>
   </a>
 </div>
-<div class="warning">v1.3 fix on <code>btnRunQueue</code>'s OnSelect: <code>Make_Document_Library failed... dataset... may not be null or empty</code> — the same class of bug fixed earlier in the flow itself, but triggered a different way this time. <code>coalesce()</code> only substitutes its fallback for a genuine <code>null</code> — it does nothing for an empty string, because an empty string isn't null, it's just empty. The flow's manual Test panel leaves a skipped field truly blank (null), so <code>coalesce()</code> caught it there. But this screen's <code>.Run()</code> call was explicitly sending <code>SiteUrl: ""</code> — a real, present, non-null empty string — so <code>coalesce()</code> passed it straight through and <code>dataset</code> ended up empty again. Fixed by sending the real site URL directly instead of an empty string. Fix below — one existing button's formula, no new controls, no re-import needed for the screen.</div>
-<h3>btnRunQueue — OnSelect (fix only, full button formula below for reference)</h3>
-<p class="snippet-stamp">v2.2 — Updated 11 Aug 2026 12:41 BST</p>
+
+<h3>scrAdminCreateLibrary v1.4 — full re-paste required</h3>
+<p class="snippet-stamp">v2.4 — Updated 11 Aug 2026 13:12 BST</p>
+<div class="warning">v1.4 adds a genuinely new control (a spinner on the progress overlay) alongside the button-disable fix below — since a control was added, not just a property changed, <strong>delete the whole <code>scrAdminCreateLibrary</code> screen and paste fresh</strong> from the link above rather than pasting over the existing one.</div>
+<ul>
+  <li><strong>Run Queue button now visibly greys out and changes to "Creating..."</strong> the instant you click it, instead of vanishing — more reliable feedback than the overlay alone for a single fast library, which can finish before the overlay's even noticeable.</li>
+  <li><strong>Spinner added to the progress overlay card</strong>, above the "Creating N libraries..." text.</li>
+  <li><strong>PrettyName fix</strong> (see the schema table above) carried into this screen's own copy of the data-refresh formula, which runs after every queue completes.</li>
+</ul>
+<div class="note">Also fixed in this version, from earlier in this thread: the "This function cannot be invoked within ForAll" bug (v1.2) and the <code>dataset ... may not be null or empty</code> bug from sending an empty-string <code>SiteUrl</code> (v1.3) — both already folded into the fresh v1.4 paste, no separate action needed for those.</div>
+<div class="note">Nothing to clean up from any failed run — <code>Make_Document_Library</code> is the very first real action in the flow, so it failing means no library, no columns, no <code>LibraryFilePlan</code> row got created at all.</div>
+<div class="note"><strong>scrAdminCreateLibrary</strong>: restricted to <code>allan.hamilton775@mod.gov.uk</code> and <code>dan.smith391@mod.gov.uk</code> via <code>varIsAdmin</code> in App.OnStart — anyone else sees a plain "restricted" message instead of the form. Sub-Team is a free-text box here rather than a suggestion dropdown — Modern Combobox has a known Microsoft-acknowledged instability issue (documented in this Bible's <code>known-bad-patterns.md</code>) that wasn't worth risking on a field that's meant to allow new values anyway. The queue is entirely local (a Power Apps collection) until you hit Run — closing the app before running loses whatever's queued, nothing's written to SharePoint until then.</div>
+
+<h3>scrFilePlan v2.2 — three inline fixes, no re-paste needed</h3>
+<p class="snippet-stamp">v2.4 — Updated 11 Aug 2026 13:12 BST</p>
+<p>Only existing properties changed, no new controls — safe to hand-edit rather than re-pasting the whole screen. All three fixes are the same underlying change: reading the new <code>EffectiveName</code> column (from App.OnStart, updated above) instead of the broken <code>DisplayName</code>.</p>
+<h4>txtSearch — OnChange</h4>
 <div class="code-block">
   <button class="copy-btn" onclick="copyPre(this)">Copy</button>
-  <pre>Set(varQueueRunning, true);
-Set(varQueueTotal, CountRows(colQueue));
-ForAll(
-    colQueue,
-    'Create Library (App)'.Run(
-        TechnicalName,
-        DisplayName,
-        Team,
-        {
-            SiteUrl: "https://modgovuk.sharepoint.com/teams/1598",
-            IsLimited: IsLimited,
-            Categories: Categories,
-            SubTeam: SubTeam
-        }
+  <pre>ClearCollect(
+    colFilePlanFiltered,
+    AddColumns(
+        If(
+            IsBlank(Trim(txtSearch.Text)),
+            colFilePlan,
+            Filter(
+                colFilePlan,
+                txtSearch.Text in PrettyName ||
+                txtSearch.Text in Title ||
+                txtSearch.Text in Team.Value ||
+                txtSearch.Text in Coalesce(SubTeam.Value, "")
+            )
+        ),
+        TeamName, Team.Value,
+        SubTeamName, Coalesce(SubTeam.Value, ""),
+        EffectiveName, If(IsBlank(PrettyName) || PrettyName = "", Title, PrettyName)
     )
 );
-Clear(colQueue);
-ClearCollect(colFilePlan, 'LibraryFilePlan');
-ClearCollect(colFilePlanFiltered, AddColumns(colFilePlan, TeamName, Team.Value, SubTeamName, Coalesce(SubTeam.Value, "")));
-ClearCollect(colTeamGroups, Sort(AddColumns(GroupBy(colFilePlanFiltered, TeamName, GroupedItems), ItemCount, CountRows(GroupedItems)), TeamName, SortOrder.Ascending));
+ClearCollect(
+    colTeamGroups,
+    Sort(
+        AddColumns(
+            GroupBy(colFilePlanFiltered, TeamName, GroupedItems),
+            ItemCount, CountRows(GroupedItems)
+        ),
+        TeamName,
+        SortOrder.Ascending
+    )
+);
 Clear(colFlatSource);
 Collect(colFlatSource, AddColumns(colTeamGroups, RowType, "Team", SortKey, TeamName, RankInGroup, 0));
 Collect(colFlatSource, AddColumns(colFilePlanFiltered, RowType, "Library", SortKey, TeamName, RankInGroup, 1));
-Notify(varQueueTotal & " librar" & If(varQueueTotal = 1, "y", "ies") & " created.", NotificationType.Success);
-Set(varQueueRunning, false)</pre>
+If(
+    !IsBlank(Trim(txtSearch.Text)),
+    ClearCollect(colExpandedKeys, ShowColumns(colTeamGroups, TeamName)),
+    Clear(colExpandedKeys)
+)</pre>
 </div>
-<div class="note">The earlier "This function cannot be invoked within ForAll" fix (v1.2) is unaffected — <code>lblOverlayText</code>'s Text property should already be updated from that step; no change to it needed for this one. Nothing to clean up from the failed run either — <code>Make_Document_Library</code> is the very first real action in the flow, so it failing means no library, no columns, no <code>LibraryFilePlan</code> row got created at all.</div>
-<div class="note"><strong>scrAdminCreateLibrary</strong>: restricted to <code>allan.hamilton775@mod.gov.uk</code> and <code>dan.smith391@mod.gov.uk</code> via <code>varIsAdmin</code> in App.OnStart — anyone else sees a plain "restricted" message instead of the form. Sub-Team is a free-text box here rather than a suggestion dropdown — Modern Combobox has a known Microsoft-acknowledged instability issue (documented in this Bible's <code>known-bad-patterns.md</code>) that wasn't worth risking on a field that's meant to allow new values anyway. The queue is entirely local (a Power Apps collection) until you hit Run — closing the app before running loses whatever's queued, nothing's written to SharePoint until then.</div>
-<div class="warning">v2.0 is a full rebuild of the accordion mechanism, not a patch — <strong>delete the whole <code>scrFilePlan</code> screen and paste fresh into a new blank one</strong>, and re-paste App.OnStart in full (it now builds a fourth collection, <code>colFlatSource</code>). If you already have v2.0 pasted, v2.1's changes are additive (new Clear button, existing controls' properties updated) so pasting v2.1 over the top should be fine.</div>
-<div class="note">v1.x used nested galleries (a Team gallery containing a Library gallery per row) with dynamically computed row heights, switching the outer gallery's Variant between Vertical and VariableHeight trying to get it to reflow correctly — it never did; expanding a Team just overlapped the rows below it. v2.0 throws that out and uses the pattern your own <code>sidebar.md</code> component (powerappsui.com) actually uses for its parent/child tree: <strong>one single flat gallery</strong>, every row the same fixed height, no nesting at all. A Team being "expanded" doesn't resize anything — it just changes which rows are included in the gallery's own <code>Items</code> formula (<code>Filter(colFlatSource, RowType = "Team" || TeamName in colExpandedKeys.TeamName)</code>). Since every visible row is the same height, the gallery reflows correctly by default — there's no per-row height math left to get wrong.</div>
-<div class="note">v2.1: added a <strong>Clear (✕)</strong> button next to the search box, and the result count line now reads "Showing N libraries..." in purple/bold while a search is active, vs "All libraries — N..." in grey when it's blank — so it's visibly obvious the search actually did something.</div>
-<div class="note">On this screen, search is <strong>instant and local</strong> — it's filtering the <code>LibraryFilePlan</code> list already loaded into the app, no network call, so there's deliberately no spinner (there's nothing to wait for). Typing a matching term also auto-expands every Team that has a result, so you don't have to manually open teams to see what matched. Searching by <strong>SG_/DG_ permission group name across the whole site</strong> is a separate, not-yet-built screen — that one genuinely hits SharePoint live and will need a spinner, once the permission-index flow exists.</div>
-<div class="note">v1.2 fix: <code>Copy()</code> actually takes a plain text value directly — <code>Copy(varTenantHost & ThisItem.LibraryUrl)</code> — not a control reference. The v1.1 attempt (<code>Copy(txtClipboardStaging)</code>) errored with <code>Expecting a Text value instead</code>, which meant the whole hidden off-screen <code>Classic/TextInput</code> workaround wasn't needed at all — removed it, the Copy link button is now a single line.</div>
-<div class="note">Still to come, in order: <strong>Admin: Create Library</strong> (the form + bulk queue, calls the flow you've already tested — no new flow work needed), then a <strong>permissions view/add/remove screen</strong> and <strong>whole-site group search</strong> (both need a new "permission index" flow, not built yet).</div>
+<h4>galRows — Items</h4>
+<div class="code-block">
+  <button class="copy-btn" onclick="copyPre(this)">Copy</button>
+  <pre>SortByColumns(
+    Filter(
+        colFlatSource,
+        (RowType = "Team") ||
+        (RowType = "Library" && TeamName in colExpandedKeys.TeamName)
+    ),
+    "SortKey", SortOrder.Ascending,
+    "RankInGroup", SortOrder.Ascending,
+    "EffectiveName", SortOrder.Ascending
+)</pre>
+</div>
+<h4>lblLibName — Text</h4>
+<div class="code-block">
+  <button class="copy-btn" onclick="copyPre(this)">Copy</button>
+  <pre>ThisItem.EffectiveName</pre>
+</div>
+<div class="note">v2.1 (unaffected by the above): added a <strong>Clear (✕)</strong> button next to the search box, and the result count line now reads "Showing N libraries..." in purple/bold while a search is active, vs "All libraries — N..." in grey when it's blank.</div>
+<div class="note">v2.0 (unaffected by the above): rebuilt the whole accordion as one flat gallery instead of nested galleries — nested galleries with dynamic per-row height never correctly reflowed on expand, rows just overlapped. The pattern that actually works came from this project's own catalogued <code>sidebar.md</code> component (powerappsui.com): one single flat gallery, every row the same fixed height, expand/collapse changes which rows are <em>in</em> <code>Items</code> rather than resizing anything.</div>
+<div class="note">On this screen, search is <strong>instant and local</strong> — it's filtering the <code>LibraryFilePlan</code> list already loaded into the app, no network call, so there's deliberately no spinner. Typing a matching term also auto-expands every Team that has a result. Searching by <strong>SG_/DG_ permission group name across the whole site</strong> is a separate, not-yet-built screen that reads the new <code>PermissionIndex</code> list — fast, since that's precomputed rather than a live crawl.</div>
+<div class="note">Still to come, in order: the <strong>whole-site group search</strong> screen and the <strong>permissions view/add/remove</strong> screen. Both flows they depend on are already built.</div>
 
 <h2>Issues</h2>
 <p>Found a problem? <a href="https://github.com/PhadeDev/library-file-plan-manager/issues" style="color:#7c4dff">Report it here</a>.</p>
