@@ -112,9 +112,11 @@
     <tr><td>DisplayName</td><td>Single line of text</td><td>Optional override; falls back to live library Title if blank</td></tr>
     <tr><td>SiteUrl</td><td>Single line of text</td><td>Which of your sites the library is on</td></tr>
     <tr><td>SortOrder</td><td>Number</td><td>Optional — controls order within a group</td></tr>
+    <tr><td>IsLimited</td><td>Yes/No</td><td>True if the library was created as Limited. Lets you set conditional formatting on the list view to colour-code Limited rows</td></tr>
   </tbody>
 </table>
 <div class="warning">Mark every column <strong>Not Required</strong> in SharePoint. Type column names exactly as shown, no spaces — SharePoint silently converts spaces to <code>_x0020_</code> internally, and the flow's requests need the plain names to match exactly.</div>
+<div class="note">If you already created this list before <code>IsLimited</code> was added: go to the list → <strong>+ Add column</strong> → <strong>Yes/No</strong> → name it exactly <code>IsLimited</code>. No need to recreate the list.</div>
 <div class="note">Team and SubTeam being Choice columns instead of plain text needs no flow changes — SharePoint's REST API writes a Choice value as a plain string either way, which is exactly what the flow already sends. The only difference shows up later in the Power App: instead of a free-text box on the Admin screen, Team and SubTeam become dropdowns bound to <code>Choices('LibraryFilePlan'.Team)</code> / <code>Choices('LibraryFilePlan'.SubTeam)</code> — no typo-driven duplicate groups in the file-plan view.</div>
 
 <h2>What the flow does</h2>
@@ -139,6 +141,28 @@
   <pre>if(empty(trim(coalesce(triggerBody()?['Categories'], ''))), json('&#91;&#93;'), split(triggerBody()?['Categories'], '\n'))</pre>
 </div>
 <div class="note">The flow used <code>createArray()</code> with no arguments to mean "empty array" when Categories is left blank, which isn't valid syntax. <code>json('&#91;&#93;')</code> is the correct way to write an empty array.</div>
+
+<h2>Track Limited vs Normal in the List</h2>
+<p>The flow now also writes <code>IsLimited</code> into the <code>LibraryFilePlan</code> row it creates, so you can set conditional formatting on the list view to colour Limited rows differently. This is one existing field's content changing, not a new action — safe to hand-edit if you'd rather not delete and re-import.</p>
+<ol>
+  <li>Add the <code>IsLimited</code> (Yes/No) column to your <code>LibraryFilePlan</code> list first, if you haven't already — see the schema table above.</li>
+  <li>In the flow designer: <strong>Edit</strong> the flow, click the <strong>Create_FilePlan_Row</strong> action to expand it, click into its <strong>Body</strong> box, select all and delete, then copy/paste the box below in as the replacement.</li>
+</ol>
+<h3>Create_FilePlan_Row — Body</h3>
+<div class="code-block">
+  <button class="copy-btn" onclick="copyPre(this)">Copy</button>
+  <pre>{
+  "__metadata": { "type": "SP.Data.LibraryFilePlanListItem" },
+  "Title": "@{triggerBody()?['DisplayName']}",
+  "LibraryUrl": "@{body('Get_New_Library_Url')?['d']?['RootFolder']?['ServerRelativeUrl']}",
+  "Team": "@{triggerBody()?['Team']}",
+  "SubTeam": "@{triggerBody()?['SubTeam']}",
+  "DisplayName": "@{triggerBody()?['DisplayName']}",
+  "SiteUrl": "@{triggerBody()?['SiteUrl']}",
+  "IsLimited": @{triggerBody()?['IsLimited']}
+}</pre>
+</div>
+<div class="note">Only change from before: one extra line, <code>"IsLimited": @{triggerBody()?['IsLimited']}</code>, added at the end. Save the flow after pasting — no other actions need touching, and this doesn't require re-import.</div>
 
 <h2>Limited Libraries — Two Fixed Groups, Nothing to Fill In</h2>
 <p>For a Limited library, the real-world sequence is: create the library locked down first, then email another team to get the actual access group created and added later. If <code>Break_Role_Inheritance</code> strips every permission with nothing left behind, nobody — including you — can get back in to add that group when it's ready.</p>
