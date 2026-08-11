@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <title>PowerApps – scrFilePlan – v1.0  —  Built 11 Aug 2026  11:07 BST</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #0f0f1a;
+      color: #e8e8f0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      gap: 20px;
+    }
+    h1 { font-size: 1.4rem; font-weight: 400; color: #a0a0c0; }
+    .name { font-size: 1.1rem; font-weight: 600; color: #c8b8ff; }
+    .version-badge {
+      display: inline-block;
+      background: #1a2a1a;
+      border: 1px solid #2a7d4e;
+      color: #4caf7d;
+      font-family: 'Cascadia Code', 'Consolas', monospace;
+      font-size: 0.95rem;
+      font-weight: 700;
+      padding: 6px 18px;
+      border-radius: 20px;
+      letter-spacing: 0.5px;
+    }
+    button {
+      padding: 14px 36px;
+      font-size: 1.1rem;
+      background: #7c4dff;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    button:hover { background: #6a3de8; }
+    button:active { background: #5830cc; }
+    #status {
+      font-size: 0.9rem;
+      color: #888;
+      min-height: 1.2em;
+      transition: color 0.2s;
+    }
+    #status.ok { color: #4caf7d; }
+    #status.err { color: #e85555; }
+    .info {
+      font-size: 0.8rem;
+      color: #555;
+      margin-top: 8px;
+      text-align: center;
+      line-height: 1.6;
+    }
+    .preview {
+      width: min(720px, calc(100vw - 48px));
+      background: #1a1a2e;
+      border: 1px solid #2a2a3a;
+      border-radius: 8px;
+      padding: 12px 14px;
+      color: #bfc7e8;
+      font-family: 'Cascadia Code', 'Consolas', monospace;
+      font-size: 0.78rem;
+      line-height: 1.45;
+      white-space: pre-wrap;
+      text-align: left;
+    }
+  </style>
+</head>
+<body>
+  <h1>PowerApps Screen</h1>
+  <div class="name">scrFilePlan</div>
+  <div class="version-badge">v1.0  —  Built 11 Aug 2026  11:07 BST</div>
+  <button onclick="copyYAML()">Copy YAML to Clipboard</button>
+  <div id="status">Click to copy — PowerApps-ready (CRLF, UTF-8)</div>
+  <div class="info">
+    After copying, open PowerApps Studio &rarr; select a screen &rarr; Ctrl+V<br>
+    or use the paste button in the tree view.
+  </div>
+  <pre id="preview" class="preview"></pre>
+  <script>
+    const yaml = "Screens:\r\n  scrFilePlan:\r\n    Properties:\r\n      Fill: =RGBA(245, 246, 250, 1)\r\n    Children:\r\n      - lblTitle:\r\n          Control: Label@2.5.1\r\n          Properties:\r\n            Text: =\"Library & File Plan\"\r\n            X: =32\r\n            Y: =24\r\n            Width: =600\r\n            Height: =40\r\n            Size: =22\r\n            FontWeight: =FontWeight.Semibold\r\n            Color: =RGBA(30, 30, 45, 1)\r\n            Font: =Font.'Open Sans'\r\n      - txtSearch:\r\n          Control: ModernTextInput@1.1.0\r\n          Properties:\r\n            Placeholder: =\"Search by library name, team or sub-team...\"\r\n            Type: =TextInputType.Search\r\n            X: =32\r\n            Y: =72\r\n            Width: =520\r\n            Height: =44\r\n            OnChange: |-\r\n              =ClearCollect(\r\n                  colFilePlanFiltered,\r\n                  AddColumns(\r\n                      If(\r\n                          IsBlank(Trim(txtSearch.Text)),\r\n                          colFilePlan,\r\n                          Filter(\r\n                              colFilePlan,\r\n                              txtSearch.Text in DisplayName ||\r\n                              txtSearch.Text in Title ||\r\n                              txtSearch.Text in Team.Value ||\r\n                              txtSearch.Text in Coalesce(SubTeam.Value, \"\")\r\n                          )\r\n                      ),\r\n                      TeamName, Team.Value,\r\n                      SubTeamName, Coalesce(SubTeam.Value, \"\")\r\n                  )\r\n              );\r\n              ClearCollect(\r\n                  colTeamGroups,\r\n                  Sort(\r\n                      AddColumns(\r\n                          GroupBy(colFilePlanFiltered, TeamName, GroupedItems),\r\n                          ItemCount, CountRows(GroupedItems)\r\n                      ),\r\n                      TeamName,\r\n                      SortOrder.Ascending\r\n                  )\r\n              );\r\n              If(\r\n                  !IsBlank(Trim(txtSearch.Text)),\r\n                  ClearCollect(colExpandedKeys, ShowColumns(colTeamGroups, TeamName)),\r\n                  Clear(colExpandedKeys)\r\n              )\r\n      - lblResultCount:\r\n          Control: Label@2.5.1\r\n          Properties:\r\n            Text: =CountRows(colFilePlanFiltered) & \" librar\" & If(CountRows(colFilePlanFiltered) = 1, \"y\", \"ies\") & \" across \" & CountRows(colTeamGroups) & \" teams\"\r\n            X: =32\r\n            Y: =120\r\n            Width: =520\r\n            Height: =24\r\n            Size: =12\r\n            Color: =RGBA(120, 120, 135, 1)\r\n            Font: =Font.'Open Sans'\r\n      - galTeams:\r\n          Control: Gallery@2.15.0\r\n          Variant: Vertical\r\n          Properties:\r\n            Items: |-\r\n              =colTeamGroups\r\n            TemplateSize: =64\r\n            Height: =700\r\n            Width: =1000\r\n            X: =32\r\n            Y: =156\r\n            TemplatePadding: =8\r\n            LoadingSpinner: =LoadingSpinner.None\r\n          Children:\r\n            - Container1:\r\n                Control: GroupContainer@1.5.0\r\n                Variant: ManualLayout\r\n                Properties:\r\n                  DropShadow: =DropShadow.None\r\n                  Fill: =RGBA(255, 255, 255, 1)\r\n                  Height: =56 + If(CountRows(Filter(colExpandedKeys, TeamName = ThisItem.TeamName)) > 0, ThisItem.ItemCount * 64 + 8, 0)\r\n                  Width: =1000\r\n                  Y: =0\r\n                Children:\r\n                  - recTeamHeaderBg:\r\n                      Control: Classic/Button@2.2.0\r\n                      Properties:\r\n                        Text: =\"\"\r\n                        DisplayMode: =DisplayMode.View\r\n                        Fill: =RGBA(230, 233, 245, 1)\r\n                        HoverFill: =RGBA(230, 233, 245, 1)\r\n                        PressedFill: =RGBA(230, 233, 245, 1)\r\n                        BorderColor: =RGBA(210, 213, 228, 1)\r\n                        BorderThickness: =1\r\n                        RadiusTopLeft: =10\r\n                        RadiusTopRight: =10\r\n                        RadiusBottomLeft: =10\r\n                        RadiusBottomRight: =10\r\n                        X: =0\r\n                        Y: =0\r\n                        Width: =1000\r\n                        Height: =48\r\n                  - lblChevron:\r\n                      Control: Label@2.5.1\r\n                      Properties:\r\n                        Text: =If(CountRows(Filter(colExpandedKeys, TeamName = ThisItem.TeamName)) > 0, \"v\", \">\")\r\n                        X: =16\r\n                        Y: =0\r\n                        Width: =24\r\n                        Height: =48\r\n                        Size: =16\r\n                        Color: =RGBA(60, 60, 80, 1)\r\n                        VerticalAlign: =VerticalAlign.Middle\r\n                        Font: =Font.'Open Sans'\r\n                  - lblTeamName:\r\n                      Control: Label@2.5.1\r\n                      Properties:\r\n                        Text: =ThisItem.TeamName\r\n                        X: =48\r\n                        Y: =0\r\n                        Width: =600\r\n                        Height: =48\r\n                        Size: =15\r\n                        FontWeight: =FontWeight.Semibold\r\n                        Color: =RGBA(30, 30, 45, 1)\r\n                        VerticalAlign: =VerticalAlign.Middle\r\n                        Font: =Font.'Open Sans'\r\n                  - lblTeamCount:\r\n                      Control: Label@2.5.1\r\n                      Properties:\r\n                        Text: =ThisItem.ItemCount & \" librar\" & If(ThisItem.ItemCount = 1, \"y\", \"ies\")\r\n                        X: =840\r\n                        Y: =0\r\n                        Width: =140\r\n                        Height: =48\r\n                        Size: =12\r\n                        Color: =RGBA(120, 120, 135, 1)\r\n                        Align: =Align.Right\r\n                        VerticalAlign: =VerticalAlign.Middle\r\n                        Font: =Font.'Open Sans'\r\n                  - btnTeamHeaderTap:\r\n                      Control: Classic/Button@2.2.0\r\n                      Properties:\r\n                        Text: =\"\"\r\n                        Fill: =RGBA(0, 0, 0, 0)\r\n                        HoverFill: =Self.Fill\r\n                        PressedFill: =Self.Fill\r\n                        BorderThickness: =0\r\n                        X: =0\r\n                        Y: =0\r\n                        Width: =1000\r\n                        Height: =48\r\n                        OnSelect: |-\r\n                          =If(\r\n                              CountRows(Filter(colExpandedKeys, TeamName = ThisItem.TeamName)) > 0,\r\n                              RemoveIf(colExpandedKeys, TeamName = ThisItem.TeamName),\r\n                              Collect(colExpandedKeys, {TeamName: ThisItem.TeamName})\r\n                          )\r\n                  - galLibraries:\r\n                      Control: Gallery@2.15.0\r\n                      Variant: Vertical\r\n                      Properties:\r\n                        Items: |-\r\n                          =ThisItem.GroupedItems\r\n                        TemplateSize: =64\r\n                        Height: =ThisItem.ItemCount * 64\r\n                        Width: =1000\r\n                        X: =0\r\n                        Y: =56\r\n                        Visible: =CountRows(Filter(colExpandedKeys, TeamName = ThisItem.TeamName)) > 0\r\n                        LoadingSpinner: =LoadingSpinner.None\r\n                      Children:\r\n                        - recRowBg:\r\n                            Control: Classic/Button@2.2.0\r\n                            Properties:\r\n                              Text: =\"\"\r\n                              DisplayMode: =DisplayMode.View\r\n                              Fill: =RGBA(255, 255, 255, 1)\r\n                              HoverFill: =RGBA(255, 255, 255, 1)\r\n                              PressedFill: =RGBA(255, 255, 255, 1)\r\n                              BorderColor: =RGBA(238, 239, 245, 1)\r\n                              BorderThickness: =1\r\n                              X: =0\r\n                              Y: =0\r\n                              Width: =1000\r\n                              Height: =60\r\n                        - lblLibName:\r\n                            Control: Label@2.5.1\r\n                            Properties:\r\n                              Text: =ThisItem.DisplayName\r\n                              X: =32\r\n                              Y: =0\r\n                              Width: =380\r\n                              Height: =60\r\n                              Size: =14\r\n                              Color: =RGBA(30, 30, 45, 1)\r\n                              VerticalAlign: =VerticalAlign.Middle\r\n                              Font: =Font.'Open Sans'\r\n                        - lblSubTeamTag:\r\n                            Control: Label@2.5.1\r\n                            Properties:\r\n                              Text: =ThisItem.SubTeamName\r\n                              Visible: =!IsBlank(ThisItem.SubTeamName) && ThisItem.SubTeamName <> \"\"\r\n                              X: =420\r\n                              Y: =0\r\n                              Width: =200\r\n                              Height: =60\r\n                              Size: =12\r\n                              Color: =RGBA(120, 120, 135, 1)\r\n                              VerticalAlign: =VerticalAlign.Middle\r\n                              Font: =Font.'Open Sans'\r\n                        - lblLtdBadge:\r\n                            Control: Label@2.5.1\r\n                            Properties:\r\n                              Text: =\"LTD\"\r\n                              Visible: =ThisItem.IsLimited\r\n                              X: =630\r\n                              Y: =16\r\n                              Width: =50\r\n                              Height: =28\r\n                              Size: =11\r\n                              FontWeight: =FontWeight.Bold\r\n                              Color: =RGBA(155, 45, 25, 1)\r\n                              Fill: =RGBA(250, 225, 218, 1)\r\n                              Align: =Align.Center\r\n                              VerticalAlign: =VerticalAlign.Middle\r\n                              Font: =Font.'Open Sans'\r\n                        - btnCopy:\r\n                            Control: ModernButton@1.0.0\r\n                            Properties:\r\n                              Text: =\"Copy link\"\r\n                              X: =700\r\n                              Y: =12\r\n                              Width: =110\r\n                              Height: =36\r\n                              OnSelect: |-\r\n                                =Set(varClipboardPayload, varTenantHost & ThisItem.LibraryUrl);\r\n                                SetFocus(txtClipboardStaging);\r\n                                Copy()\r\n                        - btnOpen:\r\n                            Control: ModernButton@1.0.0\r\n                            Properties:\r\n                              Text: =\"Open\"\r\n                              X: =830\r\n                              Y: =12\r\n                              Width: =110\r\n                              Height: =36\r\n                              OnSelect: |-\r\n                                =Launch(varTenantHost & ThisItem.LibraryUrl)\r\n      - txtClipboardStaging:\r\n          Control: Classic/TextInput@2.3.2\r\n          Properties:\r\n            Default: =varClipboardPayload\r\n            X: =-2000\r\n            Y: =-2000\r\n            Width: =100\r\n            Height: =40\r\n";
+    const stamp = "v1.0  \u2014  Built 11 Aug 2026  11:07 BST";
+
+    function firstLines() {
+      return yaml.split(/\r?\n/).slice(0, 8).join('\n');
+    }
+
+    async function copyYAML() {
+      const status = document.getElementById('status');
+      if (!yaml.startsWith('Screens:\r\n  ') && !yaml.startsWith('Screens:\n  ')) {
+        status.textContent = 'Refusing to copy: YAML does not start with Screens:';
+        status.className = 'err';
+        return;
+      }
+      if (yaml.includes('\r\n    Control: Screen\r\n') || yaml.includes('\n    Control: Screen\n')) {
+        status.textContent = 'Refusing to copy: stale YAML still contains screen-level Control: Screen.';
+        status.className = 'err';
+        return;
+      }
+      try {
+        await navigator.clipboard.writeText(yaml);
+        status.textContent = '✓ Copied ' + stamp + '. First YAML line: ' + yaml.split(/\r?\n/)[0];
+        status.className = 'ok';
+        setTimeout(() => {
+          status.textContent = 'Click to copy again';
+          status.className = '';
+        }, 4000);
+      } catch (e) {
+        status.textContent = 'Clipboard blocked — select the text below and copy manually.';
+        status.className = 'err';
+        const pre = document.createElement('pre');
+        pre.style = 'font-size:9px;max-height:200px;overflow:auto;background:#1a1a2e;padding:8px;border-radius:6px;text-align:left;';
+        pre.textContent = yaml;
+        document.body.appendChild(pre);
+      }
+    }
+
+    document.getElementById('preview').textContent = 'Clipboard payload preview (' + stamp + ')\n' + firstLines();
+  </script>
+</body>
+</html>

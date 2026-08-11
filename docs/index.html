@@ -83,11 +83,11 @@
 <body>
 
 <a class="back" href="https://phaderon.github.io/PowerApps/">← Guide Library</a>
-<h1>Library &amp; File Plan Manager <span style="font-size:0.65em;font-weight:400;color:#666;vertical-align:middle;margin-left:8px;">v0.1 — setup phase</span></h1>
+<h1>Library &amp; File Plan Manager <span style="font-size:0.65em;font-weight:400;color:#666;vertical-align:middle;margin-left:8px;">v1.0</span></h1>
 <p class="subtitle">SharePoint permissions map (file-plan style, grouped by team) + an admin screen that creates document libraries correctly and registers them automatically, so nothing gets forgotten again.</p>
-<p class="buildstamp">Built 10 Aug 2026  13:47 BST</p>
+<p class="buildstamp">Built 11 Aug 2026  11:08 BST</p>
 
-<div class="pending">This app has no Power Apps screens yet. Current phase: get the SharePoint list and the Power Automate flow working and tested. Screens get added here once that's confirmed — this page will grow.</div>
+<div class="pending">First screen is live below (File Plan browse). Still to come: Admin: Create Library (with a bulk queue), the permissions view/add/remove screen, and whole-site search by SG/DG group name — that last one needs a new "permission index" flow, not built yet.</div>
 
 <h2>Before You Start</h2>
 <ol>
@@ -210,8 +210,55 @@
 
 <div class="note">Clean-up: delete both test libraries and their two rows from <code>LibraryFilePlan</code> once both tests pass — they're throwaway, not meant to stay.</div>
 
-<h2>Screens</h2>
-<p>Not built yet. Coming next once the list and flow are confirmed working end to end: a Browse/File-plan screen (grouped by Team, expandable, with buttons to open each library), a Search screen (SharePoint group or nested AD group name, whole-site or per-site, with a loading spinner), and the Admin: Create Library screen that calls this flow.</p>
+<h2>Building the Power App</h2>
+<p>Create a new blank canvas app in Power Apps Studio, then follow these steps in order.</p>
+
+<h3>1. Data connections</h3>
+<p>Data panel → Add data → add this SharePoint list before pasting any screen YAML:</p>
+<div class="code-block">
+  <button class="copy-btn" onclick="copyPre(this)">Copy</button>
+  <pre>'LibraryFilePlan'   (SharePoint → your main site → LibraryFilePlan)</pre>
+</div>
+
+<h3>2. App.OnStart</h3>
+<p>Select the <strong>App</strong> object (top of the tree, not any screen) → <strong>OnStart</strong> property → paste this in full, replacing whatever's there:</p>
+<div class="code-block">
+  <button class="copy-btn" onclick="copyPre(this)">Copy</button>
+  <pre>Set(varTenantHost, "https://modgovuk.sharepoint.com");
+ClearCollect(colFilePlan, 'LibraryFilePlan');
+ClearCollect(colFilePlanFiltered, colFilePlan);
+ClearCollect(
+    colTeamGroups,
+    Sort(
+        AddColumns(
+            GroupBy(
+                AddColumns(colFilePlanFiltered, TeamName, Team.Value, SubTeamName, Coalesce(SubTeam.Value, "")),
+                TeamName,
+                GroupedItems
+            ),
+            ItemCount, CountRows(GroupedItems)
+        ),
+        TeamName,
+        SortOrder.Ascending
+    )
+);
+ClearCollect(colExpandedKeys, Filter(Table({TeamName: "seed"}), false));
+Set(varClipboardPayload, "")</pre>
+</div>
+<div class="note">This loads the library list once at app start and builds the initial grouped-by-team view. The File Plan screen's search box rebuilds <code>colFilePlanFiltered</code>/<code>colTeamGroups</code> itself as you type — App.OnStart just needs to set them up once so the screen isn't blank before you've typed anything.</div>
+
+<h3>3. Screens</h3>
+<p>New screen (blank) → open the link below → Copy YAML → paste into the new screen. Rename the screen to match the name shown (<code>scrFilePlan</code>) so later screens that navigate to it by name work correctly.</p>
+<div class="screen-grid">
+  <a class="screen-card" href="screens/scrFilePlan.html?v=1.0">
+    <div class="screen-number">Screen 1</div>
+    <div class="screen-name">scrFilePlan</div>
+    <div class="screen-desc">Read-only browse screen — search box, grouped-by-team collapsible list, Open and Copy link buttons per library, LTD badge on Limited libraries.</div>
+    <div class="screen-cta">Copy YAML →</div>
+  </a>
+</div>
+<div class="note">New in this screen, not yet Bible-proven elsewhere in your other apps: the <strong>Copy link</strong> button uses a hidden off-screen <code>Classic/TextInput</code> plus the native <code>Copy()</code> function (a real Power Apps function for copying a text input's content to the clipboard). This exact trick hasn't been live-tested in this app family before — if the button doesn't actually put anything on your clipboard, tell me and I'll adjust it, don't assume it's your mistake.</div>
+<div class="note">Still to come, in order: <strong>Admin: Create Library</strong> (the form + bulk queue, calls the flow you've already tested — no new flow work needed), then a <strong>permissions view/add/remove screen</strong> and <strong>whole-site group search</strong> (both need a new "permission index" flow, not built yet).</div>
 
 <h2>Issues</h2>
 <p>Found a problem? <a href="https://github.com/PhadeDev/library-file-plan-manager/issues" style="color:#7c4dff">Report it here</a>.</p>
