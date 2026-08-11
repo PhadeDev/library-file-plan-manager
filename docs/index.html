@@ -83,9 +83,9 @@
 <body>
 
 <a class="back" href="https://phaderon.github.io/PowerApps/">← Guide Library</a>
-<h1>Library &amp; File Plan Manager <span style="font-size:0.65em;font-weight:400;color:#666;vertical-align:middle;margin-left:8px;">v1.0</span></h1>
+<h1>Library &amp; File Plan Manager <span style="font-size:0.65em;font-weight:400;color:#666;vertical-align:middle;margin-left:8px;">v1.1</span></h1>
 <p class="subtitle">SharePoint permissions map (file-plan style, grouped by team) + an admin screen that creates document libraries correctly and registers them automatically, so nothing gets forgotten again.</p>
-<p class="buildstamp">Built 11 Aug 2026  11:08 BST</p>
+<p class="buildstamp">Built 11 Aug 2026  11:26 BST</p>
 
 <div class="pending">First screen is live below (File Plan browse). Still to come: Admin: Create Library (with a bulk queue), the permissions view/add/remove screen, and whole-site search by SG/DG group name — that last one needs a new "permission index" flow, not built yet.</div>
 
@@ -99,6 +99,18 @@
 
 <h2>Download</h2>
 <p><a class="dl" href="https://github.com/PhadeDev/library-file-plan-manager/raw/main/flows/CreateLibraryApp_flow_import.zip">CreateLibraryApp_flow_import.zip</a> — the flow package, import via Power Automate → My flows → Import → Import Package (Legacy).</p>
+<p><a class="dl" href="https://github.com/PhadeDev/library-file-plan-manager/raw/main/flows/BackfillFilePlan_flow_import.zip">BackfillFilePlan_flow_import.zip</a> — one-time scan of every existing library on the site, auto-registers anything not already tracked. See below.</p>
+
+<h2>Backfill Existing Libraries</h2>
+<p><code>LibraryFilePlan</code> only tracks libraries created <em>after</em> this system existed — it starts empty, and won't have your existing ~500 libraries in it. This flow fixes that in one run: it scans every real document library on the site (skipping SharePoint's own system libraries — Site Assets, Style Library, Form Templates, Preservation Hold Library, and a few others), and for anything not already in <code>LibraryFilePlan</code>, adds a row with:</p>
+<ul>
+  <li><strong>LibraryUrl, DisplayName, Title, SiteUrl</strong> — filled in automatically, read straight off the real library</li>
+  <li><strong>IsLimited</strong> — guessed automatically: <code>true</code> if the library already has broken permission inheritance (<code>HasUniqueRoleAssignments</code>), <code>false</code> if it's still inheriting normally. Since every Limited library your other flow creates breaks inheritance and every Normal one doesn't, this should be right for anything created by this system already — for libraries created some other way in the past, spot-check a few after running</li>
+  <li><strong>Team, SubTeam</strong> — left <strong>blank</strong>. Only you know which team actually owns which library, so this is the one part left for you to fill in by hand, directly in the SharePoint list view (which supports quick-edit/grid view for fast bulk filling — much faster than opening each row individually)</li>
+</ul>
+<p>Safe to run more than once — it checks each library's <code>LibraryUrl</code> against what's already tracked first, so it only adds what's missing, never duplicates.</p>
+<div class="warning">This scans your whole library list — with ~500 libraries, expect this to take several minutes to run. It runs 20 libraries at a time in parallel (not one at a time) to keep this reasonable, but a whole-site scan is still a whole-site scan. Let it finish; don't re-run it while it's still going.</div>
+<div class="note">Import via Power Automate → My flows → Import → Import Package (Legacy), same as the other flow. Test → Manually, leave Site URL blank (defaults to the main site), Test. Once it's done, open <code>LibraryFilePlan</code> in SharePoint, switch to grid/quick-edit view, and fill in Team (and SubTeam where relevant) for every row.</div>
 
 <h2>SharePoint List: <code>LibraryFilePlan</code></h2>
 <p>Location: your main site — <code>https://modgovuk.sharepoint.com/teams/1598/</code>. Site Contents → New → List → blank list, name it exactly <code>LibraryFilePlan</code>.</p>
