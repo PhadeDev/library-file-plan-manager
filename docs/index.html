@@ -83,9 +83,9 @@
 <body>
 
 <a class="back" href="https://phaderon.github.io/PowerApps/">← Guide Library</a>
-<h1>Library &amp; File Plan Manager <span style="font-size:0.65em;font-weight:400;color:#666;vertical-align:middle;margin-left:8px;">v2.1</span></h1>
+<h1>Library &amp; File Plan Manager <span style="font-size:0.65em;font-weight:400;color:#666;vertical-align:middle;margin-left:8px;">v2.2</span></h1>
 <p class="subtitle">SharePoint permissions map (file-plan style, grouped by team) + an admin screen that creates document libraries correctly and registers them automatically, so nothing gets forgotten again.</p>
-<p class="buildstamp">Built 11 Aug 2026  12:25 BST</p>
+<p class="buildstamp">Built 11 Aug 2026  12:30 BST</p>
 
 <div class="pending">First screen is live below (File Plan browse). Still to come: Admin: Create Library (with a bulk queue), the permissions view/add/remove screen, and whole-site search by SG/DG group name — that last one needs a new "permission index" flow, not built yet.</div>
 
@@ -100,6 +100,7 @@
 <h2>Download</h2>
 <p><a class="dl" href="https://github.com/PhadeDev/library-file-plan-manager/raw/main/flows/CreateLibraryApp_flow_import.zip">CreateLibraryApp_flow_import.zip</a> — the flow package, import via Power Automate → My flows → Import → Import Package (Legacy).</p>
 <p><a class="dl" href="https://github.com/PhadeDev/library-file-plan-manager/raw/main/flows/BackfillFilePlan_flow_import.zip">BackfillFilePlan_flow_import.zip</a> — one-time scan of every existing library on the site, auto-registers anything not already tracked. See below.</p>
+<p><a class="dl" href="https://github.com/PhadeDev/library-file-plan-manager/raw/main/flows/RebuildPermissionIndex_flow_import.zip">RebuildPermissionIndex_flow_import.zip</a> — scans libraries with broken permissions and builds a fast, searchable index of their groups. See below.</p>
 
 <h2>Backfill Existing Libraries</h2>
 <p><code>LibraryFilePlan</code> only tracks libraries created <em>after</em> this system existed — it starts empty, and won't have your existing ~500 libraries in it. This flow fixes that in one run: it scans every real document library on the site (skipping SharePoint's own system libraries — Site Assets, Style Library, Form Templates, Preservation Hold Library, and a few others), and for anything not already in <code>LibraryFilePlan</code>, adds a row with:</p>
@@ -111,6 +112,30 @@
 <p>Safe to run more than once — it checks each library's <code>LibraryUrl</code> against what's already tracked first, so it only adds what's missing, never duplicates.</p>
 <div class="warning">This scans your whole library list — with ~500 libraries, expect this to take several minutes to run. It runs 20 libraries at a time in parallel (not one at a time) to keep this reasonable, but a whole-site scan is still a whole-site scan. Let it finish; don't re-run it while it's still going.</div>
 <div class="note">Import via Power Automate → My flows → Import → Import Package (Legacy), same as the other flow. Test → Manually, leave Site URL blank (defaults to the main site), Test. Once it's done, open <code>LibraryFilePlan</code> in SharePoint, switch to grid/quick-edit view, and fill in Team (and SubTeam where relevant) for every row.</div>
+
+<h2>SharePoint List: <code>PermissionIndex</code></h2>
+<p>Location: your main site, same as <code>LibraryFilePlan</code>. Site Contents → New → List → blank list, name it exactly <code>PermissionIndex</code>.</p>
+<table>
+  <thead><tr><th>Column name (exact, no spaces)</th><th>Type</th><th>Notes</th></tr></thead>
+  <tbody>
+    <tr><td>Title</td><td>Single line of text</td><td>Built-in — the flow writes the group/user name into it too, same as GroupName, so the list is readable at a glance</td></tr>
+    <tr><td>LibraryUrl</td><td>Single line of text</td><td>Which library this permission row belongs to — joins back to <code>LibraryFilePlan.LibraryUrl</code></td></tr>
+    <tr><td>LibraryTitle</td><td>Single line of text</td><td>Display name, so search results don't need a lookup back to <code>LibraryFilePlan</code></td></tr>
+    <tr><td>GroupName</td><td>Single line of text</td><td>The actual SG_/DG_ group name (or username) this row represents — this is what the future search screen filters on</td></tr>
+    <tr><td>PrincipalType</td><td>Single line of text</td><td>"SharePoint Group", "Security Group", or "User"</td></tr>
+    <tr><td>PermissionLevel</td><td>Single line of text</td><td>e.g. "Full Control", "Contribute", "Read"</td></tr>
+    <tr><td>NestedUnderGroup</td><td>Single line of text</td><td>Blank for a group/user granted directly on the library. If this row represents a DG_ AD group found nested inside an SG_ group, this holds that SG_ group's name</td></tr>
+  </tbody>
+</table>
+<div class="warning">Mark every column <strong>Not Required</strong>, exact names, no spaces — same rule as <code>LibraryFilePlan</code>.</div>
+
+<h2>Rebuild Permission Index</h2>
+<p>Power Apps can't read SharePoint permissions directly (confirmed early on in this project — the standard connector only exposes list items, never role assignments), and a search screen can't afford to live-query every library's permissions on every keystroke. This flow bridges that: it scans permissions <strong>once</strong> and writes a flat, fast-searchable copy into <code>PermissionIndex</code>. The eventual group-search screen just filters that list — instant, no live SharePoint calls per search.</p>
+<p>Scoping decision worth knowing: this only scans libraries that already have <strong>broken/unique permissions</strong> (<code>HasUniqueRoleAssignments = true</code>) — in practice, mostly your Limited libraries. Normal libraries all inherit the exact same site-wide permissions as each other, so indexing each one individually would just be ~460+ duplicate rows saying the same thing. Anything not in the index after a rebuild simply means "inherits the site's normal permissions" — worth stating that plainly wherever the search results eventually get shown.</p>
+<p>For each in-scope library, per group/user with direct access, it writes one row. If that group is a native <strong>SharePoint Group</strong> (like <code>SG_Cadets-Admin-Ltd_MEM</code>), it also looks one level inside that group's own membership — this is how a nested <code>DG_...</code> AD group shows up in the index too, tagged via <code>NestedUnderGroup</code>, without needing Microsoft Graph or an Azure AD app registration (confirmed early in this project that Graph is off the table here — this works because SharePoint's own REST API can list a native group's members, and a nested AD group appears in that list as an entry, even though expanding <em>that</em> group's own members would need Graph, which this doesn't do).</p>
+<div class="warning">This flow <strong>deletes the entire contents of <code>PermissionIndex</code> and rebuilds it from scratch</strong> every time it runs — that's intentional (avoids stale/duplicate rows), but don't manually add anything to that list expecting it to survive a rebuild.</div>
+<div class="note">Import via Power Automate → My flows → Import → Import Package (Legacy). Test → Manually, leave Site URL blank. Given this only scans unique-permission libraries (a small subset of the ~500 total), expect this to run noticeably faster than the Backfill flow. Once it's done, open <code>PermissionIndex</code> in SharePoint and spot-check a few rows against what you already know about a couple of Limited libraries' real permissions.</div>
+<div class="note">Not wired to anything in Power Apps yet — the group-search screen that reads this list hasn't been built. Re-run this flow manually whenever the index needs refreshing (after creating/editing Limited library permissions); a scheduled/automatic rebuild is a future nice-to-have, not built now.</div>
 
 <h2>SharePoint List: <code>LibraryFilePlan</code></h2>
 <p>Location: your main site — <code>https://modgovuk.sharepoint.com/teams/1598/</code>. Site Contents → New → List → blank list, name it exactly <code>LibraryFilePlan</code>.</p>
