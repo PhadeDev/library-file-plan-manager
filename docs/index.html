@@ -301,12 +301,44 @@ Set(varQueueDone, 0)</pre>
     <div class="screen-desc">Read-only browse screen — search box, grouped-by-team collapsible list, Open and Copy link buttons per library, LTD badge on Limited libraries.</div>
     <div class="screen-cta">Copy YAML →</div>
   </a>
-  <a class="screen-card" href="screens/scrAdminCreateLibrary.html?v=1.0">
+  <a class="screen-card" href="screens/scrAdminCreateLibrary.html?v=1.1">
     <div class="screen-number">Screen 2</div>
     <div class="screen-name">scrAdminCreateLibrary</div>
     <div class="screen-desc">Restricted to the admin email list. Fill in a library's details, Add to Queue as many times as needed, then Run Queue creates them all sequentially via the flow you've already tested, with a progress overlay.</div>
     <div class="screen-cta">Copy YAML →</div>
   </a>
+</div>
+<div class="warning">v1.1 fix on <code>btnRunQueue</code>'s OnSelect: <code>Invalid number of arguments: received 7, expected 3-4</code>. Power Apps only exposes a flow's <em>required</em> trigger fields as separate positional arguments to <code>.Run(...)</code> — everything optional (<code>SiteUrl</code>, <code>IsLimited</code>, <code>Categories</code>, <code>SubTeam</code>) gets bundled into one trailing record argument instead of being passed individually. Fix below — one existing button's formula, no new controls, no re-import needed for the screen (paste this over the existing button's OnSelect).</div>
+<h3>btnRunQueue — OnSelect (fix only, full button formula below for reference)</h3>
+<div class="code-block">
+  <button class="copy-btn" onclick="copyPre(this)">Copy</button>
+  <pre>Set(varQueueRunning, true);
+Set(varQueueTotal, CountRows(colQueue));
+Set(varQueueDone, 0);
+ForAll(
+    colQueue,
+    'Create Library (App)'.Run(
+        TechnicalName,
+        DisplayName,
+        Team,
+        {
+            SiteUrl: "",
+            IsLimited: IsLimited,
+            Categories: Categories,
+            SubTeam: SubTeam
+        }
+    );
+    Set(varQueueDone, varQueueDone + 1)
+);
+Clear(colQueue);
+ClearCollect(colFilePlan, 'LibraryFilePlan');
+ClearCollect(colFilePlanFiltered, AddColumns(colFilePlan, TeamName, Team.Value, SubTeamName, Coalesce(SubTeam.Value, "")));
+ClearCollect(colTeamGroups, Sort(AddColumns(GroupBy(colFilePlanFiltered, TeamName, GroupedItems), ItemCount, CountRows(GroupedItems)), TeamName, SortOrder.Ascending));
+Clear(colFlatSource);
+Collect(colFlatSource, AddColumns(colTeamGroups, RowType, "Team", SortKey, TeamName, RankInGroup, 0));
+Collect(colFlatSource, AddColumns(colFilePlanFiltered, RowType, "Library", SortKey, TeamName, RankInGroup, 1));
+Notify(varQueueTotal & " librar" & If(varQueueTotal = 1, "y", "ies") & " created.", NotificationType.Success);
+Set(varQueueRunning, false)</pre>
 </div>
 <div class="note"><strong>scrAdminCreateLibrary</strong>: restricted to <code>allan.hamilton775@mod.gov.uk</code> and <code>dan.smith391@mod.gov.uk</code> via <code>varIsAdmin</code> in App.OnStart — anyone else sees a plain "restricted" message instead of the form. Sub-Team is a free-text box here rather than a suggestion dropdown — Modern Combobox has a known Microsoft-acknowledged instability issue (documented in this Bible's <code>known-bad-patterns.md</code>) that wasn't worth risking on a field that's meant to allow new values anyway. The queue is entirely local (a Power Apps collection) until you hit Run — closing the app before running loses whatever's queued, nothing's written to SharePoint until then.</div>
 <div class="warning">v2.0 is a full rebuild of the accordion mechanism, not a patch — <strong>delete the whole <code>scrFilePlan</code> screen and paste fresh into a new blank one</strong>, and re-paste App.OnStart in full (it now builds a fourth collection, <code>colFlatSource</code>). If you already have v2.0 pasted, v2.1's changes are additive (new Clear button, existing controls' properties updated) so pasting v2.1 over the top should be fine.</div>
