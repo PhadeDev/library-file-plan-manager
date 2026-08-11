@@ -83,9 +83,9 @@
 <body>
 
 <a class="back" href="https://phaderon.github.io/PowerApps/">← Guide Library</a>
-<h1>Library &amp; File Plan Manager <span style="font-size:0.65em;font-weight:400;color:#666;vertical-align:middle;margin-left:8px;">v2.0</span></h1>
+<h1>Library &amp; File Plan Manager <span style="font-size:0.65em;font-weight:400;color:#666;vertical-align:middle;margin-left:8px;">v2.1</span></h1>
 <p class="subtitle">SharePoint permissions map (file-plan style, grouped by team) + an admin screen that creates document libraries correctly and registers them automatically, so nothing gets forgotten again.</p>
-<p class="buildstamp">Built 11 Aug 2026  12:12 BST</p>
+<p class="buildstamp">Built 11 Aug 2026  12:25 BST</p>
 
 <div class="pending">First screen is live below (File Plan browse). Still to come: Admin: Create Library (with a bulk queue), the permissions view/add/remove screen, and whole-site search by SG/DG group name — that last one needs a new "permission index" flow, not built yet.</div>
 
@@ -226,11 +226,13 @@
 <p>Create a new blank canvas app in Power Apps Studio, then follow these steps in order.</p>
 
 <h3>1. Data connections</h3>
-<p>Data panel → Add data → add this SharePoint list before pasting any screen YAML:</p>
+<p>Data panel → Add data → add these before pasting any screen YAML:</p>
 <div class="code-block">
   <button class="copy-btn" onclick="copyPre(this)">Copy</button>
-  <pre>'LibraryFilePlan'   (SharePoint → your main site → LibraryFilePlan)</pre>
+  <pre>'LibraryFilePlan'          (SharePoint → your main site → LibraryFilePlan)
+'Create Library (App)'     (search Power Automate flows in Add data → this is the flow you already imported and tested)</pre>
 </div>
+<div class="note">Adding the flow as a data source is what makes <code>'Create Library (App)'.Run(...)</code> available to call from the Admin screen — without this step, the Run Queue button won't find the flow.</div>
 
 <h3>2. App.OnStart</h3>
 <p>Select the <strong>App</strong> object (top of the tree, not any screen) → <strong>OnStart</strong> property → paste this in full, replacing whatever's there:</p>
@@ -256,9 +258,14 @@ ClearCollect(
 Clear(colFlatSource);
 Collect(colFlatSource, AddColumns(colTeamGroups, RowType, "Team", SortKey, TeamName, RankInGroup, 0));
 Collect(colFlatSource, AddColumns(colFilePlanFiltered, RowType, "Library", SortKey, TeamName, RankInGroup, 1));
-ClearCollect(colExpandedKeys, Filter(Table({TeamName: "seed"}), false))</pre>
+ClearCollect(colExpandedKeys, Filter(Table({TeamName: "seed"}), false));
+Set(varIsAdmin, Lower(User().Email) in ["allan.hamilton775@mod.gov.uk", "dan.smith391@mod.gov.uk"]);
+ClearCollect(colQueue, Filter(Table({TechnicalName: "seed", DisplayName: "", Team: "", SubTeam: "", IsLimited: false, Categories: ""}), false));
+Set(varQueueRunning, false);
+Set(varQueueTotal, 0);
+Set(varQueueDone, 0)</pre>
 </div>
-<div class="note">This loads the library list once at app start and builds the initial grouped-by-team view. The File Plan screen's search box rebuilds all four collections itself as you type — App.OnStart just needs to set them up once so the screen isn't blank before you've typed anything.</div>
+<div class="note">This loads the library list once at app start and builds the initial grouped-by-team view. The File Plan screen's search box rebuilds all four collections itself as you type — App.OnStart just needs to set them up once so the screen isn't blank before you've typed anything. <code>varIsAdmin</code> gates the Admin screen — edit the email list directly in this line if who's authorized ever changes.</div>
 
 <h3>3. Screens</h3>
 <p>New screen (blank) → open the link below → Copy YAML → paste into the new screen. Rename the screen to match the name shown (<code>scrFilePlan</code>) so later screens that navigate to it by name work correctly.</p>
@@ -269,7 +276,14 @@ ClearCollect(colExpandedKeys, Filter(Table({TeamName: "seed"}), false))</pre>
     <div class="screen-desc">Read-only browse screen — search box, grouped-by-team collapsible list, Open and Copy link buttons per library, LTD badge on Limited libraries.</div>
     <div class="screen-cta">Copy YAML →</div>
   </a>
+  <a class="screen-card" href="screens/scrAdminCreateLibrary.html?v=1.0">
+    <div class="screen-number">Screen 2</div>
+    <div class="screen-name">scrAdminCreateLibrary</div>
+    <div class="screen-desc">Restricted to the admin email list. Fill in a library's details, Add to Queue as many times as needed, then Run Queue creates them all sequentially via the flow you've already tested, with a progress overlay.</div>
+    <div class="screen-cta">Copy YAML →</div>
+  </a>
 </div>
+<div class="note"><strong>scrAdminCreateLibrary</strong>: restricted to <code>allan.hamilton775@mod.gov.uk</code> and <code>dan.smith391@mod.gov.uk</code> via <code>varIsAdmin</code> in App.OnStart — anyone else sees a plain "restricted" message instead of the form. Sub-Team is a free-text box here rather than a suggestion dropdown — Modern Combobox has a known Microsoft-acknowledged instability issue (documented in this Bible's <code>known-bad-patterns.md</code>) that wasn't worth risking on a field that's meant to allow new values anyway. The queue is entirely local (a Power Apps collection) until you hit Run — closing the app before running loses whatever's queued, nothing's written to SharePoint until then.</div>
 <div class="warning">v2.0 is a full rebuild of the accordion mechanism, not a patch — <strong>delete the whole <code>scrFilePlan</code> screen and paste fresh into a new blank one</strong>, and re-paste App.OnStart in full (it now builds a fourth collection, <code>colFlatSource</code>). If you already have v2.0 pasted, v2.1's changes are additive (new Clear button, existing controls' properties updated) so pasting v2.1 over the top should be fine.</div>
 <div class="note">v1.x used nested galleries (a Team gallery containing a Library gallery per row) with dynamically computed row heights, switching the outer gallery's Variant between Vertical and VariableHeight trying to get it to reflow correctly — it never did; expanding a Team just overlapped the rows below it. v2.0 throws that out and uses the pattern your own <code>sidebar.md</code> component (powerappsui.com) actually uses for its parent/child tree: <strong>one single flat gallery</strong>, every row the same fixed height, no nesting at all. A Team being "expanded" doesn't resize anything — it just changes which rows are included in the gallery's own <code>Items</code> formula (<code>Filter(colFlatSource, RowType = "Team" || TeamName in colExpandedKeys.TeamName)</code>). Since every visible row is the same height, the gallery reflows correctly by default — there's no per-row height math left to get wrong.</div>
 <div class="note">v2.1: added a <strong>Clear (✕)</strong> button next to the search box, and the result count line now reads "Showing N libraries..." in purple/bold while a search is active, vs "All libraries — N..." in grey when it's blank — so it's visibly obvious the search actually did something.</div>
