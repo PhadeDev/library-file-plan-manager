@@ -175,13 +175,17 @@
 <p>One more wrinkle found during testing: SharePoint automatically adds whoever's account calls <code>breakroleinheritance</code> — in this case the flow's own connection identity — as a direct user with Full Control, as a built-in lockout safety net. That leaves a third, unwanted entry in the permissions list on top of the two SG groups. The flow now removes that automatic grant as its last step, so the final permissions list is exactly the two SG groups and nothing else.</p>
 <div class="warning">This changed which actions exist inside the flow, not just one field's content — it can't be patched by editing a single expression box like the fix above. <strong>Delete the flow you already imported and re-import the updated package</strong> from the download link at the top of this page, then redo both tests from scratch.</div>
 
+<h2>Site URL Now Defaults</h2>
+<p>Every test so far has been on the same site, so <strong>Site URL</strong> now has a default (<code>https://modgovuk.sharepoint.com/teams/1598</code>) and isn't required — leave it blank in Test and the flow fills it in itself. Same benefit carries into the Power App later: the Admin screen's call to this flow can skip Site URL entirely rather than showing it as a field.</p>
+<p>Trigger-only change, no new actions — hand-editable: open the trigger, expand <strong>Site URL</strong>'s settings, put the URL above in its Default value box, and turn Required off.</p>
+
 <h2>Testing the flow</h2>
 <p>Power Automate → My flows → <strong>Create Library (App)</strong> → Test → Manually.</p>
 <h3>First test — plain library, no permission changes</h3>
 <table>
   <thead><tr><th>Field</th><th>Value</th></tr></thead>
   <tbody>
-    <tr><td>Site URL</td><td><code>https://modgovuk.sharepoint.com/teams/1598</code></td></tr>
+    <tr><td>Site URL</td><td>leave blank — defaults to <code>https://modgovuk.sharepoint.com/teams/1598</code></td></tr>
     <tr><td>Technical Name</td><td><code>ZZTest_Library</code></td></tr>
     <tr><td>Display Name</td><td><code>ZZ Test Library</code></td></tr>
     <tr><td>Is Limited</td><td>false / off</td></tr>
