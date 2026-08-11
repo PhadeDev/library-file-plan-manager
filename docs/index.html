@@ -26,6 +26,7 @@
     tr:nth-child(even) td { background: #131320; }
     code { font-family: 'Cascadia Code','Consolas',monospace; background: #1a1a2e; padding: 1px 6px; border-radius: 4px; color: #c8d8f0; }
     .code-block { position: relative; margin: 12px 0 24px; }
+    .snippet-stamp { font-size: 0.72rem; color: #7c4dff; font-family: 'Cascadia Code','Consolas',monospace; margin: 16px 0 4px; }
     pre {
       background: #1a1a2e;
       color: #c8d8f0;
@@ -83,11 +84,12 @@
 <body>
 
 <a class="back" href="https://phaderon.github.io/PowerApps/">← Guide Library</a>
-<h1>Library &amp; File Plan Manager <span style="font-size:0.65em;font-weight:400;color:#666;vertical-align:middle;margin-left:8px;">v2.2</span></h1>
+<h1>Library &amp; File Plan Manager <span style="font-size:0.65em;font-weight:400;color:#666;vertical-align:middle;margin-left:8px;">v2.3</span></h1>
 <p class="subtitle">SharePoint permissions map (file-plan style, grouped by team) + an admin screen that creates document libraries correctly and registers them automatically, so nothing gets forgotten again.</p>
-<p class="buildstamp">Built 11 Aug 2026  12:30 BST</p>
+<p class="buildstamp">Built 11 Aug 2026  12:51 BST</p>
 
-<div class="pending">First screen is live below (File Plan browse). Still to come: Admin: Create Library (with a bulk queue), the permissions view/add/remove screen, and whole-site search by SG/DG group name — that last one needs a new "permission index" flow, not built yet.</div>
+<div class="pending">Two screens live below (File Plan browse, Admin: Create Library). Still to come: the whole-site group search screen and the permissions view/add/remove screen — the flow both depend on (permission index) is already built.</div>
+<p class="snippet-stamp">Every purple line like this one, directly above a copy box, shows the page version and the exact local time that specific box's content was last changed — not the page as a whole. If what you copied still errors after re-pasting, check this stamp against what's shown here before assuming the fix didn't take: refresh the page fully first (the stamp only updates once GitHub Pages has actually served the new version).</p>
 
 <h2>Before You Start</h2>
 <ol>
@@ -173,6 +175,7 @@
 <div class="warning">If you test the flow and get <code>Action 'Select_Categories' failed... The template language function 'createArray' expects a comma separated list of parameters. The function was invoked with no parameters.</code> — this is a known bug in the imported flow, not something you did wrong. Fix the action below before testing (or re-download the flow package above, which already has this fixed).</div>
 <p>In the flow designer: <strong>Edit</strong> the flow, click the <strong>Select_Categories</strong> action to expand it, click into its <strong>From</strong> box, select all and delete, then copy/paste the box below in as the replacement. Save the flow after.</p>
 <h3>Select_Categories — From</h3>
+<p class="snippet-stamp">v0.1 — Updated 11 Aug 2026 08:57 BST</p>
 <div class="code-block">
   <button class="copy-btn" onclick="copyPre(this)">Copy</button>
   <pre>if(empty(trim(coalesce(triggerBody()?['Categories'], ''))), json('&#91;&#93;'), split(triggerBody()?['Categories'], '\n'))</pre>
@@ -186,6 +189,7 @@
   <li>In the flow designer: <strong>Edit</strong> the flow, click the <strong>Create_FilePlan_Row</strong> action to expand it, click into its <strong>Body</strong> box, select all and delete, then copy/paste the box below in as the replacement.</li>
 </ol>
 <h3>Create_FilePlan_Row — Body</h3>
+<p class="snippet-stamp">v0.1 — Updated 11 Aug 2026 10:47 BST</p>
 <div class="code-block">
   <button class="copy-btn" onclick="copyPre(this)">Copy</button>
   <pre>{
@@ -252,6 +256,7 @@
 
 <h3>1. Data connections</h3>
 <p>Data panel → Add data → add these before pasting any screen YAML:</p>
+<p class="snippet-stamp">v2.1 — Updated 11 Aug 2026 12:26 BST</p>
 <div class="code-block">
   <button class="copy-btn" onclick="copyPre(this)">Copy</button>
   <pre>'LibraryFilePlan'          (SharePoint → your main site → LibraryFilePlan)
@@ -261,6 +266,7 @@
 
 <h3>2. App.OnStart</h3>
 <p>Select the <strong>App</strong> object (top of the tree, not any screen) → <strong>OnStart</strong> property → paste this in full, replacing whatever's there:</p>
+<p class="snippet-stamp">v2.1 — Updated 11 Aug 2026 12:26 BST</p>
 <div class="code-block">
   <button class="copy-btn" onclick="copyPre(this)">Copy</button>
   <pre>Set(varTenantHost, "https://modgovuk.sharepoint.com");
@@ -310,6 +316,7 @@ Set(varQueueDone, 0)</pre>
 </div>
 <div class="warning">v1.3 fix on <code>btnRunQueue</code>'s OnSelect: <code>Make_Document_Library failed... dataset... may not be null or empty</code> — the same class of bug fixed earlier in the flow itself, but triggered a different way this time. <code>coalesce()</code> only substitutes its fallback for a genuine <code>null</code> — it does nothing for an empty string, because an empty string isn't null, it's just empty. The flow's manual Test panel leaves a skipped field truly blank (null), so <code>coalesce()</code> caught it there. But this screen's <code>.Run()</code> call was explicitly sending <code>SiteUrl: ""</code> — a real, present, non-null empty string — so <code>coalesce()</code> passed it straight through and <code>dataset</code> ended up empty again. Fixed by sending the real site URL directly instead of an empty string. Fix below — one existing button's formula, no new controls, no re-import needed for the screen.</div>
 <h3>btnRunQueue — OnSelect (fix only, full button formula below for reference)</h3>
+<p class="snippet-stamp">v2.2 — Updated 11 Aug 2026 12:41 BST</p>
 <div class="code-block">
   <button class="copy-btn" onclick="copyPre(this)">Copy</button>
   <pre>Set(varQueueRunning, true);
