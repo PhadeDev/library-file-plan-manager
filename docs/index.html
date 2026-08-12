@@ -89,9 +89,9 @@
 <body>
 
 <a class="back" href="https://phaderon.github.io/PowerApps/">← Guide Library</a>
-<h1>Library &amp; File Plan Manager <span style="font-size:0.65em;font-weight:400;color:#666;vertical-align:middle;margin-left:8px;">v3.7</span></h1>
+<h1>Library &amp; File Plan Manager <span style="font-size:0.65em;font-weight:400;color:#666;vertical-align:middle;margin-left:8px;">v4.0</span></h1>
 <p class="subtitle">SharePoint permissions map (file-plan style, grouped by team) + an admin screen that creates document libraries correctly and registers them automatically, so nothing gets forgotten again.</p>
-<p class="buildstamp">Built 12 Aug 2026  11:46 BST</p>
+<p class="buildstamp">Built 12 Aug 2026  12:07 BST</p>
 
 <p class="snippet-stamp">Every purple line like this one, directly above a copy box, shows the page version and the exact local time that specific box's content was last changed. If a copy still errors after re-pasting, check this stamp against what's shown before assuming the fix didn't take — refresh the page fully first.</p>
 
@@ -100,12 +100,12 @@
   <ol>
     <li><strong><a class="checklist-link" href="#lists">SharePoint lists</a></strong> — create <code>LibraryFilePlan</code> and <code>PermissionIndex</code> via the CSV templates (fastest — creates every column for you), or manually per the schema tables. Column is <code>PrettyName</code>, not <code>DisplayName</code> — SharePoint silently drops writes to that name on this list.</li>
     <li><strong><a class="checklist-link" href="#flow-fix">Flow field fix</a></strong> — in <strong>Create Library (App)</strong>, edit <code>Create_FilePlan_Row</code>'s Body so it writes <code>PrettyName</code> instead of <code>DisplayName</code>. One line, no re-import.</li>
-    <li><strong><a class="checklist-link" href="#flows">Import all three flows</a></strong> — Create Library (App), Backfill File Plan, Rebuild Permission Index. Test Create Library (App) manually before touching Power Apps.</li>
+    <li><strong><a class="checklist-link" href="#flows">Import all four flows</a></strong> — Create Library (App), Backfill File Plan, Rebuild Permission Index, Manage Library Permissions. Test Create Library (App) manually before touching Power Apps.</li>
     <li><strong><a class="checklist-link" href="#build-app">Data connections + App.OnStart</a></strong> — add both SharePoint lists and the flow as data sources, paste App.OnStart in full.</li>
-    <li><strong><a class="checklist-link" href="#screens">All three screens</a></strong> — delete and paste fresh (screens have had controls added since first built, so a partial paste over the top won't apply cleanly).</li>
+    <li><strong><a class="checklist-link" href="#screens">All four screens</a></strong> — delete and paste fresh (screens have had controls added since first built, so a partial paste over the top won't apply cleanly).</li>
   </ol>
 </div>
-<div class="pending">Current state: all three screens built and File Plan / Admin Create Library are tested working. Group Search is new, not yet tested. Still to come after this: the permissions view/add/remove screen.</div>
+<div class="pending">Current state: all four planned screens are built. File Plan and Admin: Create Library are tested and working. Group Search and Manage Permissions are new — not yet tested. This was the last screen in the original plan.</div>
 
 <h2 id="lists">1. SharePoint List: <code>LibraryFilePlan</code></h2>
 <p>Location: your main site — <code>https://modgovuk.sharepoint.com/teams/1598/</code>.</p>
@@ -166,7 +166,8 @@
 <p><a class="dl" href="https://github.com/PhadeDev/library-file-plan-manager/raw/main/flows/CreateLibraryApp_flow_import.zip">CreateLibraryApp_flow_import.zip</a> — creates a library, registers it into <code>LibraryFilePlan</code>. The core flow everything else builds on.</p>
 <p><a class="dl" href="https://github.com/PhadeDev/library-file-plan-manager/raw/main/flows/BackfillFilePlan_flow_import.zip">BackfillFilePlan_flow_import.zip</a> — one-time scan of every existing library on the site, registers anything not already tracked.</p>
 <p><a class="dl" href="https://github.com/PhadeDev/library-file-plan-manager/raw/main/flows/RebuildPermissionIndex_flow_import.zip">RebuildPermissionIndex_flow_import.zip</a> — scans libraries with broken permissions and builds a fast, searchable index of their groups.</p>
-<p>All three: Power Automate → My flows → Import → Import Package (Legacy).</p>
+<p><a class="dl" href="https://github.com/PhadeDev/library-file-plan-manager/raw/main/flows/ManageLibraryPermissions_flow_import.zip">ManageLibraryPermissions_flow_import.zip</a> — lists, adds, or removes a group directly on a chosen library, called live from the Admin screen.</p>
+<p>All four: Power Automate → My flows → Import → Import Package (Legacy).</p>
 
 <h3>What Create Library (App) does</h3>
 <p>Triggered from Power Apps (or manually, for testing). Per library:</p>
@@ -207,6 +208,15 @@
 <div class="warning">Deletes the entire contents of <code>PermissionIndex</code> and rebuilds it from scratch every run — intentional, avoids stale/duplicate rows.</div>
 <div class="note">Excludes SharePoint's own auto-generated <strong>"Limited Access System Group"</strong> — this isn't a real business group, it's internal bookkeeping SharePoint creates whenever anything inside a library (even a single folder or file) has broken permissions. Since it's technically a SharePoint Group, expanding its membership floods the index with individual named users nobody would search for by name. Confirmed live: a first run without this exclusion produced ~500 rows, nearly all of them this noise. Also excludes <strong>"System Account"</strong> wherever it shows up as a nested member — SharePoint's own internal service account, never a real permission grantee.</div>
 
+<h3>Manage Library Permissions</h3>
+<p>This is the write counterpart to Rebuild Permission Index / Group Search, which are both read-only snapshots. This flow is called live, on demand, from the Admin screen — one flow, one trigger, an <code>Action</code> field ("List" / "Add" / "Remove") decides what it does:</p>
+<ul>
+  <li><strong>List</strong> — live role assignments for one library, straight from SharePoint (not the cached index), so it's always current</li>
+  <li><strong>Add</strong> — grants a SharePoint group (<code>SG_...</code>) a permission level on that library, reusing the exact same <code>Get_Group_Id → Get_Role_Def_Id → Add_Role_Assignment</code> pattern already proven in <strong>Create Library (App)</strong></li>
+  <li><strong>Remove</strong> — removes a group's entire access to that library in one call (<code>roleassignments/getbyprincipalid(id)</code> with an HTTP DELETE), rather than needing to know which specific permission level to unwind</li>
+</ul>
+<div class="note">Only manages native <strong>SharePoint groups</strong> (<code>SG_...</code>) directly on a library — matches how every Limited library in this system is actually set up: a <code>DG_...</code> AD group is never granted directly, it's always nested inside an <code>SG_...</code> wrapper group. If a genuinely new AD group needs adding, the other team creates it and its <code>SG_</code> wrapper first, same as always — this screen doesn't change that workflow, just removes the "someone has to do it by hand in native SharePoint" step.</div>
+
 <h2 id="build-app">4. Building the Power App</h2>
 <p>Create a new blank canvas app in Power Apps Studio.</p>
 
@@ -218,7 +228,8 @@
   <pre>'LibraryFilePlan'          (SharePoint → your main site → LibraryFilePlan)
 'PermissionIndex'          (SharePoint → your main site → PermissionIndex)
 'Create Library (App)'     (search Power Automate flows in Add data)
-'Rebuild Permission Index' (search Power Automate flows in Add data)</pre>
+'Rebuild Permission Index' (search Power Automate flows in Add data)
+'Manage Library Permissions' (search Power Automate flows in Add data)</pre>
 </div>
 
 <h3>App.OnStart</h3>
@@ -286,10 +297,17 @@ ClearCollect(colExpandedGroups, Filter(Table({GroupKey: "seed"}), false))</pre>
     <div class="screen-desc">Search by SG_/DG_ group name or library name. Results grouped by library in a collapsible accordion, same pattern as scrFilePlan. Reads the precomputed PermissionIndex list — instant, no live SharePoint crawl.</div>
     <div class="screen-cta">Copy YAML →</div>
   </a>
+  <a class="screen-card" href="screens/scrManagePermissions.html?v=1.0">
+    <div class="screen-number">Screen 4</div>
+    <div class="screen-name">scrManagePermissions</div>
+    <div class="screen-desc">Restricted to admins. Pick a Limited library, see its live current permissions, add or remove a SharePoint group directly — no more doing this by hand in native SharePoint.</div>
+    <div class="screen-cta">Copy YAML →</div>
+  </a>
 </div>
 <div class="note"><strong>scrFilePlan</strong>: one single flat gallery with uniform row height (a Team/Library discriminator column decides what each row shows) rather than nested galleries. Search is instant and local, no spinner needed, and auto-expands every Team with a match.</div>
 <div class="note"><strong>scrAdminCreateLibrary</strong>: Sub-Team is free text rather than a suggestion dropdown (Modern Combobox has a known instability issue). The queue is entirely local until you hit Run. Run Queue disables and shows "Creating..." immediately on click. The <strong>Rebuild Permission Index</strong> button is fire-and-forget — it doesn't wait for the flow to finish or show progress, since the run duration is unpredictable and Power Apps' <code>.Run()</code> call has no true non-blocking mode (a slow response is caught and shown as a friendly message rather than a raw error, but the flow itself always runs to completion on its own regardless). The status line above it shows how long ago the index was last rebuilt, and flags how many Limited libraries have been created since — both computed live from data already loaded, no extra flow or list needed.</div>
 <div class="note"><strong>scrGroupSearch</strong>: only finds results for libraries that were in scope for the last <strong>Rebuild Permission Index</strong> run (broken/unique-permission libraries — see that flow's section above). A Normal library never shows up here since it just inherits site-wide permissions; that's expected, not a bug. Searching matches the group name itself, the library name, or (for a nested AD group) the SharePoint group it's nested inside. v3.0 rebuilt the results as a <strong>three-tier accordion</strong> — Library → directly-granted group (matches SharePoint's own native Permissions panel exactly) → nested member, each level collapsed by default. Still one flat gallery underneath, just a third <code>RowType</code> and a second expand-tracking collection (<code>colExpandedGroups</code>) rather than nested galleries. v3.1 fixed a real sort-order bug where member rows sorted after <em>every</em> group in a library instead of clustering under their own parent group — the sort's column priority had rank ahead of the group-clustering key instead of after it. v3.2 moved the counts directly into each chevron instead of a separate pill: <code>4 &gt;</code> on a Library row (how many groups directly granted), <code>(2) &gt;</code> on a Group row (how many nested members) — visible whether the row is expanded or collapsed.</div>
+<div class="note"><strong>scrManagePermissions</strong>: unlike Rebuild Permission Index's fire-and-forget button, Add/Remove here wait for the result and immediately re-load the list — a single group operation is fast enough that blocking is the better UX, and there's a real result (success or a specific error) worth showing rather than "check back later." Uses <code>ThisItem.Title</code> (the library's real current SharePoint Title) when calling the flow, not <code>PrettyName</code>/<code>EffectiveName</code> — SharePoint's <code>getbytitle()</code> needs the actual current Title, and <strong>Create Library (App)</strong> renames every library's Title to the pretty name as its last real step, so by the time a library shows up here, its Title already <em>is</em> the pretty name.</div>
 
 <div class="note">v3.2 redesigned the counts: instead of a separate pill, the count now sits directly next to each chevron — <code>4 &gt;</code> on a Library row (how many groups directly granted, collapsed), <code>(2) &gt;</code> on a Group row (how many nested members). If you manually added <code>lblGroupMemberCount</code> per an earlier version of this guide, delete it — it's superseded by this and no longer needed.</div>
 

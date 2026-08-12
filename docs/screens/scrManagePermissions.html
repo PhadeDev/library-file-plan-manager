@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <title>PowerApps – scrManagePermissions – v1.0  —  Built 12 Aug 2026  12:05 BST</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #0f0f1a;
+      color: #e8e8f0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      gap: 20px;
+    }
+    h1 { font-size: 1.4rem; font-weight: 400; color: #a0a0c0; }
+    .name { font-size: 1.1rem; font-weight: 600; color: #c8b8ff; }
+    .version-badge {
+      display: inline-block;
+      background: #1a2a1a;
+      border: 1px solid #2a7d4e;
+      color: #4caf7d;
+      font-family: 'Cascadia Code', 'Consolas', monospace;
+      font-size: 0.95rem;
+      font-weight: 700;
+      padding: 6px 18px;
+      border-radius: 20px;
+      letter-spacing: 0.5px;
+    }
+    button {
+      padding: 14px 36px;
+      font-size: 1.1rem;
+      background: #7c4dff;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    button:hover { background: #6a3de8; }
+    button:active { background: #5830cc; }
+    #status {
+      font-size: 0.9rem;
+      color: #888;
+      min-height: 1.2em;
+      transition: color 0.2s;
+    }
+    #status.ok { color: #4caf7d; }
+    #status.err { color: #e85555; }
+    .info {
+      font-size: 0.8rem;
+      color: #555;
+      margin-top: 8px;
+      text-align: center;
+      line-height: 1.6;
+    }
+    .preview {
+      width: min(720px, calc(100vw - 48px));
+      background: #1a1a2e;
+      border: 1px solid #2a2a3a;
+      border-radius: 8px;
+      padding: 12px 14px;
+      color: #bfc7e8;
+      font-family: 'Cascadia Code', 'Consolas', monospace;
+      font-size: 0.78rem;
+      line-height: 1.45;
+      white-space: pre-wrap;
+      text-align: left;
+    }
+  </style>
+</head>
+<body>
+  <h1>PowerApps Screen</h1>
+  <div class="name">scrManagePermissions</div>
+  <div class="version-badge">v1.0  —  Built 12 Aug 2026  12:05 BST</div>
+  <button onclick="copyYAML()">Copy YAML to Clipboard</button>
+  <div id="status">Click to copy — PowerApps-ready (CRLF, UTF-8)</div>
+  <div class="info">
+    After copying, open PowerApps Studio &rarr; select a screen &rarr; Ctrl+V<br>
+    or use the paste button in the tree view.
+  </div>
+  <pre id="preview" class="preview"></pre>
+  <script>
+    const yaml = "Screens:\r\n  scrManagePermissions:\r\n    Properties:\r\n      Fill: =RGBA(245, 246, 250, 1)\r\n      OnVisible: |-\r\n        =ClearCollect(\r\n            colLimitedLibraries,\r\n            AddColumns(\r\n                Filter(colFilePlan, IsLimited = true),\r\n                EffectiveName, If(IsBlank(PrettyName) || PrettyName = \"\", Title, PrettyName)\r\n            )\r\n        );\r\n        ClearCollect(colLimitedLibrariesFiltered, colLimitedLibraries);\r\n        Set(varSelectedLibraryTitle, \"\");\r\n        Set(varSelectedLibraryDisplay, \"\");\r\n        Clear(colCurrentPermissions);\r\n        Set(varPermBusy, false)\r\n    Children:\r\n      - lblTitle:\r\n          Control: Label@2.5.1\r\n          Properties:\r\n            Text: '=\"Manage Library Permissions\"'\r\n            X: =32\r\n            Y: =24\r\n            Width: =700\r\n            Height: =40\r\n            Size: =22\r\n            FontWeight: =FontWeight.Semibold\r\n            Color: =RGBA(30, 30, 45, 1)\r\n            Font: =Font.'Open Sans'\r\n      - recAccessDeniedBg:\r\n          Control: Classic/Button@2.2.0\r\n          Properties:\r\n            Text: =\"\"\r\n            DisplayMode: =DisplayMode.View\r\n            Visible: =!varIsAdmin\r\n            Fill: =RGBA(250, 235, 235, 1)\r\n            HoverFill: =RGBA(250, 235, 235, 1)\r\n            PressedFill: =RGBA(250, 235, 235, 1)\r\n            BorderColor: =RGBA(210, 150, 150, 1)\r\n            BorderThickness: =1\r\n            RadiusTopLeft: =10\r\n            RadiusTopRight: =10\r\n            RadiusBottomLeft: =10\r\n            RadiusBottomRight: =10\r\n            X: =32\r\n            Y: =80\r\n            Width: =600\r\n            Height: =60\r\n      - lblAccessDenied:\r\n          Control: Label@2.5.1\r\n          Properties:\r\n            Text: =\"This screen is restricted. Your account (\" & User().Email & \") isn't on the admin list.\"\r\n            Visible: =!varIsAdmin\r\n            X: =52\r\n            Y: =80\r\n            Width: =560\r\n            Height: =60\r\n            Size: =13\r\n            Color: =RGBA(140, 40, 40, 1)\r\n            VerticalAlign: =VerticalAlign.Middle\r\n            Font: =Font.'Open Sans'\r\n      - lblPickerHeading:\r\n          Control: Label@2.5.1\r\n          Properties:\r\n            Text: =\"Choose a Limited library\"\r\n            Visible: =varIsAdmin && IsBlank(varSelectedLibraryTitle)\r\n            X: =32\r\n            Y: =72\r\n            Width: =500\r\n            Height: =28\r\n            Size: =16\r\n            FontWeight: =FontWeight.Semibold\r\n            Color: =RGBA(30, 30, 45, 1)\r\n            Font: =Font.'Open Sans'\r\n      - txtLibrarySearch:\r\n          Control: ModernTextInput@1.1.0\r\n          Properties:\r\n            Placeholder: =\"Search Limited libraries by name...\"\r\n            Type: =TextInputType.Search\r\n            Visible: =varIsAdmin && IsBlank(varSelectedLibraryTitle)\r\n            X: =32\r\n            Y: =104\r\n            Width: =480\r\n            Height: =44\r\n            OnChange: |-\r\n              =ClearCollect(\r\n                  colLimitedLibrariesFiltered,\r\n                  If(\r\n                      IsBlank(Trim(txtLibrarySearch.Text)),\r\n                      colLimitedLibraries,\r\n                      Filter(\r\n                          colLimitedLibraries,\r\n                          txtLibrarySearch.Text in EffectiveName || txtLibrarySearch.Text in Title\r\n                      )\r\n                  )\r\n              )\r\n      - galLibraryPicker:\r\n          Control: Gallery@2.15.0\r\n          Variant: Vertical\r\n          Properties:\r\n            Items: |-\r\n              =SortByColumns(colLimitedLibrariesFiltered, \"EffectiveName\", SortOrder.Ascending)\r\n            TemplateSize: =56\r\n            Height: =520\r\n            Width: =1000\r\n            X: =32\r\n            Y: =160\r\n            Visible: =varIsAdmin && IsBlank(varSelectedLibraryTitle)\r\n            TemplatePadding: =4\r\n            LoadingSpinner: =LoadingSpinner.None\r\n          Children:\r\n            - recPickerRowBg:\r\n                Control: Classic/Button@2.2.0\r\n                Properties:\r\n                  Text: =\"\"\r\n                  DisplayMode: =DisplayMode.View\r\n                  Fill: =RGBA(255, 255, 255, 1)\r\n                  HoverFill: =RGBA(255, 255, 255, 1)\r\n                  PressedFill: =RGBA(255, 255, 255, 1)\r\n                  BorderColor: =RGBA(238, 239, 245, 1)\r\n                  BorderThickness: =1\r\n                  RadiusTopLeft: =6\r\n                  RadiusTopRight: =6\r\n                  RadiusBottomLeft: =6\r\n                  RadiusBottomRight: =6\r\n                  X: =0\r\n                  Y: =0\r\n                  Width: =1000\r\n                  Height: =52\r\n            - lblPickerName:\r\n                Control: Label@2.5.1\r\n                Properties:\r\n                  Text: =ThisItem.EffectiveName\r\n                  X: =16\r\n                  Y: =0\r\n                  Width: =700\r\n                  Height: =52\r\n                  Size: =13\r\n                  Color: =RGBA(30, 30, 45, 1)\r\n                  VerticalAlign: =VerticalAlign.Middle\r\n                  Font: =Font.'Open Sans'\r\n            - btnManageThisLibrary:\r\n                Control: ModernButton@1.0.0\r\n                Properties:\r\n                  Text: =\"Manage\"\r\n                  X: =800\r\n                  Y: =8\r\n                  Width: =180\r\n                  Height: =36\r\n                  OnSelect: |-\r\n                    =Set(varSelectedLibraryTitle, ThisItem.Title);\r\n                    Set(varSelectedLibraryDisplay, ThisItem.EffectiveName);\r\n                    Set(varPermBusy, true);\r\n                    Set(varPermResult, 'Manage Library Permissions'.Run(ThisItem.Title, \"List\", {GroupName: \"\", PermissionLevel: \"\", SiteUrl: \"https://modgovuk.sharepoint.com/teams/1598\"}));\r\n                    ClearCollect(colCurrentPermissions, varPermResult.Permissions);\r\n                    Set(varPermBusy, false)\r\n      - btnChangeLibrary:\r\n          Control: ModernButton@1.0.0\r\n          Properties:\r\n            Text: =\"\u2190 Choose a different library\"\r\n            Visible: =varIsAdmin && !IsBlank(varSelectedLibraryTitle)\r\n            X: =32\r\n            Y: =72\r\n            Width: =240\r\n            Height: =36\r\n            OnSelect: |-\r\n              =Set(varSelectedLibraryTitle, \"\");\r\n              Set(varSelectedLibraryDisplay, \"\");\r\n              Clear(colCurrentPermissions)\r\n      - lblSelectedLibrary:\r\n          Control: Label@2.5.1\r\n          Properties:\r\n            Text: =varSelectedLibraryDisplay\r\n            Visible: =varIsAdmin && !IsBlank(varSelectedLibraryTitle)\r\n            X: =32\r\n            Y: =116\r\n            Width: =700\r\n            Height: =32\r\n            Size: =18\r\n            FontWeight: =FontWeight.Semibold\r\n            Color: =RGBA(30, 30, 45, 1)\r\n            Font: =Font.'Open Sans'\r\n      - lblPermSectionHeading:\r\n          Control: Label@2.5.1\r\n          Properties:\r\n            Text: =\"Current permissions\"\r\n            Visible: =varIsAdmin && !IsBlank(varSelectedLibraryTitle)\r\n            X: =32\r\n            Y: =156\r\n            Width: =400\r\n            Height: =24\r\n            Size: =13\r\n            Color: =RGBA(120, 120, 135, 1)\r\n            Font: =Font.'Open Sans'\r\n      - galCurrentPermissions:\r\n          Control: Gallery@2.15.0\r\n          Variant: Vertical\r\n          Properties:\r\n            Items: |-\r\n              =SortByColumns(colCurrentPermissions, \"GroupName\", SortOrder.Ascending)\r\n            TemplateSize: =52\r\n            Height: =260\r\n            Width: =940\r\n            X: =32\r\n            Y: =188\r\n            Visible: =varIsAdmin && !IsBlank(varSelectedLibraryTitle)\r\n            TemplatePadding: =4\r\n            LoadingSpinner: =LoadingSpinner.None\r\n          Children:\r\n            - recCurrentPermRowBg:\r\n                Control: Classic/Button@2.2.0\r\n                Properties:\r\n                  Text: =\"\"\r\n                  DisplayMode: =DisplayMode.View\r\n                  Fill: =RGBA(255, 255, 255, 1)\r\n                  HoverFill: =RGBA(255, 255, 255, 1)\r\n                  PressedFill: =RGBA(255, 255, 255, 1)\r\n                  BorderColor: =RGBA(238, 239, 245, 1)\r\n                  BorderThickness: =1\r\n                  X: =0\r\n                  Y: =0\r\n                  Width: =940\r\n                  Height: =48\r\n            - lblCurrentPermGroup:\r\n                Control: Label@2.5.1\r\n                Properties:\r\n                  Text: =ThisItem.GroupName & \" \u2014 \" & ThisItem.PermissionLevel\r\n                  X: =16\r\n                  Y: =0\r\n                  Width: =540\r\n                  Height: =48\r\n                  Size: =13\r\n                  Color: =RGBA(30, 30, 45, 1)\r\n                  VerticalAlign: =VerticalAlign.Middle\r\n                  Font: =Font.'Open Sans'\r\n            - lblCurrentPermType:\r\n                Control: Label@2.5.1\r\n                Properties:\r\n                  Text: =ThisItem.PrincipalType\r\n                  X: =570\r\n                  Y: =12\r\n                  Width: =140\r\n                  Height: =24\r\n                  Size: =10\r\n                  FontWeight: =FontWeight.Semibold\r\n                  Color: =RGBA(60, 90, 155, 1)\r\n                  Fill: =RGBA(225, 233, 250, 1)\r\n                  Align: =Align.Center\r\n                  VerticalAlign: =VerticalAlign.Middle\r\n                  Font: =Font.'Open Sans'\r\n            - btnRemovePermission:\r\n                Control: ModernButton@1.0.0\r\n                Properties:\r\n                  Text: =\"Remove\"\r\n                  X: =730\r\n                  Y: =6\r\n                  Width: =190\r\n                  Height: =36\r\n                  OnSelect: |-\r\n                    =Set(varPermBusy, true);\r\n                    Set(varPermResult, 'Manage Library Permissions'.Run(varSelectedLibraryTitle, \"Remove\", {GroupName: ThisItem.GroupName, PermissionLevel: \"\", SiteUrl: \"https://modgovuk.sharepoint.com/teams/1598\"}));\r\n                    If(varPermResult.Success, Notify(varPermResult.Message, NotificationType.Success), Notify(\"Failed: \" & varPermResult.Message, NotificationType.Error));\r\n                    Set(varPermResult, 'Manage Library Permissions'.Run(varSelectedLibraryTitle, \"List\", {GroupName: \"\", PermissionLevel: \"\", SiteUrl: \"https://modgovuk.sharepoint.com/teams/1598\"}));\r\n                    ClearCollect(colCurrentPermissions, varPermResult.Permissions);\r\n                    Set(varPermBusy, false)\r\n      - lblAddSectionHeading:\r\n          Control: Label@2.5.1\r\n          Properties:\r\n            Text: =\"Add a group\"\r\n            Visible: =varIsAdmin && !IsBlank(varSelectedLibraryTitle)\r\n            X: =32\r\n            Y: =460\r\n            Width: =400\r\n            Height: =24\r\n            Size: =13\r\n            Color: =RGBA(120, 120, 135, 1)\r\n            Font: =Font.'Open Sans'\r\n      - txtAddGroupName:\r\n          Control: ModernTextInput@1.1.0\r\n          Properties:\r\n            Placeholder: =\"Group name, e.g. SG_Cadets-Admin-Ltd_MEM\"\r\n            Type: =TextInputType.SingleLine\r\n            Visible: =varIsAdmin && !IsBlank(varSelectedLibraryTitle)\r\n            X: =32\r\n            Y: =488\r\n            Width: =420\r\n            Height: =44\r\n      - drpAddLevel:\r\n          Control: ModernDropdown@1.0.1\r\n          Properties:\r\n            Items: |-\r\n              =[\"Full Control\", \"Contribute\", \"Read\"]\r\n            Visible: =varIsAdmin && !IsBlank(varSelectedLibraryTitle)\r\n            X: =468\r\n            Y: =488\r\n            Width: =220\r\n            Height: =44\r\n      - btnAddPermission:\r\n          Control: ModernButton@1.0.0\r\n          Properties:\r\n            Text: =If(varPermBusy, \"Working...\", \"Add\")\r\n            DisplayMode: =If(varPermBusy, DisplayMode.Disabled, DisplayMode.Edit)\r\n            Visible: =varIsAdmin && !IsBlank(varSelectedLibraryTitle)\r\n            X: =704\r\n            Y: =488\r\n            Width: =140\r\n            Height: =44\r\n            OnSelect: |-\r\n              =If(\r\n                  IsBlank(Trim(txtAddGroupName.Text)) || IsBlank(drpAddLevel.Selected),\r\n                  Notify(\"Group name and permission level are both required.\", NotificationType.Error),\r\n                  Set(varPermBusy, true);\r\n                  Set(varPermResult, 'Manage Library Permissions'.Run(varSelectedLibraryTitle, \"Add\", {GroupName: Trim(txtAddGroupName.Text), PermissionLevel: drpAddLevel.Selected.Value, SiteUrl: \"https://modgovuk.sharepoint.com/teams/1598\"}));\r\n                  If(varPermResult.Success, Notify(varPermResult.Message, NotificationType.Success), Notify(\"Failed: \" & varPermResult.Message, NotificationType.Error));\r\n                  Set(varPermResult, 'Manage Library Permissions'.Run(varSelectedLibraryTitle, \"List\", {GroupName: \"\", PermissionLevel: \"\", SiteUrl: \"https://modgovuk.sharepoint.com/teams/1598\"}));\r\n                  ClearCollect(colCurrentPermissions, varPermResult.Permissions);\r\n                  Reset(txtAddGroupName);\r\n                  Reset(drpAddLevel);\r\n                  Set(varPermBusy, false)\r\n              )\r\n";
+    const stamp = "v1.0  \u2014  Built 12 Aug 2026  12:05 BST";
+
+    function firstLines() {
+      return yaml.split(/\r?\n/).slice(0, 8).join('\n');
+    }
+
+    async function copyYAML() {
+      const status = document.getElementById('status');
+      if (!yaml.startsWith('Screens:\r\n  ') && !yaml.startsWith('Screens:\n  ')) {
+        status.textContent = 'Refusing to copy: YAML does not start with Screens:';
+        status.className = 'err';
+        return;
+      }
+      if (yaml.includes('\r\n    Control: Screen\r\n') || yaml.includes('\n    Control: Screen\n')) {
+        status.textContent = 'Refusing to copy: stale YAML still contains screen-level Control: Screen.';
+        status.className = 'err';
+        return;
+      }
+      try {
+        await navigator.clipboard.writeText(yaml);
+        status.textContent = '✓ Copied ' + stamp + '. First YAML line: ' + yaml.split(/\r?\n/)[0];
+        status.className = 'ok';
+        setTimeout(() => {
+          status.textContent = 'Click to copy again';
+          status.className = '';
+        }, 4000);
+      } catch (e) {
+        status.textContent = 'Clipboard blocked — select the text below and copy manually.';
+        status.className = 'err';
+        const pre = document.createElement('pre');
+        pre.style = 'font-size:9px;max-height:200px;overflow:auto;background:#1a1a2e;padding:8px;border-radius:6px;text-align:left;';
+        pre.textContent = yaml;
+        document.body.appendChild(pre);
+      }
+    }
+
+    document.getElementById('preview').textContent = 'Clipboard payload preview (' + stamp + ')\n' + firstLines();
+  </script>
+</body>
+</html>
