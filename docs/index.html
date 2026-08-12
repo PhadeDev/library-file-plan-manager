@@ -89,16 +89,16 @@
 <body>
 
 <a class="back" href="https://phaderon.github.io/PowerApps/">← Guide Library</a>
-<h1>Library &amp; File Plan Manager <span style="font-size:0.65em;font-weight:400;color:#666;vertical-align:middle;margin-left:8px;">v2.9</span></h1>
+<h1>Library &amp; File Plan Manager <span style="font-size:0.65em;font-weight:400;color:#666;vertical-align:middle;margin-left:8px;">v3.0</span></h1>
 <p class="subtitle">SharePoint permissions map (file-plan style, grouped by team) + an admin screen that creates document libraries correctly and registers them automatically, so nothing gets forgotten again.</p>
-<p class="buildstamp">Built 12 Aug 2026  09:24 BST</p>
+<p class="buildstamp">Built 12 Aug 2026  09:38 BST</p>
 
 <p class="snippet-stamp">Every purple line like this one, directly above a copy box, shows the page version and the exact local time that specific box's content was last changed. If a copy still errors after re-pasting, check this stamp against what's shown before assuming the fix didn't take — refresh the page fully first.</p>
 
 <h2>Action Checklist — Do These In Order</h2>
 <div class="checklist">
   <ol>
-    <li><strong><a class="checklist-link" href="#lists">SharePoint lists</a></strong> — create <code>LibraryFilePlan</code> and <code>PermissionIndex</code> with the exact columns shown, including <code>PrettyName</code> (not <code>DisplayName</code> — SharePoint silently drops writes to that name on this list).</li>
+    <li><strong><a class="checklist-link" href="#lists">SharePoint lists</a></strong> — create <code>LibraryFilePlan</code> and <code>PermissionIndex</code> via the CSV templates (fastest — creates every column for you), or manually per the schema tables. Column is <code>PrettyName</code>, not <code>DisplayName</code> — SharePoint silently drops writes to that name on this list.</li>
     <li><strong><a class="checklist-link" href="#flow-fix">Flow field fix</a></strong> — in <strong>Create Library (App)</strong>, edit <code>Create_FilePlan_Row</code>'s Body so it writes <code>PrettyName</code> instead of <code>DisplayName</code>. One line, no re-import.</li>
     <li><strong><a class="checklist-link" href="#flows">Import all three flows</a></strong> — Create Library (App), Backfill File Plan, Rebuild Permission Index. Test Create Library (App) manually before touching Power Apps.</li>
     <li><strong><a class="checklist-link" href="#build-app">Data connections + App.OnStart</a></strong> — add both SharePoint lists and the flow as data sources, paste App.OnStart in full.</li>
@@ -108,7 +108,8 @@
 <div class="pending">Current state: all three screens built and File Plan / Admin Create Library are tested working. Group Search is new, not yet tested. Still to come after this: the permissions view/add/remove screen.</div>
 
 <h2 id="lists">1. SharePoint List: <code>LibraryFilePlan</code></h2>
-<p>Location: your main site — <code>https://modgovuk.sharepoint.com/teams/1598/</code>. Site Contents → New → List → blank list, name it exactly <code>LibraryFilePlan</code>.</p>
+<p>Location: your main site — <code>https://modgovuk.sharepoint.com/teams/1598/</code>.</p>
+<p><a class="dl" href="https://github.com/PhadeDev/library-file-plan-manager/raw/main/lists/LibraryFilePlan_list_template.csv">LibraryFilePlan_list_template.csv</a> — download this, then Site Contents → New → List → <strong>From CSV</strong> (or Excel) → upload it. SharePoint reads the embedded schema and creates every column with the correct type and Team's choices already filled in — no manual column-by-column setup. Delete the single placeholder row afterward, and rename the list to exactly <code>LibraryFilePlan</code> if it doesn't pick that up from the filename.</p>
 <table>
   <thead><tr><th>Column name (exact, no spaces)</th><th>Type</th><th>Notes</th></tr></thead>
   <tbody>
@@ -123,9 +124,11 @@
   </tbody>
 </table>
 <div class="warning">Mark every column <strong>Not Required</strong>. Type names exactly as shown, no spaces — SharePoint silently converts spaces to <code>_x0020_</code> internally, and the flows' requests need the plain names to match exactly.</div>
+<div class="note">The CSV was built by hand to match the schema format seen in a real export from this exact list (same embedded-schema mechanism, not guessed) but hasn't been round-tripped through SharePoint's import wizard directly. If "From CSV" doesn't pick up the column types correctly, fall back to creating the columns manually per the table above — same end result either way.</div>
 
 <h2>SharePoint List: <code>PermissionIndex</code></h2>
-<p>Location: your main site, same as <code>LibraryFilePlan</code>. Site Contents → New → List → blank list, name it exactly <code>PermissionIndex</code>.</p>
+<p>Location: your main site, same as <code>LibraryFilePlan</code>.</p>
+<p><a class="dl" href="https://github.com/PhadeDev/library-file-plan-manager/raw/main/lists/PermissionIndex_list_template.csv">PermissionIndex_list_template.csv</a> — same idea: Site Contents → New → List → <strong>From CSV</strong> → upload, delete the placeholder row, rename to exactly <code>PermissionIndex</code> if needed.</p>
 <table>
   <thead><tr><th>Column name (exact, no spaces)</th><th>Type</th><th>Notes</th></tr></thead>
   <tbody>
