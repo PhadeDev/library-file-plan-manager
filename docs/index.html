@@ -89,9 +89,9 @@
 <body>
 
 <a class="back" href="https://phaderon.github.io/PowerApps/">← Guide Library</a>
-<h1>Library &amp; File Plan Manager <span style="font-size:0.65em;font-weight:400;color:#666;vertical-align:middle;margin-left:8px;">v3.5</span></h1>
+<h1>Library &amp; File Plan Manager <span style="font-size:0.65em;font-weight:400;color:#666;vertical-align:middle;margin-left:8px;">v3.6</span></h1>
 <p class="subtitle">SharePoint permissions map (file-plan style, grouped by team) + an admin screen that creates document libraries correctly and registers them automatically, so nothing gets forgotten again.</p>
-<p class="buildstamp">Built 12 Aug 2026  11:23 BST</p>
+<p class="buildstamp">Built 12 Aug 2026  11:34 BST</p>
 
 <p class="snippet-stamp">Every purple line like this one, directly above a copy box, shows the page version and the exact local time that specific box's content was last changed. If a copy still errors after re-pasting, check this stamp against what's shown before assuming the fix didn't take — refresh the page fully first.</p>
 
@@ -290,6 +290,27 @@ ClearCollect(colExpandedGroups, Filter(Table({GroupKey: "seed"}), false))</pre>
 <div class="note"><strong>scrFilePlan</strong>: one single flat gallery with uniform row height (a Team/Library discriminator column decides what each row shows) rather than nested galleries. Search is instant and local, no spinner needed, and auto-expands every Team with a match.</div>
 <div class="note"><strong>scrAdminCreateLibrary</strong>: Sub-Team is free text rather than a suggestion dropdown (Modern Combobox has a known instability issue). The queue is entirely local until you hit Run. Run Queue disables and shows "Creating..." immediately on click. The <strong>Rebuild Permission Index</strong> button is fire-and-forget — it doesn't wait for the flow to finish or show progress, since the run duration is unpredictable and Power Apps' <code>.Run()</code> call has no true non-blocking mode (a slow response is caught and shown as a friendly message rather than a raw error, but the flow itself always runs to completion on its own regardless). The status line above it shows how long ago the index was last rebuilt, and flags how many Limited libraries have been created since — both computed live from data already loaded, no extra flow or list needed.</div>
 <div class="note"><strong>scrGroupSearch</strong>: only finds results for libraries that were in scope for the last <strong>Rebuild Permission Index</strong> run (broken/unique-permission libraries — see that flow's section above). A Normal library never shows up here since it just inherits site-wide permissions; that's expected, not a bug. Searching matches the group name itself, the library name, or (for a nested AD group) the SharePoint group it's nested inside. v3.0 rebuilt the results as a <strong>three-tier accordion</strong> — Library → directly-granted group (matches SharePoint's own native Permissions panel exactly) → nested member, each level collapsed by default. Still one flat gallery underneath, just a third <code>RowType</code> and a second expand-tracking collection (<code>colExpandedGroups</code>) rather than nested galleries. v3.1 fixed a real sort-order bug where member rows sorted after <em>every</em> group in a library instead of clustering under their own parent group — the sort's column priority had rank ahead of the group-clustering key instead of after it — and added a member count next to each group (e.g. "2 members") so you know what's inside before expanding.</div>
+
+<h3>Manual fix: member-count pill missing after paste</h3>
+<p>If <code>lblGroupMemberCount</code> didn't come through on your paste (confirmed happened at least once — the control just wasn't there), add it by hand in Studio rather than re-pasting the whole screen again:</p>
+<ol>
+  <li>Tree view → expand <code>galResults</code> → click into its template → select <code>lblGroupPrincipalTypeBadge</code> (the "SharePoint Group" pill) — the new label goes right next to it.</li>
+  <li>Insert → <strong>Text label</strong> (classic Label, not Modern Text) — it drops in as a sibling in the same template, so it repeats per row automatically.</li>
+  <li>Rename it to <code>lblGroupMemberCount</code>.</li>
+  <li>Set its <strong>Text</strong> and <strong>Visible</strong> properties (paste-ready below), then position it roughly <code>X: 750, Y: 0, Width: 110, Height: 48</code>, <code>Align: Right</code>, in the empty space right of the badge.</li>
+</ol>
+<p class="snippet-stamp">v3.5 — Updated 12 Aug 2026 11:34 BST</p>
+<h4>lblGroupMemberCount — Text</h4>
+<div class="code-block">
+  <button class="copy-btn" onclick="copyPre(this)">Copy</button>
+  <pre>If(ThisItem.MemberCount > 0, ThisItem.MemberCount & " member" & If(ThisItem.MemberCount = 1, "", "s"), "")</pre>
+</div>
+<h4>lblGroupMemberCount — Visible</h4>
+<div class="code-block">
+  <button class="copy-btn" onclick="copyPre(this)">Copy</button>
+  <pre>ThisItem.RowType = "Group" && ThisItem.MemberCount > 0</pre>
+</div>
+<div class="warning">Needs <code>ThisItem.MemberCount</code> to exist, which comes from <strong>App.OnStart</strong> — if that hasn't been re-pasted since this version, the label will show blank instead of a real count. Re-paste App.OnStart first if in doubt.</div>
 
 <h2>Issues</h2>
 <p>Found a problem? <a href="https://github.com/PhadeDev/library-file-plan-manager/issues" style="color:#7c4dff">Report it here</a>.</p>
