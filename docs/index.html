@@ -89,9 +89,9 @@
 <body>
 
 <a class="back" href="https://phaderon.github.io/PowerApps/">← Guide Library</a>
-<h1>Library &amp; File Plan Manager <span style="font-size:0.65em;font-weight:400;color:#666;vertical-align:middle;margin-left:8px;">v3.0</span></h1>
+<h1>Library &amp; File Plan Manager <span style="font-size:0.65em;font-weight:400;color:#666;vertical-align:middle;margin-left:8px;">v3.1</span></h1>
 <p class="subtitle">SharePoint permissions map (file-plan style, grouped by team) + an admin screen that creates document libraries correctly and registers them automatically, so nothing gets forgotten again.</p>
-<p class="buildstamp">Built 12 Aug 2026  09:38 BST</p>
+<p class="buildstamp">Built 12 Aug 2026  09:41 BST</p>
 
 <p class="snippet-stamp">Every purple line like this one, directly above a copy box, shows the page version and the exact local time that specific box's content was last changed. If a copy still errors after re-pasting, check this stamp against what's shown before assuming the fix didn't take — refresh the page fully first.</p>
 
@@ -216,7 +216,8 @@
   <button class="copy-btn" onclick="copyPre(this)">Copy</button>
   <pre>'LibraryFilePlan'          (SharePoint → your main site → LibraryFilePlan)
 'PermissionIndex'          (SharePoint → your main site → PermissionIndex)
-'Create Library (App)'     (search Power Automate flows in Add data)</pre>
+'Create Library (App)'     (search Power Automate flows in Add data)
+'Rebuild Permission Index' (search Power Automate flows in Add data)</pre>
 </div>
 
 <h3>App.OnStart</h3>
@@ -250,6 +251,7 @@ ClearCollect(colQueue, Filter(Table({TechnicalName: "seed", DisplayName: "", Tea
 Set(varQueueRunning, false);
 Set(varQueueTotal, 0);
 Set(varQueueDone, 0);
+Set(varIndexRunError, false);
 ClearCollect(colPermissionIndex, 'PermissionIndex');
 ClearCollect(colPermissionFiltered, colPermissionIndex)</pre>
 </div>
@@ -264,10 +266,10 @@ ClearCollect(colPermissionFiltered, colPermissionIndex)</pre>
     <div class="screen-desc">Read-only browse screen — search box, grouped-by-team collapsible list, Open and Copy link buttons per library, LTD badge on Limited libraries.</div>
     <div class="screen-cta">Copy YAML →</div>
   </a>
-  <a class="screen-card" href="screens/scrAdminCreateLibrary.html?v=1.4">
+  <a class="screen-card" href="screens/scrAdminCreateLibrary.html?v=1.5">
     <div class="screen-number">Screen 2</div>
     <div class="screen-name">scrAdminCreateLibrary</div>
-    <div class="screen-desc">Restricted to the admin email list. Fill in a library's details, Add to Queue as many times as needed, then Run Queue creates them all sequentially, with a progress overlay.</div>
+    <div class="screen-desc">Restricted to the admin email list. Fill in a library's details, Add to Queue as many times as needed, then Run Queue creates them all sequentially, with a progress overlay. Also has a Rebuild Permission Index button with a staleness indicator.</div>
     <div class="screen-cta">Copy YAML →</div>
   </a>
   <a class="screen-card" href="screens/scrGroupSearch.html?v=1.0">
@@ -278,7 +280,7 @@ ClearCollect(colPermissionFiltered, colPermissionIndex)</pre>
   </a>
 </div>
 <div class="note"><strong>scrFilePlan</strong>: one single flat gallery with uniform row height (a Team/Library discriminator column decides what each row shows) rather than nested galleries. Search is instant and local, no spinner needed, and auto-expands every Team with a match.</div>
-<div class="note"><strong>scrAdminCreateLibrary</strong>: Sub-Team is free text rather than a suggestion dropdown (Modern Combobox has a known instability issue). The queue is entirely local until you hit Run. Run Queue disables and shows "Creating..." immediately on click.</div>
+<div class="note"><strong>scrAdminCreateLibrary</strong>: Sub-Team is free text rather than a suggestion dropdown (Modern Combobox has a known instability issue). The queue is entirely local until you hit Run. Run Queue disables and shows "Creating..." immediately on click. The <strong>Rebuild Permission Index</strong> button is fire-and-forget — it doesn't wait for the flow to finish or show progress, since the run duration is unpredictable and Power Apps' <code>.Run()</code> call has no true non-blocking mode (a slow response is caught and shown as a friendly message rather than a raw error, but the flow itself always runs to completion on its own regardless). The status line above it shows how long ago the index was last rebuilt, and flags how many Limited libraries have been created since — both computed live from data already loaded, no extra flow or list needed.</div>
 <div class="note"><strong>scrGroupSearch</strong>: only finds results for libraries that were in scope for the last <strong>Rebuild Permission Index</strong> run (broken/unique-permission libraries — see that flow's section above). A Normal library never shows up here since it just inherits site-wide permissions; that's expected, not a bug. Searching matches the group name itself, the library name, or (for a nested AD group) the SharePoint group it's nested inside.</div>
 
 <h2>Issues</h2>
