@@ -89,9 +89,9 @@
 <body>
 
 <a class="back" href="https://phaderon.github.io/PowerApps/">← Guide Library</a>
-<h1>Library &amp; File Plan Manager <span style="font-size:0.65em;font-weight:400;color:#666;vertical-align:middle;margin-left:8px;">v3.1</span></h1>
+<h1>Library &amp; File Plan Manager <span style="font-size:0.65em;font-weight:400;color:#666;vertical-align:middle;margin-left:8px;">v3.2</span></h1>
 <p class="subtitle">SharePoint permissions map (file-plan style, grouped by team) + an admin screen that creates document libraries correctly and registers them automatically, so nothing gets forgotten again.</p>
-<p class="buildstamp">Built 12 Aug 2026  09:41 BST</p>
+<p class="buildstamp">Built 12 Aug 2026  09:53 BST</p>
 
 <p class="snippet-stamp">Every purple line like this one, directly above a copy box, shows the page version and the exact local time that specific box's content was last changed. If a copy still errors after re-pasting, check this stamp against what's shown before assuming the fix didn't take — refresh the page fully first.</p>
 
@@ -109,7 +109,7 @@
 
 <h2 id="lists">1. SharePoint List: <code>LibraryFilePlan</code></h2>
 <p>Location: your main site — <code>https://modgovuk.sharepoint.com/teams/1598/</code>.</p>
-<p><a class="dl" href="https://github.com/PhadeDev/library-file-plan-manager/raw/main/lists/LibraryFilePlan_list_template.csv">LibraryFilePlan_list_template.csv</a> — download this, then Site Contents → New → List → <strong>From CSV</strong> (or Excel) → upload it. SharePoint reads the embedded schema and creates every column with the correct type and Team's choices already filled in — no manual column-by-column setup. Delete the single placeholder row afterward, and rename the list to exactly <code>LibraryFilePlan</code> if it doesn't pick that up from the filename.</p>
+<p><a class="dl" href="lists/LibraryFilePlan_list_template.csv">LibraryFilePlan_list_template.csv</a> — download this, then Site Contents → New → List → <strong>From CSV</strong> (or Excel) → upload it. SharePoint reads the embedded schema and creates every column with the correct type and Team's choices already filled in — no manual column-by-column setup. Delete the single placeholder row afterward, and rename the list to exactly <code>LibraryFilePlan</code> if it doesn't pick that up from the filename.</p>
 <table>
   <thead><tr><th>Column name (exact, no spaces)</th><th>Type</th><th>Notes</th></tr></thead>
   <tbody>
@@ -128,7 +128,7 @@
 
 <h2>SharePoint List: <code>PermissionIndex</code></h2>
 <p>Location: your main site, same as <code>LibraryFilePlan</code>.</p>
-<p><a class="dl" href="https://github.com/PhadeDev/library-file-plan-manager/raw/main/lists/PermissionIndex_list_template.csv">PermissionIndex_list_template.csv</a> — same idea: Site Contents → New → List → <strong>From CSV</strong> → upload, delete the placeholder row, rename to exactly <code>PermissionIndex</code> if needed.</p>
+<p><a class="dl" href="lists/PermissionIndex_list_template.csv">PermissionIndex_list_template.csv</a> — same idea: Site Contents → New → List → <strong>From CSV</strong> → upload, delete the placeholder row, rename to exactly <code>PermissionIndex</code> if needed.</p>
 <table>
   <thead><tr><th>Column name (exact, no spaces)</th><th>Type</th><th>Notes</th></tr></thead>
   <tbody>
