@@ -89,9 +89,9 @@
 <body>
 
 <a class="back" href="https://phaderon.github.io/PowerApps/">← Guide Library</a>
-<h1>Library &amp; File Plan Manager <span style="font-size:0.65em;font-weight:400;color:#666;vertical-align:middle;margin-left:8px;">v4.0</span></h1>
+<h1>Library &amp; File Plan Manager <span style="font-size:0.65em;font-weight:400;color:#666;vertical-align:middle;margin-left:8px;">v4.1</span></h1>
 <p class="subtitle">SharePoint permissions map (file-plan style, grouped by team) + an admin screen that creates document libraries correctly and registers them automatically, so nothing gets forgotten again.</p>
-<p class="buildstamp">Built 12 Aug 2026  12:07 BST</p>
+<p class="buildstamp">Built 12 Aug 2026  12:23 BST</p>
 
 <p class="snippet-stamp">Every purple line like this one, directly above a copy box, shows the page version and the exact local time that specific box's content was last changed. If a copy still errors after re-pasting, check this stamp against what's shown before assuming the fix didn't take — refresh the page fully first.</p>
 
@@ -103,6 +103,7 @@
     <li><strong><a class="checklist-link" href="#flows">Import all four flows</a></strong> — Create Library (App), Backfill File Plan, Rebuild Permission Index, Manage Library Permissions. Test Create Library (App) manually before touching Power Apps.</li>
     <li><strong><a class="checklist-link" href="#build-app">Data connections + App.OnStart</a></strong> — add both SharePoint lists and the flow as data sources, paste App.OnStart in full.</li>
     <li><strong><a class="checklist-link" href="#screens">All four screens</a></strong> — delete and paste fresh (screens have had controls added since first built, so a partial paste over the top won't apply cleanly).</li>
+    <li><strong><a class="checklist-link" href="#navbar">Navigation bar</a></strong> — select each screen in the Tree view, paste that screen's snippet as an add-on (not a full replacement). Nudge existing top controls down afterward to clear the bar.</li>
   </ol>
 </div>
 <div class="pending">Current state: all four planned screens are built. File Plan and Admin: Create Library are tested and working. Group Search and Manage Permissions are new — not yet tested. This was the last screen in the original plan.</div>
@@ -310,6 +311,260 @@ ClearCollect(colExpandedGroups, Filter(Table({GroupKey: "seed"}), false))</pre>
 <div class="note"><strong>scrManagePermissions</strong>: unlike Rebuild Permission Index's fire-and-forget button, Add/Remove here wait for the result and immediately re-load the list — a single group operation is fast enough that blocking is the better UX, and there's a real result (success or a specific error) worth showing rather than "check back later." Uses <code>ThisItem.Title</code> (the library's real current SharePoint Title) when calling the flow, not <code>PrettyName</code>/<code>EffectiveName</code> — SharePoint's <code>getbytitle()</code> needs the actual current Title, and <strong>Create Library (App)</strong> renames every library's Title to the pretty name as its last real step, so by the time a library shows up here, its Title already <em>is</em> the pretty name.</div>
 
 <div class="note">v3.2 redesigned the counts: instead of a separate pill, the count now sits directly next to each chevron — <code>4 &gt;</code> on a Library row (how many groups directly granted, collapsed), <code>(2) &gt;</code> on a Group row (how many nested members). If you manually added <code>lblGroupMemberCount</code> per an earlier version of this guide, delete it — it's superseded by this and no longer needed.</div>
+
+<h2 id="navbar">6. Navigation Bar</h2>
+<p>None of the four screens link to each other yet — add a small nav bar to each. This is an add-on, not a full screen replacement: select the screen in the Tree view first, then paste. Two of the four buttons (Create Library, Manage Permissions) are gated by <code>varIsAdmin</code>, same check used everywhere else in this app.</p>
+<div class="warning">The bar sits at <code>Y: 0</code>, <code>Height: 48</code> — it will visually overlap each screen's existing Title label (which starts around <code>Y: 24</code>). Nudge your screen's existing top controls down by about 50px afterward, or accept the overlap if it doesn't bother you — this wasn't worth reissuing every screen's full YAML just to shift everything down.</div>
+<p class="snippet-stamp">v4.1 — Updated 12 Aug 2026 12:23 BST</p>
+<h3>Paste onto scrFilePlan</h3>
+<div class="code-block">
+  <button class="copy-btn" onclick="copyPre(this)">Copy</button>
+  <pre>Screens:
+  scrFilePlan:
+    Children:
+      - recNavBarBg:
+          Control: Classic/Button@2.2.0
+          Properties:
+            Text: =""
+            DisplayMode: =DisplayMode.View
+            Fill: =RGBA(30, 30, 45, 1)
+            HoverFill: =RGBA(30, 30, 45, 1)
+            PressedFill: =RGBA(30, 30, 45, 1)
+            BorderThickness: =0
+            X: =0
+            Y: =0
+            Width: =1000
+            Height: =48
+      - btnNavFilePlan:
+          Control: ModernButton@1.0.0
+          Properties:
+            Text: ="File Plan"
+            X: =16
+            Y: =6
+            Width: =140
+            Height: =36
+            OnSelect: |-
+              =Navigate(scrFilePlan)
+      - btnNavGroupSearch:
+          Control: ModernButton@1.0.0
+          Properties:
+            Text: ="Group Search"
+            X: =164
+            Y: =6
+            Width: =160
+            Height: =36
+            OnSelect: |-
+              =Navigate(scrGroupSearch)
+      - btnNavCreateLibrary:
+          Control: ModernButton@1.0.0
+          Properties:
+            Text: ="Create Library"
+            Visible: =varIsAdmin
+            X: =332
+            Y: =6
+            Width: =160
+            Height: =36
+            OnSelect: |-
+              =Navigate(scrAdminCreateLibrary)
+      - btnNavManagePermissions:
+          Control: ModernButton@1.0.0
+          Properties:
+            Text: ="Manage Permissions"
+            Visible: =varIsAdmin
+            X: =500
+            Y: =6
+            Width: =190
+            Height: =36
+            OnSelect: |-
+              =Navigate(scrManagePermissions)</pre>
+</div>
+<h3>Paste onto scrAdminCreateLibrary</h3>
+<div class="code-block">
+  <button class="copy-btn" onclick="copyPre(this)">Copy</button>
+  <pre>Screens:
+  scrAdminCreateLibrary:
+    Children:
+      - recNavBarBg:
+          Control: Classic/Button@2.2.0
+          Properties:
+            Text: =""
+            DisplayMode: =DisplayMode.View
+            Fill: =RGBA(30, 30, 45, 1)
+            HoverFill: =RGBA(30, 30, 45, 1)
+            PressedFill: =RGBA(30, 30, 45, 1)
+            BorderThickness: =0
+            X: =0
+            Y: =0
+            Width: =1000
+            Height: =48
+      - btnNavFilePlan:
+          Control: ModernButton@1.0.0
+          Properties:
+            Text: ="File Plan"
+            X: =16
+            Y: =6
+            Width: =140
+            Height: =36
+            OnSelect: |-
+              =Navigate(scrFilePlan)
+      - btnNavGroupSearch:
+          Control: ModernButton@1.0.0
+          Properties:
+            Text: ="Group Search"
+            X: =164
+            Y: =6
+            Width: =160
+            Height: =36
+            OnSelect: |-
+              =Navigate(scrGroupSearch)
+      - btnNavCreateLibrary:
+          Control: ModernButton@1.0.0
+          Properties:
+            Text: ="Create Library"
+            Visible: =varIsAdmin
+            X: =332
+            Y: =6
+            Width: =160
+            Height: =36
+            OnSelect: |-
+              =Navigate(scrAdminCreateLibrary)
+      - btnNavManagePermissions:
+          Control: ModernButton@1.0.0
+          Properties:
+            Text: ="Manage Permissions"
+            Visible: =varIsAdmin
+            X: =500
+            Y: =6
+            Width: =190
+            Height: =36
+            OnSelect: |-
+              =Navigate(scrManagePermissions)</pre>
+</div>
+<h3>Paste onto scrGroupSearch</h3>
+<div class="code-block">
+  <button class="copy-btn" onclick="copyPre(this)">Copy</button>
+  <pre>Screens:
+  scrGroupSearch:
+    Children:
+      - recNavBarBg:
+          Control: Classic/Button@2.2.0
+          Properties:
+            Text: =""
+            DisplayMode: =DisplayMode.View
+            Fill: =RGBA(30, 30, 45, 1)
+            HoverFill: =RGBA(30, 30, 45, 1)
+            PressedFill: =RGBA(30, 30, 45, 1)
+            BorderThickness: =0
+            X: =0
+            Y: =0
+            Width: =1000
+            Height: =48
+      - btnNavFilePlan:
+          Control: ModernButton@1.0.0
+          Properties:
+            Text: ="File Plan"
+            X: =16
+            Y: =6
+            Width: =140
+            Height: =36
+            OnSelect: |-
+              =Navigate(scrFilePlan)
+      - btnNavGroupSearch:
+          Control: ModernButton@1.0.0
+          Properties:
+            Text: ="Group Search"
+            X: =164
+            Y: =6
+            Width: =160
+            Height: =36
+            OnSelect: |-
+              =Navigate(scrGroupSearch)
+      - btnNavCreateLibrary:
+          Control: ModernButton@1.0.0
+          Properties:
+            Text: ="Create Library"
+            Visible: =varIsAdmin
+            X: =332
+            Y: =6
+            Width: =160
+            Height: =36
+            OnSelect: |-
+              =Navigate(scrAdminCreateLibrary)
+      - btnNavManagePermissions:
+          Control: ModernButton@1.0.0
+          Properties:
+            Text: ="Manage Permissions"
+            Visible: =varIsAdmin
+            X: =500
+            Y: =6
+            Width: =190
+            Height: =36
+            OnSelect: |-
+              =Navigate(scrManagePermissions)</pre>
+</div>
+<h3>Paste onto scrManagePermissions</h3>
+<div class="code-block">
+  <button class="copy-btn" onclick="copyPre(this)">Copy</button>
+  <pre>Screens:
+  scrManagePermissions:
+    Children:
+      - recNavBarBg:
+          Control: Classic/Button@2.2.0
+          Properties:
+            Text: =""
+            DisplayMode: =DisplayMode.View
+            Fill: =RGBA(30, 30, 45, 1)
+            HoverFill: =RGBA(30, 30, 45, 1)
+            PressedFill: =RGBA(30, 30, 45, 1)
+            BorderThickness: =0
+            X: =0
+            Y: =0
+            Width: =1000
+            Height: =48
+      - btnNavFilePlan:
+          Control: ModernButton@1.0.0
+          Properties:
+            Text: ="File Plan"
+            X: =16
+            Y: =6
+            Width: =140
+            Height: =36
+            OnSelect: |-
+              =Navigate(scrFilePlan)
+      - btnNavGroupSearch:
+          Control: ModernButton@1.0.0
+          Properties:
+            Text: ="Group Search"
+            X: =164
+            Y: =6
+            Width: =160
+            Height: =36
+            OnSelect: |-
+              =Navigate(scrGroupSearch)
+      - btnNavCreateLibrary:
+          Control: ModernButton@1.0.0
+          Properties:
+            Text: ="Create Library"
+            Visible: =varIsAdmin
+            X: =332
+            Y: =6
+            Width: =160
+            Height: =36
+            OnSelect: |-
+              =Navigate(scrAdminCreateLibrary)
+      - btnNavManagePermissions:
+          Control: ModernButton@1.0.0
+          Properties:
+            Text: ="Manage Permissions"
+            Visible: =varIsAdmin
+            X: =500
+            Y: =6
+            Width: =190
+            Height: =36
+            OnSelect: |-
+              =Navigate(scrManagePermissions)</pre>
+</div>
+<div class="note">Validated against the real Studio parser (Layer A of this Bible's own <code>payaml-validate</code> tool) — clean on all three layers, including zero unproven-property flags, since every control/property here has already been proven elsewhere in this app. One thing not independently confirmed: that Studio's paste, given a screen selected in the Tree view and a <code>Screens: scrName: Children: [...]</code> fragment on the clipboard, adds those as new children of that screen rather than something else. If it doesn't behave that way, fall back to inserting each control manually (Insert → the control type, then set the properties shown above) — same end result, just click-by-click instead of paste.</div>
 
 <h2>Issues</h2>
 <p>Found a problem? <a href="https://github.com/PhadeDev/library-file-plan-manager/issues" style="color:#7c4dff">Report it here</a>.</p>
