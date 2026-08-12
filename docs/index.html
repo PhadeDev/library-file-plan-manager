@@ -89,9 +89,9 @@
 <body>
 
 <a class="back" href="https://phaderon.github.io/PowerApps/">← Guide Library</a>
-<h1>Library &amp; File Plan Manager <span style="font-size:0.65em;font-weight:400;color:#666;vertical-align:middle;margin-left:8px;">v2.7</span></h1>
+<h1>Library &amp; File Plan Manager <span style="font-size:0.65em;font-weight:400;color:#666;vertical-align:middle;margin-left:8px;">v2.8</span></h1>
 <p class="subtitle">SharePoint permissions map (file-plan style, grouped by team) + an admin screen that creates document libraries correctly and registers them automatically, so nothing gets forgotten again.</p>
-<p class="buildstamp">Built 12 Aug 2026  09:10 BST</p>
+<p class="buildstamp">Built 12 Aug 2026  09:11 BST</p>
 
 <p class="snippet-stamp">Every purple line like this one, directly above a copy box, shows the page version and the exact local time that specific box's content was last changed. If a copy still errors after re-pasting, check this stamp against what's shown before assuming the fix didn't take — refresh the page fully first.</p>
 
@@ -101,11 +101,11 @@
     <li><strong><a class="checklist-link" href="#lists">SharePoint lists</a></strong> — create <code>LibraryFilePlan</code> and <code>PermissionIndex</code> with the exact columns shown, including <code>PrettyName</code> (not <code>DisplayName</code> — SharePoint silently drops writes to that name on this list).</li>
     <li><strong><a class="checklist-link" href="#flow-fix">Flow field fix</a></strong> — in <strong>Create Library (App)</strong>, edit <code>Create_FilePlan_Row</code>'s Body so it writes <code>PrettyName</code> instead of <code>DisplayName</code>. One line, no re-import.</li>
     <li><strong><a class="checklist-link" href="#flows">Import all three flows</a></strong> — Create Library (App), Backfill File Plan, Rebuild Permission Index. Test Create Library (App) manually before touching Power Apps.</li>
-    <li><strong><a class="checklist-link" href="#build-app">Data connections + App.OnStart</a></strong> — add the SharePoint list and flow as data sources, paste App.OnStart in full.</li>
-    <li><strong><a class="checklist-link" href="#screens">Both screens</a></strong> — delete and paste fresh (both have had controls added since first built, so a partial paste over the top won't apply cleanly).</li>
+    <li><strong><a class="checklist-link" href="#build-app">Data connections + App.OnStart</a></strong> — add both SharePoint lists and the flow as data sources, paste App.OnStart in full.</li>
+    <li><strong><a class="checklist-link" href="#screens">All three screens</a></strong> — delete and paste fresh (screens have had controls added since first built, so a partial paste over the top won't apply cleanly).</li>
   </ol>
 </div>
-<div class="pending">Current state: both screens built and tested working. Steps 1–2 above are the one outstanding fix (the PrettyName rename); everything else is either already done or is what a screen re-paste in step 5 picks up automatically. Still to come after this: the whole-site group search screen and the permissions view/add/remove screen — both flows they depend on already exist.</div>
+<div class="pending">Current state: all three screens built and File Plan / Admin Create Library are tested working. Group Search is new, not yet tested. Still to come after this: the permissions view/add/remove screen.</div>
 
 <h2 id="lists">1. SharePoint List: <code>LibraryFilePlan</code></h2>
 <p>Location: your main site — <code>https://modgovuk.sharepoint.com/teams/1598/</code>. Site Contents → New → List → blank list, name it exactly <code>LibraryFilePlan</code>.</p>
@@ -208,16 +208,17 @@
 
 <h3>Data connections</h3>
 <p>Data panel → Add data → add these before pasting any screen YAML:</p>
-<p class="snippet-stamp">v2.6 — Updated 12 Aug 2026 08:30 BST</p>
+<p class="snippet-stamp">v2.8 — Updated 12 Aug 2026 09:11 BST</p>
 <div class="code-block">
   <button class="copy-btn" onclick="copyPre(this)">Copy</button>
   <pre>'LibraryFilePlan'          (SharePoint → your main site → LibraryFilePlan)
+'PermissionIndex'          (SharePoint → your main site → PermissionIndex)
 'Create Library (App)'     (search Power Automate flows in Add data)</pre>
 </div>
 
 <h3>App.OnStart</h3>
 <p>Select the <strong>App</strong> object (top of the tree, not any screen) → <strong>OnStart</strong> property → paste this in full:</p>
-<p class="snippet-stamp">v2.6 — Updated 12 Aug 2026 08:30 BST</p>
+<p class="snippet-stamp">v2.8 — Updated 12 Aug 2026 09:11 BST</p>
 <div class="code-block">
   <button class="copy-btn" onclick="copyPre(this)">Copy</button>
   <pre>Set(varTenantHost, "https://modgovuk.sharepoint.com");
@@ -245,9 +246,11 @@ Set(varIsAdmin, Lower(User().Email) in ["allan.hamilton775@mod.gov.uk", "dan.smi
 ClearCollect(colQueue, Filter(Table({TechnicalName: "seed", DisplayName: "", Team: "", SubTeam: "", IsLimited: false, Categories: ""}), false));
 Set(varQueueRunning, false);
 Set(varQueueTotal, 0);
-Set(varQueueDone, 0)</pre>
+Set(varQueueDone, 0);
+ClearCollect(colPermissionIndex, 'PermissionIndex');
+ClearCollect(colPermissionFiltered, colPermissionIndex)</pre>
 </div>
-<div class="note"><code>EffectiveName</code> is <code>PrettyName</code> when filled in, otherwise falls back to <code>Title</code> — self-heals every library missing a pretty name, no data migration needed. <code>varIsAdmin</code> gates the Admin screen — edit the email list directly in this line if who's authorized ever changes.</div>
+<div class="note"><code>EffectiveName</code> is <code>PrettyName</code> when filled in, otherwise falls back to <code>Title</code> — self-heals every library missing a pretty name, no data migration needed. <code>varIsAdmin</code> gates the Admin screen — edit the email list directly in this line if who's authorized ever changes. <code>colPermissionIndex</code>/<code>colPermissionFiltered</code> feed the Group Search screen — make sure you've run <strong>Rebuild Permission Index</strong> at least once first, or this loads empty.</div>
 
 <h2 id="screens">5. Screens</h2>
 <p>For each: delete the existing screen if you already have one pasted, New screen (blank) → open the link → Copy YAML → paste. Rename the screen to match the name shown.</p>
@@ -264,9 +267,16 @@ Set(varQueueDone, 0)</pre>
     <div class="screen-desc">Restricted to the admin email list. Fill in a library's details, Add to Queue as many times as needed, then Run Queue creates them all sequentially, with a progress overlay.</div>
     <div class="screen-cta">Copy YAML →</div>
   </a>
+  <a class="screen-card" href="screens/scrGroupSearch.html?v=1.0">
+    <div class="screen-number">Screen 3</div>
+    <div class="screen-name">scrGroupSearch</div>
+    <div class="screen-desc">Search by SG_/DG_ group name or library name across every Limited library's permissions. Reads the precomputed PermissionIndex list — instant, no live SharePoint crawl.</div>
+    <div class="screen-cta">Copy YAML →</div>
+  </a>
 </div>
 <div class="note"><strong>scrFilePlan</strong>: one single flat gallery with uniform row height (a Team/Library discriminator column decides what each row shows) rather than nested galleries. Search is instant and local, no spinner needed, and auto-expands every Team with a match.</div>
 <div class="note"><strong>scrAdminCreateLibrary</strong>: Sub-Team is free text rather than a suggestion dropdown (Modern Combobox has a known instability issue). The queue is entirely local until you hit Run. Run Queue disables and shows "Creating..." immediately on click.</div>
+<div class="note"><strong>scrGroupSearch</strong>: only finds results for libraries that were in scope for the last <strong>Rebuild Permission Index</strong> run (broken/unique-permission libraries — see that flow's section above). A Normal library never shows up here since it just inherits site-wide permissions; that's expected, not a bug. Searching matches the group name itself, the library name, or (for a nested AD group) the SharePoint group it's nested inside.</div>
 
 <h2>Issues</h2>
 <p>Found a problem? <a href="https://github.com/PhadeDev/library-file-plan-manager/issues" style="color:#7c4dff">Report it here</a>.</p>

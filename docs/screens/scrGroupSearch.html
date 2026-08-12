@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <title>PowerApps – scrGroupSearch – v1.0  —  Built 12 Aug 2026  09:11 BST</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #0f0f1a;
+      color: #e8e8f0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      gap: 20px;
+    }
+    h1 { font-size: 1.4rem; font-weight: 400; color: #a0a0c0; }
+    .name { font-size: 1.1rem; font-weight: 600; color: #c8b8ff; }
+    .version-badge {
+      display: inline-block;
+      background: #1a2a1a;
+      border: 1px solid #2a7d4e;
+      color: #4caf7d;
+      font-family: 'Cascadia Code', 'Consolas', monospace;
+      font-size: 0.95rem;
+      font-weight: 700;
+      padding: 6px 18px;
+      border-radius: 20px;
+      letter-spacing: 0.5px;
+    }
+    button {
+      padding: 14px 36px;
+      font-size: 1.1rem;
+      background: #7c4dff;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    button:hover { background: #6a3de8; }
+    button:active { background: #5830cc; }
+    #status {
+      font-size: 0.9rem;
+      color: #888;
+      min-height: 1.2em;
+      transition: color 0.2s;
+    }
+    #status.ok { color: #4caf7d; }
+    #status.err { color: #e85555; }
+    .info {
+      font-size: 0.8rem;
+      color: #555;
+      margin-top: 8px;
+      text-align: center;
+      line-height: 1.6;
+    }
+    .preview {
+      width: min(720px, calc(100vw - 48px));
+      background: #1a1a2e;
+      border: 1px solid #2a2a3a;
+      border-radius: 8px;
+      padding: 12px 14px;
+      color: #bfc7e8;
+      font-family: 'Cascadia Code', 'Consolas', monospace;
+      font-size: 0.78rem;
+      line-height: 1.45;
+      white-space: pre-wrap;
+      text-align: left;
+    }
+  </style>
+</head>
+<body>
+  <h1>PowerApps Screen</h1>
+  <div class="name">scrGroupSearch</div>
+  <div class="version-badge">v1.0  —  Built 12 Aug 2026  09:11 BST</div>
+  <button onclick="copyYAML()">Copy YAML to Clipboard</button>
+  <div id="status">Click to copy — PowerApps-ready (CRLF, UTF-8)</div>
+  <div class="info">
+    After copying, open PowerApps Studio &rarr; select a screen &rarr; Ctrl+V<br>
+    or use the paste button in the tree view.
+  </div>
+  <pre id="preview" class="preview"></pre>
+  <script>
+    const yaml = "Screens:\r\n  scrGroupSearch:\r\n    Properties:\r\n      Fill: =RGBA(245, 246, 250, 1)\r\n    Children:\r\n      - lblTitle:\r\n          Control: Label@2.5.1\r\n          Properties:\r\n            Text: =\"Group & Permission Search\"\r\n            X: =32\r\n            Y: =24\r\n            Width: =700\r\n            Height: =40\r\n            Size: =22\r\n            FontWeight: =FontWeight.Semibold\r\n            Color: =RGBA(30, 30, 45, 1)\r\n            Font: =Font.'Open Sans'\r\n      - lblSubtitle:\r\n          Control: Label@2.5.1\r\n          Properties:\r\n            Text: =\"Search by SharePoint group (SG_...) or nested AD group (DG_...) name to see every Limited library it has access to.\"\r\n            X: =32\r\n            Y: =62\r\n            Width: =820\r\n            Height: =24\r\n            Size: =12\r\n            Color: =RGBA(120, 120, 135, 1)\r\n            Font: =Font.'Open Sans'\r\n      - txtSearch:\r\n          Control: ModernTextInput@1.1.0\r\n          Properties:\r\n            Placeholder: =\"Search by group name (SG_/DG_) or library name...\"\r\n            Type: =TextInputType.Search\r\n            X: =32\r\n            Y: =96\r\n            Width: =480\r\n            Height: =44\r\n            OnChange: |-\r\n              =ClearCollect(\r\n                  colPermissionFiltered,\r\n                  If(\r\n                      IsBlank(Trim(txtSearch.Text)),\r\n                      colPermissionIndex,\r\n                      Filter(\r\n                          colPermissionIndex,\r\n                          txtSearch.Text in GroupName ||\r\n                          txtSearch.Text in LibraryTitle ||\r\n                          txtSearch.Text in Coalesce(NestedUnderGroup, \"\")\r\n                      )\r\n                  )\r\n              )\r\n      - btnClearSearch:\r\n          Control: Classic/Button@2.2.0\r\n          Properties:\r\n            Text: =\"\u2715\"\r\n            Visible: =!IsBlank(Trim(txtSearch.Text))\r\n            Fill: =RGBA(0, 0, 0, 0)\r\n            HoverFill: =RGBA(230, 233, 245, 1)\r\n            PressedFill: =RGBA(230, 233, 245, 1)\r\n            Color: =RGBA(120, 120, 135, 1)\r\n            BorderThickness: =0\r\n            X: =516\r\n            Y: =96\r\n            Width: =36\r\n            Height: =44\r\n            OnSelect: |-\r\n              =Reset(txtSearch);\r\n              ClearCollect(colPermissionFiltered, colPermissionIndex)\r\n      - lblResultCount:\r\n          Control: Label@2.5.1\r\n          Properties:\r\n            Text: =If(IsBlank(Trim(txtSearch.Text)), \"All \" & CountRows(colPermissionFiltered) & \" permission entries\", \"Showing \" & CountRows(colPermissionFiltered) & \" matching entr\" & If(CountRows(colPermissionFiltered) = 1, \"y\", \"ies\"))\r\n            X: =32\r\n            Y: =144\r\n            Width: =520\r\n            Height: =24\r\n            Size: =12\r\n            FontWeight: =If(IsBlank(Trim(txtSearch.Text)), FontWeight.Normal, FontWeight.Semibold)\r\n            Color: =If(IsBlank(Trim(txtSearch.Text)), RGBA(120, 120, 135, 1), RGBA(124, 77, 255, 1))\r\n            Font: =Font.'Open Sans'\r\n      - galResults:\r\n          Control: Gallery@2.15.0\r\n          Variant: Vertical\r\n          Properties:\r\n            Items: |-\r\n              =SortByColumns(colPermissionFiltered, \"LibraryTitle\", SortOrder.Ascending, \"GroupName\", SortOrder.Ascending)\r\n            TemplateSize: =64\r\n            Height: =700\r\n            Width: =1000\r\n            X: =32\r\n            Y: =180\r\n            TemplatePadding: =4\r\n            LoadingSpinner: =LoadingSpinner.None\r\n          Children:\r\n            - recRowBg:\r\n                Control: Classic/Button@2.2.0\r\n                Properties:\r\n                  Text: =\"\"\r\n                  DisplayMode: =DisplayMode.View\r\n                  Fill: =RGBA(255, 255, 255, 1)\r\n                  HoverFill: =RGBA(255, 255, 255, 1)\r\n                  PressedFill: =RGBA(255, 255, 255, 1)\r\n                  BorderColor: =RGBA(238, 239, 245, 1)\r\n                  BorderThickness: =1\r\n                  RadiusTopLeft: =6\r\n                  RadiusTopRight: =6\r\n                  RadiusBottomLeft: =6\r\n                  RadiusBottomRight: =6\r\n                  X: =0\r\n                  Y: =0\r\n                  Width: =1000\r\n                  Height: =60\r\n            - lblLibraryTitle:\r\n                Control: Label@2.5.1\r\n                Properties:\r\n                  Text: =ThisItem.LibraryTitle\r\n                  X: =16\r\n                  Y: =4\r\n                  Width: =300\r\n                  Height: =24\r\n                  Size: =13\r\n                  FontWeight: =FontWeight.Semibold\r\n                  Color: =RGBA(30, 30, 45, 1)\r\n                  Font: =Font.'Open Sans'\r\n            - lblGroupInfo:\r\n                Control: Label@2.5.1\r\n                Properties:\r\n                  Text: =ThisItem.GroupName & \" \u2014 \" & ThisItem.PermissionLevel & If(IsBlank(ThisItem.NestedUnderGroup) || ThisItem.NestedUnderGroup = \"\", \"\", \" (nested inside \" & ThisItem.NestedUnderGroup & \")\")\r\n                  X: =16\r\n                  Y: =28\r\n                  Width: =620\r\n                  Height: =24\r\n                  Size: =11\r\n                  Color: =RGBA(120, 120, 135, 1)\r\n                  Font: =Font.'Open Sans'\r\n            - lblPrincipalTypeBadge:\r\n                Control: Label@2.5.1\r\n                Properties:\r\n                  Text: =ThisItem.PrincipalType\r\n                  X: =650\r\n                  Y: =16\r\n                  Width: =140\r\n                  Height: =28\r\n                  Size: =11\r\n                  FontWeight: =FontWeight.Semibold\r\n                  Color: =RGBA(60, 90, 155, 1)\r\n                  Fill: =RGBA(225, 233, 250, 1)\r\n                  Align: =Align.Center\r\n                  VerticalAlign: =VerticalAlign.Middle\r\n                  Font: =Font.'Open Sans'\r\n            - btnOpen:\r\n                Control: ModernButton@1.0.0\r\n                Properties:\r\n                  Text: =\"Open library\"\r\n                  X: =800\r\n                  Y: =12\r\n                  Width: =184\r\n                  Height: =36\r\n                  OnSelect: |-\r\n                    =Launch(varTenantHost & ThisItem.LibraryUrl)\r\n";
+    const stamp = "v1.0  \u2014  Built 12 Aug 2026  09:11 BST";
+
+    function firstLines() {
+      return yaml.split(/\r?\n/).slice(0, 8).join('\n');
+    }
+
+    async function copyYAML() {
+      const status = document.getElementById('status');
+      if (!yaml.startsWith('Screens:\r\n  ') && !yaml.startsWith('Screens:\n  ')) {
+        status.textContent = 'Refusing to copy: YAML does not start with Screens:';
+        status.className = 'err';
+        return;
+      }
+      if (yaml.includes('\r\n    Control: Screen\r\n') || yaml.includes('\n    Control: Screen\n')) {
+        status.textContent = 'Refusing to copy: stale YAML still contains screen-level Control: Screen.';
+        status.className = 'err';
+        return;
+      }
+      try {
+        await navigator.clipboard.writeText(yaml);
+        status.textContent = '✓ Copied ' + stamp + '. First YAML line: ' + yaml.split(/\r?\n/)[0];
+        status.className = 'ok';
+        setTimeout(() => {
+          status.textContent = 'Click to copy again';
+          status.className = '';
+        }, 4000);
+      } catch (e) {
+        status.textContent = 'Clipboard blocked — select the text below and copy manually.';
+        status.className = 'err';
+        const pre = document.createElement('pre');
+        pre.style = 'font-size:9px;max-height:200px;overflow:auto;background:#1a1a2e;padding:8px;border-radius:6px;text-align:left;';
+        pre.textContent = yaml;
+        document.body.appendChild(pre);
+      }
+    }
+
+    document.getElementById('preview').textContent = 'Clipboard payload preview (' + stamp + ')\n' + firstLines();
+  </script>
+</body>
+</html>
