@@ -89,9 +89,9 @@
 <body>
 
 <a class="back" href="https://phaderon.github.io/PowerApps/">← Guide Library</a>
-<h1>Library &amp; File Plan Manager <span style="font-size:0.65em;font-weight:400;color:#666;vertical-align:middle;margin-left:8px;">v3.4</span></h1>
+<h1>Library &amp; File Plan Manager <span style="font-size:0.65em;font-weight:400;color:#666;vertical-align:middle;margin-left:8px;">v3.5</span></h1>
 <p class="subtitle">SharePoint permissions map (file-plan style, grouped by team) + an admin screen that creates document libraries correctly and registers them automatically, so nothing gets forgotten again.</p>
-<p class="buildstamp">Built 12 Aug 2026  11:03 BST</p>
+<p class="buildstamp">Built 12 Aug 2026  11:23 BST</p>
 
 <p class="snippet-stamp">Every purple line like this one, directly above a copy box, shows the page version and the exact local time that specific box's content was last changed. If a copy still errors after re-pasting, check this stamp against what's shown before assuming the fix didn't take — refresh the page fully first.</p>
 
@@ -223,7 +223,7 @@
 
 <h3>App.OnStart</h3>
 <p>Select the <strong>App</strong> object (top of the tree, not any screen) → <strong>OnStart</strong> property → paste this in full:</p>
-<p class="snippet-stamp">v3.4 — Updated 12 Aug 2026 11:03 BST</p>
+<p class="snippet-stamp">v3.5 — Updated 12 Aug 2026 11:23 BST</p>
 <div class="code-block">
   <button class="copy-btn" onclick="copyPre(this)">Copy</button>
   <pre>Set(varTenantHost, "https://modgovuk.sharepoint.com");
@@ -258,7 +258,7 @@ ClearCollect(colPermissionFiltered, colPermissionIndex);
 ClearCollect(colLibraryGroups, Sort(AddColumns(GroupBy(colPermissionFiltered, LibraryUrl, LibraryTitle, GroupedItems), ItemCount, CountRows(GroupedItems)), LibraryTitle, SortOrder.Ascending));
 Clear(colPermFlatSource);
 Collect(colPermFlatSource, AddColumns(colLibraryGroups, RowType, "Library", SortKey, LibraryUrl, RankInGroup, 0, GroupSortKey, ""));
-Collect(colPermFlatSource, AddColumns(Filter(colPermissionFiltered, IsBlank(NestedUnderGroup) || NestedUnderGroup = ""), RowType, "Group", SortKey, LibraryUrl, RankInGroup, 1, GroupSortKey, GroupName));
+Collect(colPermFlatSource, AddColumns(Filter(colPermissionFiltered, IsBlank(NestedUnderGroup) || NestedUnderGroup = ""), RowType, "Group", SortKey, LibraryUrl, RankInGroup, 1, GroupSortKey, GroupName, MemberCount, With({_gn: GroupName, _lu: LibraryUrl}, CountRows(Filter(colPermissionFiltered, NestedUnderGroup = _gn && LibraryUrl = _lu)))));
 Collect(colPermFlatSource, AddColumns(Filter(colPermissionFiltered, !IsBlank(NestedUnderGroup) && NestedUnderGroup <> ""), RowType, "Member", SortKey, LibraryUrl, RankInGroup, 2, GroupSortKey, NestedUnderGroup));
 ClearCollect(colExpandedLibs, Filter(Table({LibraryUrl: "seed"}), false));
 ClearCollect(colExpandedGroups, Filter(Table({GroupKey: "seed"}), false))</pre>
@@ -280,7 +280,7 @@ ClearCollect(colExpandedGroups, Filter(Table({GroupKey: "seed"}), false))</pre>
     <div class="screen-desc">Restricted to the admin email list. Fill in a library's details, Add to Queue as many times as needed, then Run Queue creates them all sequentially, with a progress overlay. Also has a Rebuild Permission Index button with a staleness indicator.</div>
     <div class="screen-cta">Copy YAML →</div>
   </a>
-  <a class="screen-card" href="screens/scrGroupSearch.html?v=3.0">
+  <a class="screen-card" href="screens/scrGroupSearch.html?v=3.1">
     <div class="screen-number">Screen 3</div>
     <div class="screen-name">scrGroupSearch</div>
     <div class="screen-desc">Search by SG_/DG_ group name or library name. Results grouped by library in a collapsible accordion, same pattern as scrFilePlan. Reads the precomputed PermissionIndex list — instant, no live SharePoint crawl.</div>
@@ -289,7 +289,7 @@ ClearCollect(colExpandedGroups, Filter(Table({GroupKey: "seed"}), false))</pre>
 </div>
 <div class="note"><strong>scrFilePlan</strong>: one single flat gallery with uniform row height (a Team/Library discriminator column decides what each row shows) rather than nested galleries. Search is instant and local, no spinner needed, and auto-expands every Team with a match.</div>
 <div class="note"><strong>scrAdminCreateLibrary</strong>: Sub-Team is free text rather than a suggestion dropdown (Modern Combobox has a known instability issue). The queue is entirely local until you hit Run. Run Queue disables and shows "Creating..." immediately on click. The <strong>Rebuild Permission Index</strong> button is fire-and-forget — it doesn't wait for the flow to finish or show progress, since the run duration is unpredictable and Power Apps' <code>.Run()</code> call has no true non-blocking mode (a slow response is caught and shown as a friendly message rather than a raw error, but the flow itself always runs to completion on its own regardless). The status line above it shows how long ago the index was last rebuilt, and flags how many Limited libraries have been created since — both computed live from data already loaded, no extra flow or list needed.</div>
-<div class="note"><strong>scrGroupSearch</strong>: only finds results for libraries that were in scope for the last <strong>Rebuild Permission Index</strong> run (broken/unique-permission libraries — see that flow's section above). A Normal library never shows up here since it just inherits site-wide permissions; that's expected, not a bug. Searching matches the group name itself, the library name, or (for a nested AD group) the SharePoint group it's nested inside. v3.0 rebuilt the results as a <strong>three-tier accordion</strong> — Library → directly-granted group (matches SharePoint's own native Permissions panel exactly) → nested member, each level collapsed by default. Still one flat gallery underneath, just a third <code>RowType</code> and a second expand-tracking collection (<code>colExpandedGroups</code>) rather than nested galleries.</div>
+<div class="note"><strong>scrGroupSearch</strong>: only finds results for libraries that were in scope for the last <strong>Rebuild Permission Index</strong> run (broken/unique-permission libraries — see that flow's section above). A Normal library never shows up here since it just inherits site-wide permissions; that's expected, not a bug. Searching matches the group name itself, the library name, or (for a nested AD group) the SharePoint group it's nested inside. v3.0 rebuilt the results as a <strong>three-tier accordion</strong> — Library → directly-granted group (matches SharePoint's own native Permissions panel exactly) → nested member, each level collapsed by default. Still one flat gallery underneath, just a third <code>RowType</code> and a second expand-tracking collection (<code>colExpandedGroups</code>) rather than nested galleries. v3.1 fixed a real sort-order bug where member rows sorted after <em>every</em> group in a library instead of clustering under their own parent group — the sort's column priority had rank ahead of the group-clustering key instead of after it — and added a member count next to each group (e.g. "2 members") so you know what's inside before expanding.</div>
 
 <h2>Issues</h2>
 <p>Found a problem? <a href="https://github.com/PhadeDev/library-file-plan-manager/issues" style="color:#7c4dff">Report it here</a>.</p>
