@@ -89,9 +89,9 @@
 <body>
 
 <a class="back" href="https://phaderon.github.io/PowerApps/">← Guide Library</a>
-<h1>Library &amp; File Plan Manager <span style="font-size:0.65em;font-weight:400;color:#666;vertical-align:middle;margin-left:8px;">v3.2</span></h1>
+<h1>Library &amp; File Plan Manager <span style="font-size:0.65em;font-weight:400;color:#666;vertical-align:middle;margin-left:8px;">v3.3</span></h1>
 <p class="subtitle">SharePoint permissions map (file-plan style, grouped by team) + an admin screen that creates document libraries correctly and registers them automatically, so nothing gets forgotten again.</p>
-<p class="buildstamp">Built 12 Aug 2026  09:53 BST</p>
+<p class="buildstamp">Built 12 Aug 2026  10:32 BST</p>
 
 <p class="snippet-stamp">Every purple line like this one, directly above a copy box, shows the page version and the exact local time that specific box's content was last changed. If a copy still errors after re-pasting, check this stamp against what's shown before assuming the fix didn't take — refresh the page fully first.</p>
 
@@ -205,6 +205,7 @@
 <p>Power Apps can't read SharePoint permissions directly, and a search screen can't afford to live-query every library's permissions on every keystroke. This flow scans permissions <strong>once</strong> and writes a flat, fast-searchable copy into <code>PermissionIndex</code>; the group-search screen just filters that list.</p>
 <p>Only scans libraries with <strong>broken/unique permissions</strong> (mostly your Limited libraries) — Normal libraries all inherit the exact same site-wide permissions, so indexing each individually would be pure noise. If a group is a native <strong>SharePoint Group</strong>, it also looks one level inside that group's own membership — this is how a nested <code>DG_...</code> AD group shows up in the index too, without needing Microsoft Graph.</p>
 <div class="warning">Deletes the entire contents of <code>PermissionIndex</code> and rebuilds it from scratch every run — intentional, avoids stale/duplicate rows.</div>
+<div class="note">Excludes SharePoint's own auto-generated <strong>"Limited Access System Group"</strong> — this isn't a real business group, it's internal bookkeeping SharePoint creates whenever anything inside a library (even a single folder or file) has broken permissions. Since it's technically a SharePoint Group, expanding its membership floods the index with individual named users nobody would search for by name. Confirmed live: a first run without this exclusion produced ~500 rows, nearly all of them this noise.</div>
 
 <h2 id="build-app">4. Building the Power App</h2>
 <p>Create a new blank canvas app in Power Apps Studio.</p>
@@ -222,7 +223,7 @@
 
 <h3>App.OnStart</h3>
 <p>Select the <strong>App</strong> object (top of the tree, not any screen) → <strong>OnStart</strong> property → paste this in full:</p>
-<p class="snippet-stamp">v3.2 — Updated 12 Aug 2026 09:53 BST</p>
+<p class="snippet-stamp">v3.3 — Updated 12 Aug 2026 10:32 BST</p>
 <div class="code-block">
   <button class="copy-btn" onclick="copyPre(this)">Copy</button>
   <pre>Set(varTenantHost, "https://modgovuk.sharepoint.com");
@@ -253,7 +254,12 @@ Set(varQueueTotal, 0);
 Set(varQueueDone, 0);
 Set(varIndexRunError, false);
 ClearCollect(colPermissionIndex, 'PermissionIndex');
-ClearCollect(colPermissionFiltered, colPermissionIndex)</pre>
+ClearCollect(colPermissionFiltered, colPermissionIndex);
+ClearCollect(colLibraryGroups, Sort(AddColumns(GroupBy(colPermissionFiltered, LibraryUrl, LibraryTitle, GroupedItems), ItemCount, CountRows(GroupedItems)), LibraryTitle, SortOrder.Ascending));
+Clear(colPermFlatSource);
+Collect(colPermFlatSource, AddColumns(colLibraryGroups, RowType, "Library", SortKey, LibraryUrl, RankInGroup, 0));
+Collect(colPermFlatSource, AddColumns(colPermissionFiltered, RowType, "Permission", SortKey, LibraryUrl, RankInGroup, 1));
+ClearCollect(colExpandedLibs, Filter(Table({LibraryUrl: "seed"}), false))</pre>
 </div>
 <div class="note"><code>EffectiveName</code> is <code>PrettyName</code> when filled in, otherwise falls back to <code>Title</code> — self-heals every library missing a pretty name, no data migration needed. <code>varIsAdmin</code> gates the Admin screen — edit the email list directly in this line if who's authorized ever changes. <code>colPermissionIndex</code>/<code>colPermissionFiltered</code> feed the Group Search screen — make sure you've run <strong>Rebuild Permission Index</strong> at least once first, or this loads empty.</div>
 
@@ -272,16 +278,16 @@ ClearCollect(colPermissionFiltered, colPermissionIndex)</pre>
     <div class="screen-desc">Restricted to the admin email list. Fill in a library's details, Add to Queue as many times as needed, then Run Queue creates them all sequentially, with a progress overlay. Also has a Rebuild Permission Index button with a staleness indicator.</div>
     <div class="screen-cta">Copy YAML →</div>
   </a>
-  <a class="screen-card" href="screens/scrGroupSearch.html?v=1.0">
+  <a class="screen-card" href="screens/scrGroupSearch.html?v=2.0">
     <div class="screen-number">Screen 3</div>
     <div class="screen-name">scrGroupSearch</div>
-    <div class="screen-desc">Search by SG_/DG_ group name or library name across every Limited library's permissions. Reads the precomputed PermissionIndex list — instant, no live SharePoint crawl.</div>
+    <div class="screen-desc">Search by SG_/DG_ group name or library name. Results grouped by library in a collapsible accordion, same pattern as scrFilePlan. Reads the precomputed PermissionIndex list — instant, no live SharePoint crawl.</div>
     <div class="screen-cta">Copy YAML →</div>
   </a>
 </div>
 <div class="note"><strong>scrFilePlan</strong>: one single flat gallery with uniform row height (a Team/Library discriminator column decides what each row shows) rather than nested galleries. Search is instant and local, no spinner needed, and auto-expands every Team with a match.</div>
 <div class="note"><strong>scrAdminCreateLibrary</strong>: Sub-Team is free text rather than a suggestion dropdown (Modern Combobox has a known instability issue). The queue is entirely local until you hit Run. Run Queue disables and shows "Creating..." immediately on click. The <strong>Rebuild Permission Index</strong> button is fire-and-forget — it doesn't wait for the flow to finish or show progress, since the run duration is unpredictable and Power Apps' <code>.Run()</code> call has no true non-blocking mode (a slow response is caught and shown as a friendly message rather than a raw error, but the flow itself always runs to completion on its own regardless). The status line above it shows how long ago the index was last rebuilt, and flags how many Limited libraries have been created since — both computed live from data already loaded, no extra flow or list needed.</div>
-<div class="note"><strong>scrGroupSearch</strong>: only finds results for libraries that were in scope for the last <strong>Rebuild Permission Index</strong> run (broken/unique-permission libraries — see that flow's section above). A Normal library never shows up here since it just inherits site-wide permissions; that's expected, not a bug. Searching matches the group name itself, the library name, or (for a nested AD group) the SharePoint group it's nested inside.</div>
+<div class="note"><strong>scrGroupSearch</strong>: only finds results for libraries that were in scope for the last <strong>Rebuild Permission Index</strong> run (broken/unique-permission libraries — see that flow's section above). A Normal library never shows up here since it just inherits site-wide permissions; that's expected, not a bug. Searching matches the group name itself, the library name, or (for a nested AD group) the SharePoint group it's nested inside. v2.0 rebuilt the results as a library-grouped accordion (same flat-gallery-with-RowType pattern as <code>scrFilePlan</code>) instead of a flat ungrouped list — matches this project's own established pattern for this kind of UI.</div>
 
 <h2>Issues</h2>
 <p>Found a problem? <a href="https://github.com/PhadeDev/library-file-plan-manager/issues" style="color:#7c4dff">Report it here</a>.</p>
