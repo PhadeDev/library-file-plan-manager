@@ -89,9 +89,9 @@
 <body>
 
 <a class="back" href="https://phaderon.github.io/PowerApps/">← Guide Library</a>
-<h1>Library &amp; File Plan Manager <span style="font-size:0.65em;font-weight:400;color:#666;vertical-align:middle;margin-left:8px;">v2.6</span></h1>
+<h1>Library &amp; File Plan Manager <span style="font-size:0.65em;font-weight:400;color:#666;vertical-align:middle;margin-left:8px;">v2.7</span></h1>
 <p class="subtitle">SharePoint permissions map (file-plan style, grouped by team) + an admin screen that creates document libraries correctly and registers them automatically, so nothing gets forgotten again.</p>
-<p class="buildstamp">Built 12 Aug 2026  08:30 BST</p>
+<p class="buildstamp">Built 12 Aug 2026  09:10 BST</p>
 
 <p class="snippet-stamp">Every purple line like this one, directly above a copy box, shows the page version and the exact local time that specific box's content was last changed. If a copy still errors after re-pasting, check this stamp against what's shown before assuming the fix didn't take — refresh the page fully first.</p>
 
@@ -142,6 +142,7 @@
 
 <h2 id="flow-fix">2. Flow Field Fix: Create_FilePlan_Row</h2>
 <p>In Power Automate, open <strong>Create Library (App)</strong> → Edit → click <strong>Create_FilePlan_Row</strong> to expand it → click into its <strong>Body</strong> box → select all, delete → paste this in as the replacement → Save. Existing action, existing field, no re-import needed.</p>
+<div class="warning">Saving the flow is not enough on its own — a Power App that already calls this flow keeps running the <strong>old</strong> logic until its own connection to the flow is refreshed. After saving, go into Power Apps Studio → Data panel → find <strong>Create Library (App)</strong> under your data sources → refresh it (remove and re-add if there's no direct refresh option). Do this after every flow edit, not just this one.</div>
 <p class="snippet-stamp">v2.6 — Updated 12 Aug 2026 08:30 BST</p>
 <div class="code-block">
   <button class="copy-btn" onclick="copyPre(this)">Copy</button>
