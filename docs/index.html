@@ -89,9 +89,9 @@
 <body>
 
 <a class="back" href="https://phaderon.github.io/PowerApps/">← Guide Library</a>
-<h1>Library &amp; File Plan Manager <span style="font-size:0.65em;font-weight:400;color:#666;vertical-align:middle;margin-left:8px;">v4.1</span></h1>
+<h1>Library &amp; File Plan Manager <span style="font-size:0.65em;font-weight:400;color:#666;vertical-align:middle;margin-left:8px;">v4.2</span></h1>
 <p class="subtitle">SharePoint permissions map (file-plan style, grouped by team) + an admin screen that creates document libraries correctly and registers them automatically, so nothing gets forgotten again.</p>
-<p class="buildstamp">Built 12 Aug 2026  12:23 BST</p>
+<p class="buildstamp">Built 13 Aug 2026  09:26 BST</p>
 
 <p class="snippet-stamp">Every purple line like this one, directly above a copy box, shows the page version and the exact local time that specific box's content was last changed. If a copy still errors after re-pasting, check this stamp against what's shown before assuming the fix didn't take — refresh the page fully first.</p>
 
@@ -100,6 +100,7 @@
   <ol>
     <li><strong><a class="checklist-link" href="#lists">SharePoint lists</a></strong> — create <code>LibraryFilePlan</code> and <code>PermissionIndex</code> via the CSV templates (fastest — creates every column for you), or manually per the schema tables. Column is <code>PrettyName</code>, not <code>DisplayName</code> — SharePoint silently drops writes to that name on this list.</li>
     <li><strong><a class="checklist-link" href="#flow-fix">Flow field fix</a></strong> — in <strong>Create Library (App)</strong>, edit <code>Create_FilePlan_Row</code>'s Body so it writes <code>PrettyName</code> instead of <code>DisplayName</code>. One line, no re-import.</li>
+    <li><strong><a class="checklist-link" href="#flow-fix-2">Flow field fix (missing libraries)</a></strong> — in <strong>Rebuild Permission Index</strong>, add <code>&amp;$top=5000</code> to <code>Get_Unique_Perm_Libraries</code>'s Uri so it stops capping out around 20-30 libraries. One line, no re-import.</li>
     <li><strong><a class="checklist-link" href="#flows">Import all four flows</a></strong> — Create Library (App), Backfill File Plan, Rebuild Permission Index, Manage Library Permissions. Test Create Library (App) manually before touching Power Apps.</li>
     <li><strong><a class="checklist-link" href="#build-app">Data connections + App.OnStart</a></strong> — add both SharePoint lists and the flow as data sources, paste App.OnStart in full.</li>
     <li><strong><a class="checklist-link" href="#screens">All four screens</a></strong> — delete and paste fresh (screens have had controls added since first built, so a partial paste over the top won't apply cleanly).</li>
@@ -162,6 +163,17 @@
 }</pre>
 </div>
 <div class="note">Only the SharePoint field name changed (<code>DisplayName</code> → <code>PrettyName</code>). The value is still populated from <code>triggerBody()?['DisplayName']</code> — that's the Power Apps trigger's own parameter name, unrelated to the SharePoint column, and it hasn't changed.</div>
+
+<h2 id="flow-fix-2">2b. Flow Field Fix: Get_Unique_Perm_Libraries (missing libraries bug)</h2>
+<p><strong>Cause:</strong> this action asks SharePoint for every library with unique permissions, but never told it how many to return. SharePoint's <code>_api/web/lists</code> endpoint defaults to a page size of around 100 items per response and doesn't automatically continue to the next page — with enough lists on the site (including hidden/system ones counted before the filter narrows them down), the real Limited libraries near the end of that list never got reached, so the index silently stopped at whatever fit in the first page.</p>
+<p>In Power Automate, open <strong>Rebuild Permission Index</strong> → Edit → click <strong>Get_Unique_Perm_Libraries</strong> to expand it → click into its <strong>Uri</strong> box → add <code>&amp;$top=5000</code> to the end → Save. Existing action, one field, no re-import needed.</p>
+<p class="snippet-stamp">v4.2 — Updated 13 Aug 2026 09:26 BST</p>
+<div class="code-block">
+  <button class="copy-btn" onclick="copyPre(this)">Copy</button>
+  <pre>_api/web/lists?$filter=BaseTemplate eq 101 and Hidden eq false and HasUniqueRoleAssignments eq true&$select=Title,Id,RootFolder/ServerRelativeUrl&$expand=RootFolder&$top=5000</pre>
+</div>
+<div class="warning">This changes the flow's own logic, same as any other flow edit — refresh <strong>Rebuild Permission Index</strong>'s connection in the Power Apps Data panel afterward, then run the Rebuild button on the Admin screen once to repopulate the index with every library this time.</div>
+<div class="note">The downloadable flow zip for a fresh install already has this fix baked in — this section is only needed if you imported before 13 Aug 2026.</div>
 
 <h2 id="flows">3. Download &amp; Import Flows</h2>
 <p><a class="dl" href="https://github.com/PhadeDev/library-file-plan-manager/raw/main/flows/CreateLibraryApp_flow_import.zip">CreateLibraryApp_flow_import.zip</a> — creates a library, registers it into <code>LibraryFilePlan</code>. The core flow everything else builds on.</p>
