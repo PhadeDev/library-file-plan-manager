@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <title>PowerApps – scrEditLibraries – v1.0  —  Built 13 Aug 2026  10:23 BST</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #0f0f1a;
+      color: #e8e8f0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      gap: 20px;
+    }
+    h1 { font-size: 1.4rem; font-weight: 400; color: #a0a0c0; }
+    .name { font-size: 1.1rem; font-weight: 600; color: #c8b8ff; }
+    .version-badge {
+      display: inline-block;
+      background: #1a2a1a;
+      border: 1px solid #2a7d4e;
+      color: #4caf7d;
+      font-family: 'Cascadia Code', 'Consolas', monospace;
+      font-size: 0.95rem;
+      font-weight: 700;
+      padding: 6px 18px;
+      border-radius: 20px;
+      letter-spacing: 0.5px;
+    }
+    button {
+      padding: 14px 36px;
+      font-size: 1.1rem;
+      background: #7c4dff;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    button:hover { background: #6a3de8; }
+    button:active { background: #5830cc; }
+    #status {
+      font-size: 0.9rem;
+      color: #888;
+      min-height: 1.2em;
+      transition: color 0.2s;
+    }
+    #status.ok { color: #4caf7d; }
+    #status.err { color: #e85555; }
+    .info {
+      font-size: 0.8rem;
+      color: #555;
+      margin-top: 8px;
+      text-align: center;
+      line-height: 1.6;
+    }
+    .preview {
+      width: min(720px, calc(100vw - 48px));
+      background: #1a1a2e;
+      border: 1px solid #2a2a3a;
+      border-radius: 8px;
+      padding: 12px 14px;
+      color: #bfc7e8;
+      font-family: 'Cascadia Code', 'Consolas', monospace;
+      font-size: 0.78rem;
+      line-height: 1.45;
+      white-space: pre-wrap;
+      text-align: left;
+    }
+  </style>
+</head>
+<body>
+  <h1>PowerApps Screen</h1>
+  <div class="name">scrEditLibraries</div>
+  <div class="version-badge">v1.0  —  Built 13 Aug 2026  10:23 BST</div>
+  <button onclick="copyYAML()">Copy YAML to Clipboard</button>
+  <div id="status">Click to copy — PowerApps-ready (CRLF, UTF-8)</div>
+  <div class="info">
+    After copying, open PowerApps Studio &rarr; select a screen &rarr; Ctrl+V<br>
+    or use the paste button in the tree view.
+  </div>
+  <pre id="preview" class="preview"></pre>
+  <script>
+    const yaml = "Screens:\r\n  scrEditLibraries:\r\n    Properties:\r\n      Fill: =RGBA(245, 246, 250, 1)\r\n      OnVisible: |-\r\n        =Set(varEditSaveStatus, \"\")\r\n    Children:\r\n      - lblTitle:\r\n          Control: Label@2.5.1\r\n          Properties:\r\n            Text: =\"Edit \" & CountRows(colEditQueue) & \" Librar\" & If(CountRows(colEditQueue) = 1, \"y\", \"ies\")\r\n            X: =32\r\n            Y: =24\r\n            Width: =700\r\n            Height: =40\r\n            Size: =22\r\n            FontWeight: =FontWeight.Semibold\r\n            Color: =RGBA(30, 30, 45, 1)\r\n            Font: =Font.'Open Sans'\r\n      - lblSubtitle:\r\n          Control: Label@2.5.1\r\n          Properties:\r\n            Text: =\"Change whatever you need on each, then Save All applies every change in one go. Library URLs can't be changed here \u2014 do that directly in SharePoint if it's ever genuinely needed.\"\r\n            X: =32\r\n            Y: =62\r\n            Width: =900\r\n            Height: =40\r\n            Size: =12\r\n            Color: =RGBA(120, 120, 135, 1)\r\n            Font: =Font.'Open Sans'\r\n      - recAccessDeniedBg:\r\n          Control: Classic/Button@2.2.0\r\n          Properties:\r\n            Text: =\"\"\r\n            DisplayMode: =DisplayMode.View\r\n            Visible: =!varIsAdmin\r\n            Fill: =RGBA(250, 235, 235, 1)\r\n            HoverFill: =RGBA(250, 235, 235, 1)\r\n            PressedFill: =RGBA(250, 235, 235, 1)\r\n            BorderColor: =RGBA(210, 150, 150, 1)\r\n            BorderThickness: =1\r\n            RadiusTopLeft: =10\r\n            RadiusTopRight: =10\r\n            RadiusBottomLeft: =10\r\n            RadiusBottomRight: =10\r\n            X: =32\r\n            Y: =100\r\n            Width: =600\r\n            Height: =60\r\n      - lblAccessDenied:\r\n          Control: Label@2.5.1\r\n          Properties:\r\n            Text: =\"This screen is restricted. Your account (\" & User().Email & \") isn't on the admin list.\"\r\n            Visible: =!varIsAdmin\r\n            X: =52\r\n            Y: =100\r\n            Width: =560\r\n            Height: =60\r\n            Size: =13\r\n            Color: =RGBA(140, 40, 40, 1)\r\n            VerticalAlign: =VerticalAlign.Middle\r\n            Font: =Font.'Open Sans'\r\n      - btnBack:\r\n          Control: ModernButton@1.0.0\r\n          Properties:\r\n            Text: =\"Back Without Saving\"\r\n            Visible: =varIsAdmin\r\n            X: =32\r\n            Y: =116\r\n            Width: =190\r\n            Height: =40\r\n            OnSelect: |-\r\n              =Navigate(scrManageLibraries, ScreenTransition.UnCover)\r\n      - btnSaveAll:\r\n          Control: ModernButton@1.0.0\r\n          Properties:\r\n            Text: =\"Save All\"\r\n            Visible: =varIsAdmin\r\n            DisplayMode: =If(varEditSaving, DisplayMode.Disabled, DisplayMode.Edit)\r\n            X: =840\r\n            Y: =116\r\n            Width: =140\r\n            Height: =40\r\n            OnSelect: |-\r\n              =Set(varEditSaving, true);\r\n              ForAll(\r\n                  colEditQueue,\r\n                  With(\r\n                      {_url: LibraryUrl, _pretty: PrettyName, _team: TeamName, _subTeam: SubTeamName},\r\n                      Patch(\r\n                          'LibraryFilePlan',\r\n                          LookUp('LibraryFilePlan', LibraryUrl = _url),\r\n                          {\r\n                              PrettyName: _pretty,\r\n                              Team: LookUp(Choices('LibraryFilePlan'.Team), Value = _team),\r\n                              SubTeam: {Value: _subTeam}\r\n                          }\r\n                      )\r\n                  )\r\n              );\r\n              Set(varEditSaving, false);\r\n              Set(varEditSaveStatus, \"Saved \" & CountRows(colEditQueue) & \" librar\" & If(CountRows(colEditQueue) = 1, \"y\", \"ies\") & \".\");\r\n              ClearCollect(colFilePlan, 'LibraryFilePlan');\r\n              ClearCollect(colFilePlanFiltered, AddColumns(colFilePlan, TeamName, Team.Value, SubTeamName, Coalesce(SubTeam.Value, \"\"), EffectiveName, If(IsBlank(PrettyName) || PrettyName = \"\", Title, PrettyName)));\r\n              Clear(colSelectedLibraries)\r\n      - lblSaveStatus:\r\n          Control: Label@2.5.1\r\n          Properties:\r\n            Text: =If(varEditSaving, \"Saving...\", varEditSaveStatus)\r\n            Visible: =varIsAdmin && (varEditSaving || !IsBlank(varEditSaveStatus))\r\n            X: =32\r\n            Y: =164\r\n            Width: =900\r\n            Height: =24\r\n            Size: =12\r\n            FontWeight: =FontWeight.Semibold\r\n            Color: =RGBA(124, 77, 255, 1)\r\n            Font: =Font.'Open Sans'\r\n      - galEditCards:\r\n          Control: Gallery@2.15.0\r\n          Variant: Vertical\r\n          Properties:\r\n            Items: =colEditQueue\r\n            TemplateSize: =148\r\n            Height: =620\r\n            Width: =1000\r\n            X: =32\r\n            Y: =200\r\n            TemplatePadding: =8\r\n            LoadingSpinner: =LoadingSpinner.None\r\n            Visible: =varIsAdmin\r\n          Children:\r\n            - recCardBg:\r\n                Control: Classic/Button@2.2.0\r\n                Properties:\r\n                  Text: =\"\"\r\n                  DisplayMode: =DisplayMode.View\r\n                  Fill: =RGBA(255, 255, 255, 1)\r\n                  HoverFill: =Self.Fill\r\n                  PressedFill: =Self.Fill\r\n                  BorderColor: =RGBA(230, 233, 245, 1)\r\n                  BorderThickness: =1\r\n                  RadiusTopLeft: =10\r\n                  RadiusTopRight: =10\r\n                  RadiusBottomLeft: =10\r\n                  RadiusBottomRight: =10\r\n                  X: =0\r\n                  Y: =0\r\n                  Width: =1000\r\n                  Height: =140\r\n            - lblCardTitle:\r\n                Control: Label@2.5.1\r\n                Properties:\r\n                  Text: =ThisItem.EffectiveName\r\n                  X: =20\r\n                  Y: =12\r\n                  Width: =600\r\n                  Height: =28\r\n                  Size: =15\r\n                  FontWeight: =FontWeight.Semibold\r\n                  Color: =RGBA(30, 30, 45, 1)\r\n                  Font: =Font.'Open Sans'\r\n            - lblCardUrl:\r\n                Control: Label@2.5.1\r\n                Properties:\r\n                  Text: =ThisItem.LibraryUrl\r\n                  X: =20\r\n                  Y: =40\r\n                  Width: =600\r\n                  Height: =20\r\n                  Size: =10\r\n                  Color: =RGBA(150, 150, 165, 1)\r\n                  Font: =Font.'Open Sans'\r\n            - lblPrettyNameLbl:\r\n                Control: Label@2.5.1\r\n                Properties:\r\n                  Text: =\"Pretty Name\"\r\n                  X: =20\r\n                  Y: =66\r\n                  Width: =300\r\n                  Height: =18\r\n                  Size: =11\r\n                  Color: =RGBA(90, 90, 105, 1)\r\n                  Font: =Font.'Open Sans'\r\n            - txtCardPrettyName:\r\n                Control: ModernTextInput@1.1.0\r\n                Properties:\r\n                  Default: =ThisItem.PrettyName\r\n                  Type: =TextInputType.SingleLine\r\n                  X: =20\r\n                  Y: =86\r\n                  Width: =300\r\n                  Height: =40\r\n                  OnChange: |-\r\n                    =Patch(colEditQueue, ThisItem, {PrettyName: Self.Text})\r\n            - lblTeamLbl:\r\n                Control: Label@2.5.1\r\n                Properties:\r\n                  Text: =\"Team\"\r\n                  X: =340\r\n                  Y: =66\r\n                  Width: =260\r\n                  Height: =18\r\n                  Size: =11\r\n                  Color: =RGBA(90, 90, 105, 1)\r\n                  Font: =Font.'Open Sans'\r\n            - drpCardTeam:\r\n                Control: ModernDropdown@1.0.1\r\n                Properties:\r\n                  Items: =Choices('LibraryFilePlan'.Team)\r\n                  ItemDisplayText: =ThisItem.Value\r\n                  DefaultSelectedItems: =Filter(Choices('LibraryFilePlan'.Team), Value = ThisItem.TeamName)\r\n                  X: =340\r\n                  Y: =86\r\n                  Width: =260\r\n                  Height: =40\r\n                  OnChange: |-\r\n                    =Patch(colEditQueue, ThisItem, {TeamName: Self.Selected.Value})\r\n            - lblSubTeamLbl:\r\n                Control: Label@2.5.1\r\n                Properties:\r\n                  Text: =\"Sub-Team\"\r\n                  X: =620\r\n                  Y: =66\r\n                  Width: =260\r\n                  Height: =18\r\n                  Size: =11\r\n                  Color: =RGBA(90, 90, 105, 1)\r\n                  Font: =Font.'Open Sans'\r\n            - txtCardSubTeam:\r\n                Control: ModernTextInput@1.1.0\r\n                Properties:\r\n                  Default: =ThisItem.SubTeamName\r\n                  Placeholder: =\"Optional\"\r\n                  Type: =TextInputType.SingleLine\r\n                  X: =620\r\n                  Y: =86\r\n                  Width: =260\r\n                  Height: =40\r\n                  OnChange: |-\r\n                    =Patch(colEditQueue, ThisItem, {SubTeamName: Self.Text})\r\n            - btnRemoveFromCart:\r\n                Control: ModernButton@1.0.0\r\n                Properties:\r\n                  Text: =\"Remove\"\r\n                  X: =900\r\n                  Y: =12\r\n                  Width: =84\r\n                  Height: =32\r\n                  OnSelect: |-\r\n                    =RemoveIf(colEditQueue, LibraryUrl = ThisItem.LibraryUrl)\r\n";
+    const stamp = "v1.0  \u2014  Built 13 Aug 2026  10:23 BST";
+
+    function firstLines() {
+      return yaml.split(/\r?\n/).slice(0, 8).join('\n');
+    }
+
+    async function copyYAML() {
+      const status = document.getElementById('status');
+      if (!yaml.startsWith('Screens:\r\n  ') && !yaml.startsWith('Screens:\n  ')) {
+        status.textContent = 'Refusing to copy: YAML does not start with Screens:';
+        status.className = 'err';
+        return;
+      }
+      if (yaml.includes('\r\n    Control: Screen\r\n') || yaml.includes('\n    Control: Screen\n')) {
+        status.textContent = 'Refusing to copy: stale YAML still contains screen-level Control: Screen.';
+        status.className = 'err';
+        return;
+      }
+      try {
+        await navigator.clipboard.writeText(yaml);
+        status.textContent = '✓ Copied ' + stamp + '. First YAML line: ' + yaml.split(/\r?\n/)[0];
+        status.className = 'ok';
+        setTimeout(() => {
+          status.textContent = 'Click to copy again';
+          status.className = '';
+        }, 4000);
+      } catch (e) {
+        status.textContent = 'Clipboard blocked — select the text below and copy manually.';
+        status.className = 'err';
+        const pre = document.createElement('pre');
+        pre.style = 'font-size:9px;max-height:200px;overflow:auto;background:#1a1a2e;padding:8px;border-radius:6px;text-align:left;';
+        pre.textContent = yaml;
+        document.body.appendChild(pre);
+      }
+    }
+
+    document.getElementById('preview').textContent = 'Clipboard payload preview (' + stamp + ')\n' + firstLines();
+  </script>
+</body>
+</html>

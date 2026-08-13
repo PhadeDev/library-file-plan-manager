@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <title>PowerApps – scrManageLibraries – v1.0  —  Built 13 Aug 2026  10:23 BST</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #0f0f1a;
+      color: #e8e8f0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      gap: 20px;
+    }
+    h1 { font-size: 1.4rem; font-weight: 400; color: #a0a0c0; }
+    .name { font-size: 1.1rem; font-weight: 600; color: #c8b8ff; }
+    .version-badge {
+      display: inline-block;
+      background: #1a2a1a;
+      border: 1px solid #2a7d4e;
+      color: #4caf7d;
+      font-family: 'Cascadia Code', 'Consolas', monospace;
+      font-size: 0.95rem;
+      font-weight: 700;
+      padding: 6px 18px;
+      border-radius: 20px;
+      letter-spacing: 0.5px;
+    }
+    button {
+      padding: 14px 36px;
+      font-size: 1.1rem;
+      background: #7c4dff;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    button:hover { background: #6a3de8; }
+    button:active { background: #5830cc; }
+    #status {
+      font-size: 0.9rem;
+      color: #888;
+      min-height: 1.2em;
+      transition: color 0.2s;
+    }
+    #status.ok { color: #4caf7d; }
+    #status.err { color: #e85555; }
+    .info {
+      font-size: 0.8rem;
+      color: #555;
+      margin-top: 8px;
+      text-align: center;
+      line-height: 1.6;
+    }
+    .preview {
+      width: min(720px, calc(100vw - 48px));
+      background: #1a1a2e;
+      border: 1px solid #2a2a3a;
+      border-radius: 8px;
+      padding: 12px 14px;
+      color: #bfc7e8;
+      font-family: 'Cascadia Code', 'Consolas', monospace;
+      font-size: 0.78rem;
+      line-height: 1.45;
+      white-space: pre-wrap;
+      text-align: left;
+    }
+  </style>
+</head>
+<body>
+  <h1>PowerApps Screen</h1>
+  <div class="name">scrManageLibraries</div>
+  <div class="version-badge">v1.0  —  Built 13 Aug 2026  10:23 BST</div>
+  <button onclick="copyYAML()">Copy YAML to Clipboard</button>
+  <div id="status">Click to copy — PowerApps-ready (CRLF, UTF-8)</div>
+  <div class="info">
+    After copying, open PowerApps Studio &rarr; select a screen &rarr; Ctrl+V<br>
+    or use the paste button in the tree view.
+  </div>
+  <pre id="preview" class="preview"></pre>
+  <script>
+    const yaml = "Screens:\r\n  scrManageLibraries:\r\n    Properties:\r\n      Fill: =RGBA(245, 246, 250, 1)\r\n      OnVisible: |-\r\n        =ClearCollect(colManageFiltered, colFilePlanFiltered);\r\n        Clear(colSelectedLibraries);\r\n        Set(varConfirmOverrideVisible, false);\r\n        Set(varDeleteStatus, \"\")\r\n    Children:\r\n      - lblTitle:\r\n          Control: Label@2.5.1\r\n          Properties:\r\n            Text: '=\"Manage Libraries\"'\r\n            X: =32\r\n            Y: =24\r\n            Width: =600\r\n            Height: =40\r\n            Size: =22\r\n            FontWeight: =FontWeight.Semibold\r\n            Color: =RGBA(30, 30, 45, 1)\r\n            Font: =Font.'Open Sans'\r\n      - lblSubtitle:\r\n          Control: Label@2.5.1\r\n          Properties:\r\n            Text: =\"Tick libraries to bulk-delete or bulk-edit them. Delete checks each library for files first and skips any that aren't empty, with an override.\"\r\n            X: =32\r\n            Y: =62\r\n            Width: =900\r\n            Height: =40\r\n            Size: =12\r\n            Color: =RGBA(120, 120, 135, 1)\r\n            Font: =Font.'Open Sans'\r\n      - recAccessDeniedBg:\r\n          Control: Classic/Button@2.2.0\r\n          Properties:\r\n            Text: =\"\"\r\n            DisplayMode: =DisplayMode.View\r\n            Visible: =!varIsAdmin\r\n            Fill: =RGBA(250, 235, 235, 1)\r\n            HoverFill: =RGBA(250, 235, 235, 1)\r\n            PressedFill: =RGBA(250, 235, 235, 1)\r\n            BorderColor: =RGBA(210, 150, 150, 1)\r\n            BorderThickness: =1\r\n            RadiusTopLeft: =10\r\n            RadiusTopRight: =10\r\n            RadiusBottomLeft: =10\r\n            RadiusBottomRight: =10\r\n            X: =32\r\n            Y: =100\r\n            Width: =600\r\n            Height: =60\r\n      - lblAccessDenied:\r\n          Control: Label@2.5.1\r\n          Properties:\r\n            Text: =\"This screen is restricted. Your account (\" & User().Email & \") isn't on the admin list.\"\r\n            Visible: =!varIsAdmin\r\n            X: =52\r\n            Y: =100\r\n            Width: =560\r\n            Height: =60\r\n            Size: =13\r\n            Color: =RGBA(140, 40, 40, 1)\r\n            VerticalAlign: =VerticalAlign.Middle\r\n            Font: =Font.'Open Sans'\r\n      - txtSearch:\r\n          Control: ModernTextInput@1.1.0\r\n          Properties:\r\n            Placeholder: =\"Search by library name...\"\r\n            Type: =TextInputType.Search\r\n            Visible: =varIsAdmin\r\n            X: =32\r\n            Y: =116\r\n            Width: =400\r\n            Height: =44\r\n            OnChange: |-\r\n              =ClearCollect(\r\n                  colManageFiltered,\r\n                  If(\r\n                      IsBlank(Trim(txtSearch.Text)),\r\n                      colFilePlanFiltered,\r\n                      Filter(colFilePlanFiltered, txtSearch.Text in EffectiveName)\r\n                  )\r\n              )\r\n      - btnSelectAll:\r\n          Control: ModernButton@1.0.0\r\n          Properties:\r\n            Text: =\"Select All Visible\"\r\n            Visible: =varIsAdmin\r\n            X: =448\r\n            Y: =116\r\n            Width: =160\r\n            Height: =44\r\n            OnSelect: |-\r\n              =Collect(\r\n                  colSelectedLibraries,\r\n                  ShowColumns(Filter(colManageFiltered, !(LibraryUrl in colSelectedLibraries.LibraryUrl)), LibraryUrl)\r\n              )\r\n      - btnClearSelection:\r\n          Control: ModernButton@1.0.0\r\n          Properties:\r\n            Text: =\"Clear Selection\"\r\n            Visible: =varIsAdmin\r\n            X: =624\r\n            Y: =116\r\n            Width: =150\r\n            Height: =44\r\n            OnSelect: |-\r\n              =Clear(colSelectedLibraries)\r\n      - lblSelectedCount:\r\n          Control: Label@2.5.1\r\n          Properties:\r\n            Text: =CountRows(colSelectedLibraries) & \" selected\"\r\n            Visible: =varIsAdmin\r\n            X: =32\r\n            Y: =168\r\n            Width: =200\r\n            Height: =28\r\n            Size: =13\r\n            FontWeight: =FontWeight.Semibold\r\n            Color: =RGBA(124, 77, 255, 1)\r\n            VerticalAlign: =VerticalAlign.Middle\r\n            Font: =Font.'Open Sans'\r\n      - btnEditSelected:\r\n          Control: ModernButton@1.0.0\r\n          Properties:\r\n            Text: =\"Edit Selected\"\r\n            Visible: =varIsAdmin\r\n            DisplayMode: =If(CountRows(colSelectedLibraries) = 0, DisplayMode.Disabled, DisplayMode.Edit)\r\n            X: =624\r\n            Y: =164\r\n            Width: =150\r\n            Height: =40\r\n            OnSelect: |-\r\n              =ClearCollect(\r\n                  colEditQueue,\r\n                  Filter(colFilePlanFiltered, LibraryUrl in colSelectedLibraries.LibraryUrl)\r\n              );\r\n              Navigate(scrEditLibraries, ScreenTransition.Cover)\r\n      - btnDeleteSelected:\r\n          Control: ModernButton@1.0.0\r\n          Properties:\r\n            Text: =\"Delete Selected\"\r\n            Visible: =varIsAdmin\r\n            DisplayMode: =If(CountRows(colSelectedLibraries) = 0 || varDeleteBusy, DisplayMode.Disabled, DisplayMode.Edit)\r\n            BasePaletteColor: =RGBA(190, 50, 50, 1)\r\n            X: =790\r\n            Y: =164\r\n            Width: =150\r\n            Height: =40\r\n            OnSelect: |-\r\n              =Set(varDeleteBusy, true);\r\n              Set(varDeleteStatus, \"\");\r\n              Set(\r\n                  varDeleteResp,\r\n                  'Delete Libraries (App)'.Run(\r\n                      \"[\" & Concat(colSelectedLibraries, \"\"\"\" & LibraryUrl & \"\"\"\", \",\") & \"]\",\r\n                      \"Delete\",\r\n                      {Force: false}\r\n                  )\r\n              );\r\n              Set(varDeleteBusy, false);\r\n              ClearCollect(colDeleteSkipped, Filter(varDeleteResp.Results, Deleted = false));\r\n              Set(varDeletedCount, CountRows(Filter(varDeleteResp.Results, Deleted = true)));\r\n              If(\r\n                  CountRows(colDeleteSkipped) > 0,\r\n                  Set(varConfirmOverrideVisible, true),\r\n                  (\r\n                      Set(varDeleteStatus, \"Deleted \" & varDeletedCount & \" librar\" & If(varDeletedCount = 1, \"y\", \"ies\") & \".\");\r\n                      ClearCollect(colFilePlan, 'LibraryFilePlan');\r\n                      ClearCollect(colFilePlanFiltered, AddColumns(colFilePlan, TeamName, Team.Value, SubTeamName, Coalesce(SubTeam.Value, \"\"), EffectiveName, If(IsBlank(PrettyName) || PrettyName = \"\", Title, PrettyName)));\r\n                      Clear(colSelectedLibraries)\r\n                  )\r\n              )\r\n      - lblDeleteStatus:\r\n          Control: Label@2.5.1\r\n          Properties:\r\n            Text: =If(varDeleteBusy, \"Checking and deleting...\", varDeleteStatus)\r\n            Visible: =varIsAdmin && (varDeleteBusy || !IsBlank(varDeleteStatus))\r\n            X: =32\r\n            Y: =208\r\n            Width: =900\r\n            Height: =24\r\n            Size: =12\r\n            Color: =RGBA(120, 120, 135, 1)\r\n            Font: =Font.'Open Sans'\r\n      - galManage:\r\n          Control: Gallery@2.15.0\r\n          Variant: Vertical\r\n          Properties:\r\n            Items: =colManageFiltered\r\n            TemplateSize: =56\r\n            Height: =620\r\n            Width: =1000\r\n            X: =32\r\n            Y: =244\r\n            TemplatePadding: =4\r\n            LoadingSpinner: =LoadingSpinner.None\r\n            Visible: =varIsAdmin\r\n          Children:\r\n            - recRowBg:\r\n                Control: Classic/Button@2.2.0\r\n                Properties:\r\n                  Text: =\"\"\r\n                  DisplayMode: =DisplayMode.View\r\n                  Fill: =If(ThisItem.LibraryUrl in colSelectedLibraries.LibraryUrl, RGBA(238, 233, 255, 1), RGBA(255, 255, 255, 1))\r\n                  HoverFill: =Self.Fill\r\n                  PressedFill: =Self.Fill\r\n                  BorderColor: =RGBA(230, 233, 245, 1)\r\n                  BorderThickness: =1\r\n                  RadiusTopLeft: =8\r\n                  RadiusTopRight: =8\r\n                  RadiusBottomLeft: =8\r\n                  RadiusBottomRight: =8\r\n                  X: =0\r\n                  Y: =0\r\n                  Width: =1000\r\n                  Height: =52\r\n            - chkSelect:\r\n                Control: CheckBox@0.0.30\r\n                Properties:\r\n                  Label: =\"\"\r\n                  Checked: =ThisItem.LibraryUrl in colSelectedLibraries.LibraryUrl\r\n                  BasePaletteColor: =RGBA(124, 77, 255, 1)\r\n                  CheckboxSize: =22\r\n                  X: =16\r\n                  Y: =14\r\n                  Width: =38\r\n                  Height: =38\r\n                  OnCheck: |-\r\n                    =Collect(colSelectedLibraries, {LibraryUrl: ThisItem.LibraryUrl})\r\n                  OnUncheck: |-\r\n                    =RemoveIf(colSelectedLibraries, LibraryUrl = ThisItem.LibraryUrl)\r\n            - lblRowName:\r\n                Control: Label@2.5.1\r\n                Properties:\r\n                  Text: =ThisItem.EffectiveName\r\n                  X: =64\r\n                  Y: =0\r\n                  Width: =460\r\n                  Height: =52\r\n                  Size: =14\r\n                  FontWeight: =FontWeight.Semibold\r\n                  Color: =RGBA(30, 30, 45, 1)\r\n                  VerticalAlign: =VerticalAlign.Middle\r\n                  Font: =Font.'Open Sans'\r\n            - lblRowTeam:\r\n                Control: Label@2.5.1\r\n                Properties:\r\n                  Text: =ThisItem.TeamName & If(IsBlank(ThisItem.SubTeamName) || ThisItem.SubTeamName = \"\", \"\", \" / \" & ThisItem.SubTeamName)\r\n                  X: =536\r\n                  Y: =0\r\n                  Width: =320\r\n                  Height: =52\r\n                  Size: =12\r\n                  Color: =RGBA(120, 120, 135, 1)\r\n                  VerticalAlign: =VerticalAlign.Middle\r\n                  Font: =Font.'Open Sans'\r\n            - lblRowLimitedBadge:\r\n                Control: Label@2.5.1\r\n                Properties:\r\n                  Text: =\"LTD\"\r\n                  Visible: =ThisItem.IsLimited\r\n                  X: =870\r\n                  Y: =14\r\n                  Width: =56\r\n                  Height: =24\r\n                  Size: =10\r\n                  FontWeight: =FontWeight.Semibold\r\n                  Color: =RGBA(155, 90, 20, 1)\r\n                  Fill: =RGBA(250, 235, 210, 1)\r\n                  Align: =Align.Center\r\n                  VerticalAlign: =VerticalAlign.Middle\r\n                  Font: =Font.'Open Sans'\r\n      - recOverlayBg:\r\n          Control: Classic/Button@2.2.0\r\n          Properties:\r\n            Text: =\"\"\r\n            DisplayMode: =DisplayMode.View\r\n            Visible: =varConfirmOverrideVisible\r\n            Fill: =RGBA(0, 0, 0, 0.4)\r\n            HoverFill: =Self.Fill\r\n            PressedFill: =Self.Fill\r\n            BorderThickness: =0\r\n            X: =0\r\n            Y: =0\r\n            Width: =1200\r\n            Height: =900\r\n      - recConfirmBox:\r\n          Control: Classic/Button@2.2.0\r\n          Properties:\r\n            Text: =\"\"\r\n            DisplayMode: =DisplayMode.View\r\n            Visible: =varConfirmOverrideVisible\r\n            Fill: =RGBA(255, 255, 255, 1)\r\n            HoverFill: =Self.Fill\r\n            PressedFill: =Self.Fill\r\n            BorderColor: =RGBA(210, 150, 150, 1)\r\n            BorderThickness: =1\r\n            RadiusTopLeft: =12\r\n            RadiusTopRight: =12\r\n            RadiusBottomLeft: =12\r\n            RadiusBottomRight: =12\r\n            X: =260\r\n            Y: =220\r\n            Width: =480\r\n            Height: =360\r\n      - lblConfirmTitle:\r\n          Control: Label@2.5.1\r\n          Properties:\r\n            Text: =CountRows(colDeleteSkipped) & \" librar\" & If(CountRows(colDeleteSkipped) = 1, \"y contains\", \"ies contain\") & \" files\"\r\n            Visible: =varConfirmOverrideVisible\r\n            X: =284\r\n            Y: =244\r\n            Width: =432\r\n            Height: =32\r\n            Size: =16\r\n            FontWeight: =FontWeight.Semibold\r\n            Color: =RGBA(140, 40, 40, 1)\r\n            Font: =Font.'Open Sans'\r\n      - lblConfirmBody:\r\n          Control: Label@2.5.1\r\n          Properties:\r\n            Text: =Concat(colDeleteSkipped, Title & \" (\" & ItemCount & \" item\" & If(ItemCount = 1, \"\", \"s\") & \")\", Char(10))\r\n            Visible: =varConfirmOverrideVisible\r\n            X: =284\r\n            Y: =284\r\n            Width: =432\r\n            Height: =180\r\n            Size: =12\r\n            Color: =RGBA(60, 60, 80, 1)\r\n            Font: =Font.'Open Sans'\r\n      - lblConfirmNote:\r\n          Control: Label@2.5.1\r\n          Properties:\r\n            Text: =\"Everything else you selected has already been deleted. These were skipped because they aren't empty.\"\r\n            Visible: =varConfirmOverrideVisible\r\n            X: =284\r\n            Y: =472\r\n            Width: =432\r\n            Height: =40\r\n            Size: =11\r\n            Color: =RGBA(120, 120, 135, 1)\r\n            Font: =Font.'Open Sans'\r\n      - btnConfirmCancel:\r\n          Control: ModernButton@1.0.0\r\n          Properties:\r\n            Text: =\"Leave Them\"\r\n            Visible: =varConfirmOverrideVisible\r\n            X: =284\r\n            Y: =520\r\n            Width: =190\r\n            Height: =40\r\n            OnSelect: |-\r\n              =Set(varConfirmOverrideVisible, false);\r\n              Set(varDeleteStatus, \"Deleted \" & varDeletedCount & \" librar\" & If(varDeletedCount = 1, \"y\", \"ies\") & \". \" & CountRows(colDeleteSkipped) & \" left alone (not empty).\");\r\n              ClearCollect(colFilePlan, 'LibraryFilePlan');\r\n              ClearCollect(colFilePlanFiltered, AddColumns(colFilePlan, TeamName, Team.Value, SubTeamName, Coalesce(SubTeam.Value, \"\"), EffectiveName, If(IsBlank(PrettyName) || PrettyName = \"\", Title, PrettyName)));\r\n              Clear(colSelectedLibraries)\r\n      - btnConfirmDeleteAnyway:\r\n          Control: ModernButton@1.0.0\r\n          Properties:\r\n            Text: =\"Delete Anyway\"\r\n            Visible: =varConfirmOverrideVisible\r\n            BasePaletteColor: =RGBA(190, 50, 50, 1)\r\n            X: =526\r\n            Y: =520\r\n            Width: =190\r\n            Height: =40\r\n            OnSelect: |-\r\n              =Set(varDeleteBusy, true);\r\n              Set(\r\n                  varDeleteResp2,\r\n                  'Delete Libraries (App)'.Run(\r\n                      \"[\" & Concat(colDeleteSkipped, \"\"\"\" & LibraryUrl & \"\"\"\", \",\") & \"]\",\r\n                      \"Delete\",\r\n                      {Force: true}\r\n                  )\r\n              );\r\n              Set(varDeleteBusy, false);\r\n              Set(varConfirmOverrideVisible, false);\r\n              Set(varDeleteStatus, \"Deleted \" & (varDeletedCount + CountRows(colDeleteSkipped)) & \" libraries.\");\r\n              ClearCollect(colFilePlan, 'LibraryFilePlan');\r\n              ClearCollect(colFilePlanFiltered, AddColumns(colFilePlan, TeamName, Team.Value, SubTeamName, Coalesce(SubTeam.Value, \"\"), EffectiveName, If(IsBlank(PrettyName) || PrettyName = \"\", Title, PrettyName)));\r\n              Clear(colSelectedLibraries);\r\n              Clear(colDeleteSkipped)\r\n";
+    const stamp = "v1.0  \u2014  Built 13 Aug 2026  10:23 BST";
+
+    function firstLines() {
+      return yaml.split(/\r?\n/).slice(0, 8).join('\n');
+    }
+
+    async function copyYAML() {
+      const status = document.getElementById('status');
+      if (!yaml.startsWith('Screens:\r\n  ') && !yaml.startsWith('Screens:\n  ')) {
+        status.textContent = 'Refusing to copy: YAML does not start with Screens:';
+        status.className = 'err';
+        return;
+      }
+      if (yaml.includes('\r\n    Control: Screen\r\n') || yaml.includes('\n    Control: Screen\n')) {
+        status.textContent = 'Refusing to copy: stale YAML still contains screen-level Control: Screen.';
+        status.className = 'err';
+        return;
+      }
+      try {
+        await navigator.clipboard.writeText(yaml);
+        status.textContent = '✓ Copied ' + stamp + '. First YAML line: ' + yaml.split(/\r?\n/)[0];
+        status.className = 'ok';
+        setTimeout(() => {
+          status.textContent = 'Click to copy again';
+          status.className = '';
+        }, 4000);
+      } catch (e) {
+        status.textContent = 'Clipboard blocked — select the text below and copy manually.';
+        status.className = 'err';
+        const pre = document.createElement('pre');
+        pre.style = 'font-size:9px;max-height:200px;overflow:auto;background:#1a1a2e;padding:8px;border-radius:6px;text-align:left;';
+        pre.textContent = yaml;
+        document.body.appendChild(pre);
+      }
+    }
+
+    document.getElementById('preview').textContent = 'Clipboard payload preview (' + stamp + ')\n' + firstLines();
+  </script>
+</body>
+</html>

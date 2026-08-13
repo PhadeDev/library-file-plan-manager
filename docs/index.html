@@ -89,9 +89,9 @@
 <body>
 
 <a class="back" href="https://phaderon.github.io/PowerApps/">← Guide Library</a>
-<h1>Library &amp; File Plan Manager <span style="font-size:0.65em;font-weight:400;color:#666;vertical-align:middle;margin-left:8px;">v4.2</span></h1>
+<h1>Library &amp; File Plan Manager <span style="font-size:0.65em;font-weight:400;color:#666;vertical-align:middle;margin-left:8px;">v4.3</span></h1>
 <p class="subtitle">SharePoint permissions map (file-plan style, grouped by team) + an admin screen that creates document libraries correctly and registers them automatically, so nothing gets forgotten again.</p>
-<p class="buildstamp">Built 13 Aug 2026  09:26 BST</p>
+<p class="buildstamp">Built 13 Aug 2026  10:23 BST</p>
 
 <p class="snippet-stamp">Every purple line like this one, directly above a copy box, shows the page version and the exact local time that specific box's content was last changed. If a copy still errors after re-pasting, check this stamp against what's shown before assuming the fix didn't take — refresh the page fully first.</p>
 
@@ -103,7 +103,7 @@
     <li><strong><a class="checklist-link" href="#flow-fix-2">Flow field fix (missing libraries)</a></strong> — in <strong>Rebuild Permission Index</strong>, add <code>&amp;$top=5000</code> to <code>Get_Unique_Perm_Libraries</code>'s Uri so it stops capping out around 20-30 libraries. One line, no re-import.</li>
     <li><strong><a class="checklist-link" href="#flows">Import all four flows</a></strong> — Create Library (App), Backfill File Plan, Rebuild Permission Index, Manage Library Permissions. Test Create Library (App) manually before touching Power Apps.</li>
     <li><strong><a class="checklist-link" href="#build-app">Data connections + App.OnStart</a></strong> — add both SharePoint lists and the flow as data sources, paste App.OnStart in full.</li>
-    <li><strong><a class="checklist-link" href="#screens">All four screens</a></strong> — delete and paste fresh (screens have had controls added since first built, so a partial paste over the top won't apply cleanly).</li>
+    <li><strong><a class="checklist-link" href="#screens">All six screens</a></strong> — delete and paste fresh (screens have had controls added since first built, so a partial paste over the top won't apply cleanly).</li>
     <li><strong><a class="checklist-link" href="#navbar">Navigation bar</a></strong> — select each screen in the Tree view, paste that screen's snippet as an add-on (not a full replacement). Nudge existing top controls down afterward to clear the bar.</li>
   </ol>
 </div>
@@ -180,7 +180,8 @@
 <p><a class="dl" href="https://github.com/PhadeDev/library-file-plan-manager/raw/main/flows/BackfillFilePlan_flow_import.zip">BackfillFilePlan_flow_import.zip</a> — one-time scan of every existing library on the site, registers anything not already tracked.</p>
 <p><a class="dl" href="https://github.com/PhadeDev/library-file-plan-manager/raw/main/flows/RebuildPermissionIndex_flow_import.zip">RebuildPermissionIndex_flow_import.zip</a> — scans libraries with broken permissions and builds a fast, searchable index of their groups.</p>
 <p><a class="dl" href="https://github.com/PhadeDev/library-file-plan-manager/raw/main/flows/ManageLibraryPermissions_flow_import.zip">ManageLibraryPermissions_flow_import.zip</a> — lists, adds, or removes a group directly on a chosen library, called live from the Admin screen.</p>
-<p>All four: Power Automate → My flows → Import → Import Package (Legacy).</p>
+<p><a class="dl" href="https://github.com/PhadeDev/library-file-plan-manager/raw/main/flows/DeleteLibrariesApp_flow_import.zip">DeleteLibrariesApp_flow_import.zip</a> — checks each library for files, deletes the ones that are safe to delete (or all of them if overridden), and cleans up their <code>LibraryFilePlan</code>/<code>PermissionIndex</code> rows. Called live from the Manage Libraries screen.</p>
+<p>All five: Power Automate → My flows → Import → Import Package (Legacy).</p>
 
 <h3>What Create Library (App) does</h3>
 <p>Triggered from Power Apps (or manually, for testing). Per library:</p>
@@ -230,24 +231,30 @@
 </ul>
 <div class="note">Only manages native <strong>SharePoint groups</strong> (<code>SG_...</code>) directly on a library — matches how every Limited library in this system is actually set up: a <code>DG_...</code> AD group is never granted directly, it's always nested inside an <code>SG_...</code> wrapper group. If a genuinely new AD group needs adding, the other team creates it and its <code>SG_</code> wrapper first, same as always — this screen doesn't change that workflow, just removes the "someone has to do it by hand in native SharePoint" step.</div>
 
+<h3>Delete Libraries (App)</h3>
+<p>Called from the Manage Libraries screen with a JSON array of library URLs, an <code>Action</code> (currently always <code>"Delete"</code> from the app — <code>"Check"</code> is accepted too but every branch other than Delete just reports counts and changes nothing, so it's there if you ever want a preview-only call), and a <code>Force</code> flag.</p>
+<p>Per library: gets its live <code>ItemCount</code> via <code>_api/web/GetList(url)</code> (server-relative URL, not title — the one join key in this whole system guaranteed not to drift if someone renames a library directly in SharePoint). If <code>Force</code> is false and <code>ItemCount &gt; 0</code>, that library is skipped and reported back, untouched. Otherwise it deletes the document library itself, its <code>LibraryFilePlan</code> row, and every <code>PermissionIndex</code> row that pointed at it.</p>
+<div class="warning">There is no undo. A skipped (non-empty) library only gets deleted if the app is told to override — but once that override is sent, the flow deletes exactly what it's told to, no second check.</div>
+
 <h2 id="build-app">4. Building the Power App</h2>
 <p>Create a new blank canvas app in Power Apps Studio.</p>
 
 <h3>Data connections</h3>
 <p>Data panel → Add data → add these before pasting any screen YAML:</p>
-<p class="snippet-stamp">v3.2 — Updated 12 Aug 2026 09:53 BST</p>
+<p class="snippet-stamp">v4.3 — Updated 13 Aug 2026 10:23 BST</p>
 <div class="code-block">
   <button class="copy-btn" onclick="copyPre(this)">Copy</button>
   <pre>'LibraryFilePlan'          (SharePoint → your main site → LibraryFilePlan)
 'PermissionIndex'          (SharePoint → your main site → PermissionIndex)
 'Create Library (App)'     (search Power Automate flows in Add data)
 'Rebuild Permission Index' (search Power Automate flows in Add data)
-'Manage Library Permissions' (search Power Automate flows in Add data)</pre>
+'Manage Library Permissions' (search Power Automate flows in Add data)
+'Delete Libraries (App)'   (search Power Automate flows in Add data)</pre>
 </div>
 
 <h3>App.OnStart</h3>
 <p>Select the <strong>App</strong> object (top of the tree, not any screen) → <strong>OnStart</strong> property → paste this in full:</p>
-<p class="snippet-stamp">v3.7 — Updated 12 Aug 2026 11:46 BST</p>
+<p class="snippet-stamp">v3.8 — Updated 13 Aug 2026 10:23 BST</p>
 <div class="code-block">
   <button class="copy-btn" onclick="copyPre(this)">Copy</button>
   <pre>Set(varTenantHost, "https://modgovuk.sharepoint.com");
@@ -285,7 +292,17 @@ Collect(colPermFlatSource, AddColumns(colLibraryGroups, RowType, "Library", Sort
 Collect(colPermFlatSource, AddColumns(Filter(colPermissionFiltered, IsBlank(NestedUnderGroup) || NestedUnderGroup = ""), RowType, "Group", SortKey, LibraryUrl, RankInGroup, 1, GroupSortKey, GroupName, MemberCount, With({_gn: GroupName, _lu: LibraryUrl}, CountRows(Filter(colPermissionFiltered, NestedUnderGroup = _gn && LibraryUrl = _lu)))));
 Collect(colPermFlatSource, AddColumns(Filter(colPermissionFiltered, !IsBlank(NestedUnderGroup) && NestedUnderGroup <> ""), RowType, "Member", SortKey, LibraryUrl, RankInGroup, 2, GroupSortKey, NestedUnderGroup));
 ClearCollect(colExpandedLibs, Filter(Table({LibraryUrl: "seed"}), false));
-ClearCollect(colExpandedGroups, Filter(Table({GroupKey: "seed"}), false))</pre>
+ClearCollect(colExpandedGroups, Filter(Table({GroupKey: "seed"}), false));
+ClearCollect(colSelectedLibraries, Filter(Table({LibraryUrl: "seed"}), false));
+ClearCollect(colManageFiltered, colFilePlanFiltered);
+ClearCollect(colEditQueue, Filter(colFilePlanFiltered, false));
+ClearCollect(colDeleteSkipped, Filter(Table({LibraryUrl: "seed", Title: "seed", ItemCount: 0, Deleted: false}), false));
+Set(varDeleteBusy, false);
+Set(varDeleteStatus, "");
+Set(varConfirmOverrideVisible, false);
+Set(varDeletedCount, 0);
+Set(varEditSaving, false);
+Set(varEditSaveStatus, "")</pre>
 </div>
 <div class="note"><code>EffectiveName</code> is <code>PrettyName</code> when filled in, otherwise falls back to <code>Title</code> — self-heals every library missing a pretty name, no data migration needed. <code>varIsAdmin</code> gates the Admin screen — edit the email list directly in this line if who's authorized ever changes. <code>colPermissionIndex</code>/<code>colPermissionFiltered</code> feed the Group Search screen — make sure you've run <strong>Rebuild Permission Index</strong> at least once first, or this loads empty.</div>
 
@@ -316,18 +333,32 @@ ClearCollect(colExpandedGroups, Filter(Table({GroupKey: "seed"}), false))</pre>
     <div class="screen-desc">Restricted to admins. Pick a Limited library, see its live current permissions, add or remove a SharePoint group directly — no more doing this by hand in native SharePoint.</div>
     <div class="screen-cta">Copy YAML →</div>
   </a>
+  <a class="screen-card" href="screens/scrManageLibraries.html?v=1.0">
+    <div class="screen-number">Screen 5</div>
+    <div class="screen-name">scrManageLibraries</div>
+    <div class="screen-desc">Restricted to admins. Tick libraries, bulk-delete them (empty ones go straight away, non-empty ones get an override prompt) or send the selection to the edit cart.</div>
+    <div class="screen-cta">Copy YAML →</div>
+  </a>
+  <a class="screen-card" href="screens/scrEditLibraries.html?v=1.0">
+    <div class="screen-number">Screen 6</div>
+    <div class="screen-name">scrEditLibraries</div>
+    <div class="screen-desc">Restricted to admins. The edit cart — one stacked form per library sent over from Manage Libraries, change whatever's needed on each, Save All applies every change in one pass.</div>
+    <div class="screen-cta">Copy YAML →</div>
+  </a>
 </div>
 <div class="note"><strong>scrFilePlan</strong>: one single flat gallery with uniform row height (a Team/Library discriminator column decides what each row shows) rather than nested galleries. Search is instant and local, no spinner needed, and auto-expands every Team with a match.</div>
 <div class="note"><strong>scrAdminCreateLibrary</strong>: Sub-Team is free text rather than a suggestion dropdown (Modern Combobox has a known instability issue). The queue is entirely local until you hit Run. Run Queue disables and shows "Creating..." immediately on click. The <strong>Rebuild Permission Index</strong> button is fire-and-forget — it doesn't wait for the flow to finish or show progress, since the run duration is unpredictable and Power Apps' <code>.Run()</code> call has no true non-blocking mode (a slow response is caught and shown as a friendly message rather than a raw error, but the flow itself always runs to completion on its own regardless). The status line above it shows how long ago the index was last rebuilt, and flags how many Limited libraries have been created since — both computed live from data already loaded, no extra flow or list needed.</div>
 <div class="note"><strong>scrGroupSearch</strong>: only finds results for libraries that were in scope for the last <strong>Rebuild Permission Index</strong> run (broken/unique-permission libraries — see that flow's section above). A Normal library never shows up here since it just inherits site-wide permissions; that's expected, not a bug. Searching matches the group name itself, the library name, or (for a nested AD group) the SharePoint group it's nested inside. v3.0 rebuilt the results as a <strong>three-tier accordion</strong> — Library → directly-granted group (matches SharePoint's own native Permissions panel exactly) → nested member, each level collapsed by default. Still one flat gallery underneath, just a third <code>RowType</code> and a second expand-tracking collection (<code>colExpandedGroups</code>) rather than nested galleries. v3.1 fixed a real sort-order bug where member rows sorted after <em>every</em> group in a library instead of clustering under their own parent group — the sort's column priority had rank ahead of the group-clustering key instead of after it. v3.2 moved the counts directly into each chevron instead of a separate pill: <code>4 &gt;</code> on a Library row (how many groups directly granted), <code>(2) &gt;</code> on a Group row (how many nested members) — visible whether the row is expanded or collapsed.</div>
 <div class="note"><strong>scrManagePermissions</strong>: unlike Rebuild Permission Index's fire-and-forget button, Add/Remove here wait for the result and immediately re-load the list — a single group operation is fast enough that blocking is the better UX, and there's a real result (success or a specific error) worth showing rather than "check back later." Uses <code>ThisItem.Title</code> (the library's real current SharePoint Title) when calling the flow, not <code>PrettyName</code>/<code>EffectiveName</code> — SharePoint's <code>getbytitle()</code> needs the actual current Title, and <strong>Create Library (App)</strong> renames every library's Title to the pretty name as its last real step, so by the time a library shows up here, its Title already <em>is</em> the pretty name.</div>
+<div class="note"><strong>scrManageLibraries</strong>: the delete button always sends <code>Force: false</code> on the first call — any empty library in your selection is deleted immediately, any non-empty one is skipped and reported back in one round trip, no separate "check" step needed first. If anything was skipped, an override panel lists exactly which ones and their item counts; "Delete Anyway" re-sends only those, this time with <code>Force: true</code>. First-time use of two controls new to this app: <code>CheckBox@0.0.30</code> (per-row tick, read/write via its <code>Checked</code> property) and <code>ModernButton</code>'s <code>BasePaletteColor</code> for the red delete buttons — Modern buttons don't have a direct <code>Fill</code> property, unlike Classic buttons used everywhere else in this app; light seed colours get overridden by Fluent 2's contrast rules, but the dark red used here renders correctly.</div>
+<div class="note"><strong>scrEditLibraries</strong>: the "edit cart" pattern — ticking libraries on scrManageLibraries and hitting Edit Selected copies them into a local collection (<code>colEditQueue</code>), shown here as one stacked card per library, all editable at once. Every field edit patches straight into that local collection as you type (no flow, no round trip); "Save All" is the only point anything actually writes to SharePoint, via a single <code>ForAll</code> + <code>Patch</code>. Library URL is deliberately not editable here — it's the join key this entire app relies on to survive renames, so changing it needs to stay a rare, manual, direct-in-SharePoint action, not a button.</div>
 
 <div class="note">v3.2 redesigned the counts: instead of a separate pill, the count now sits directly next to each chevron — <code>4 &gt;</code> on a Library row (how many groups directly granted, collapsed), <code>(2) &gt;</code> on a Group row (how many nested members). If you manually added <code>lblGroupMemberCount</code> per an earlier version of this guide, delete it — it's superseded by this and no longer needed.</div>
 
 <h2 id="navbar">6. Navigation Bar</h2>
-<p>None of the four screens link to each other yet — add a small nav bar to each. This is an add-on, not a full screen replacement: select the screen in the Tree view first, then paste. Two of the four buttons (Create Library, Manage Permissions) are gated by <code>varIsAdmin</code>, same check used everywhere else in this app.</p>
+<p>Add this small nav bar to each of the six screens. This is an add-on, not a full screen replacement: select the screen in the Tree view first, then paste. Four of the five buttons (everything except File Plan and Group Search) are gated by <code>varIsAdmin</code>, same check used everywhere else in this app.</p>
 <div class="warning">The bar sits at <code>Y: 0</code>, <code>Height: 48</code> — it will visually overlap each screen's existing Title label (which starts around <code>Y: 24</code>). Nudge your screen's existing top controls down by about 50px afterward, or accept the overlap if it doesn't bother you — this wasn't worth reissuing every screen's full YAML just to shift everything down.</div>
-<p class="snippet-stamp">v4.1 — Updated 12 Aug 2026 12:23 BST</p>
+<p class="snippet-stamp">v4.3 — Updated 13 Aug 2026 10:23 BST</p>
 <h3>Paste onto scrFilePlan</h3>
 <div class="code-block">
   <button class="copy-btn" onclick="copyPre(this)">Copy</button>
@@ -388,69 +419,18 @@ ClearCollect(colExpandedGroups, Filter(Table({GroupKey: "seed"}), false))</pre>
             Width: =190
             Height: =36
             OnSelect: |-
-              =Navigate(scrManagePermissions)</pre>
-</div>
-<h3>Paste onto scrAdminCreateLibrary</h3>
-<div class="code-block">
-  <button class="copy-btn" onclick="copyPre(this)">Copy</button>
-  <pre>Screens:
-  scrAdminCreateLibrary:
-    Children:
-      - recNavBarBg:
-          Control: Classic/Button@2.2.0
-          Properties:
-            Text: =""
-            DisplayMode: =DisplayMode.View
-            Fill: =RGBA(30, 30, 45, 1)
-            HoverFill: =RGBA(30, 30, 45, 1)
-            PressedFill: =RGBA(30, 30, 45, 1)
-            BorderThickness: =0
-            X: =0
-            Y: =0
-            Width: =1000
-            Height: =48
-      - btnNavFilePlan:
+              =Navigate(scrManagePermissions)
+      - btnNavManageLibraries:
           Control: ModernButton@1.0.0
           Properties:
-            Text: ="File Plan"
-            X: =16
-            Y: =6
-            Width: =140
-            Height: =36
-            OnSelect: |-
-              =Navigate(scrFilePlan)
-      - btnNavGroupSearch:
-          Control: ModernButton@1.0.0
-          Properties:
-            Text: ="Group Search"
-            X: =164
-            Y: =6
-            Width: =160
-            Height: =36
-            OnSelect: |-
-              =Navigate(scrGroupSearch)
-      - btnNavCreateLibrary:
-          Control: ModernButton@1.0.0
-          Properties:
-            Text: ="Create Library"
+            Text: ="Manage Libraries"
             Visible: =varIsAdmin
-            X: =332
+            X: =698
             Y: =6
-            Width: =160
+            Width: =170
             Height: =36
             OnSelect: |-
-              =Navigate(scrAdminCreateLibrary)
-      - btnNavManagePermissions:
-          Control: ModernButton@1.0.0
-          Properties:
-            Text: ="Manage Permissions"
-            Visible: =varIsAdmin
-            X: =500
-            Y: =6
-            Width: =190
-            Height: =36
-            OnSelect: |-
-              =Navigate(scrManagePermissions)</pre>
+              =Navigate(scrManageLibraries)</pre>
 </div>
 <h3>Paste onto scrGroupSearch</h3>
 <div class="code-block">
@@ -512,7 +492,91 @@ ClearCollect(colExpandedGroups, Filter(Table({GroupKey: "seed"}), false))</pre>
             Width: =190
             Height: =36
             OnSelect: |-
-              =Navigate(scrManagePermissions)</pre>
+              =Navigate(scrManagePermissions)
+      - btnNavManageLibraries:
+          Control: ModernButton@1.0.0
+          Properties:
+            Text: ="Manage Libraries"
+            Visible: =varIsAdmin
+            X: =698
+            Y: =6
+            Width: =170
+            Height: =36
+            OnSelect: |-
+              =Navigate(scrManageLibraries)</pre>
+</div>
+<h3>Paste onto scrAdminCreateLibrary</h3>
+<div class="code-block">
+  <button class="copy-btn" onclick="copyPre(this)">Copy</button>
+  <pre>Screens:
+  scrAdminCreateLibrary:
+    Children:
+      - recNavBarBg:
+          Control: Classic/Button@2.2.0
+          Properties:
+            Text: =""
+            DisplayMode: =DisplayMode.View
+            Fill: =RGBA(30, 30, 45, 1)
+            HoverFill: =RGBA(30, 30, 45, 1)
+            PressedFill: =RGBA(30, 30, 45, 1)
+            BorderThickness: =0
+            X: =0
+            Y: =0
+            Width: =1000
+            Height: =48
+      - btnNavFilePlan:
+          Control: ModernButton@1.0.0
+          Properties:
+            Text: ="File Plan"
+            X: =16
+            Y: =6
+            Width: =140
+            Height: =36
+            OnSelect: |-
+              =Navigate(scrFilePlan)
+      - btnNavGroupSearch:
+          Control: ModernButton@1.0.0
+          Properties:
+            Text: ="Group Search"
+            X: =164
+            Y: =6
+            Width: =160
+            Height: =36
+            OnSelect: |-
+              =Navigate(scrGroupSearch)
+      - btnNavCreateLibrary:
+          Control: ModernButton@1.0.0
+          Properties:
+            Text: ="Create Library"
+            Visible: =varIsAdmin
+            X: =332
+            Y: =6
+            Width: =160
+            Height: =36
+            OnSelect: |-
+              =Navigate(scrAdminCreateLibrary)
+      - btnNavManagePermissions:
+          Control: ModernButton@1.0.0
+          Properties:
+            Text: ="Manage Permissions"
+            Visible: =varIsAdmin
+            X: =500
+            Y: =6
+            Width: =190
+            Height: =36
+            OnSelect: |-
+              =Navigate(scrManagePermissions)
+      - btnNavManageLibraries:
+          Control: ModernButton@1.0.0
+          Properties:
+            Text: ="Manage Libraries"
+            Visible: =varIsAdmin
+            X: =698
+            Y: =6
+            Width: =170
+            Height: =36
+            OnSelect: |-
+              =Navigate(scrManageLibraries)</pre>
 </div>
 <h3>Paste onto scrManagePermissions</h3>
 <div class="code-block">
@@ -574,9 +638,166 @@ ClearCollect(colExpandedGroups, Filter(Table({GroupKey: "seed"}), false))</pre>
             Width: =190
             Height: =36
             OnSelect: |-
-              =Navigate(scrManagePermissions)</pre>
+              =Navigate(scrManagePermissions)
+      - btnNavManageLibraries:
+          Control: ModernButton@1.0.0
+          Properties:
+            Text: ="Manage Libraries"
+            Visible: =varIsAdmin
+            X: =698
+            Y: =6
+            Width: =170
+            Height: =36
+            OnSelect: |-
+              =Navigate(scrManageLibraries)</pre>
 </div>
-<div class="note">Validated against the real Studio parser (Layer A of this Bible's own <code>payaml-validate</code> tool) — clean on all three layers, including zero unproven-property flags, since every control/property here has already been proven elsewhere in this app. One thing not independently confirmed: that Studio's paste, given a screen selected in the Tree view and a <code>Screens: scrName: Children: [...]</code> fragment on the clipboard, adds those as new children of that screen rather than something else. If it doesn't behave that way, fall back to inserting each control manually (Insert → the control type, then set the properties shown above) — same end result, just click-by-click instead of paste.</div>
+<h3>Paste onto scrManageLibraries</h3>
+<div class="code-block">
+  <button class="copy-btn" onclick="copyPre(this)">Copy</button>
+  <pre>Screens:
+  scrManageLibraries:
+    Children:
+      - recNavBarBg:
+          Control: Classic/Button@2.2.0
+          Properties:
+            Text: =""
+            DisplayMode: =DisplayMode.View
+            Fill: =RGBA(30, 30, 45, 1)
+            HoverFill: =RGBA(30, 30, 45, 1)
+            PressedFill: =RGBA(30, 30, 45, 1)
+            BorderThickness: =0
+            X: =0
+            Y: =0
+            Width: =1000
+            Height: =48
+      - btnNavFilePlan:
+          Control: ModernButton@1.0.0
+          Properties:
+            Text: ="File Plan"
+            X: =16
+            Y: =6
+            Width: =140
+            Height: =36
+            OnSelect: |-
+              =Navigate(scrFilePlan)
+      - btnNavGroupSearch:
+          Control: ModernButton@1.0.0
+          Properties:
+            Text: ="Group Search"
+            X: =164
+            Y: =6
+            Width: =160
+            Height: =36
+            OnSelect: |-
+              =Navigate(scrGroupSearch)
+      - btnNavCreateLibrary:
+          Control: ModernButton@1.0.0
+          Properties:
+            Text: ="Create Library"
+            Visible: =varIsAdmin
+            X: =332
+            Y: =6
+            Width: =160
+            Height: =36
+            OnSelect: |-
+              =Navigate(scrAdminCreateLibrary)
+      - btnNavManagePermissions:
+          Control: ModernButton@1.0.0
+          Properties:
+            Text: ="Manage Permissions"
+            Visible: =varIsAdmin
+            X: =500
+            Y: =6
+            Width: =190
+            Height: =36
+            OnSelect: |-
+              =Navigate(scrManagePermissions)
+      - btnNavManageLibraries:
+          Control: ModernButton@1.0.0
+          Properties:
+            Text: ="Manage Libraries"
+            Visible: =varIsAdmin
+            X: =698
+            Y: =6
+            Width: =170
+            Height: =36
+            OnSelect: |-
+              =Navigate(scrManageLibraries)</pre>
+</div>
+<h3>Paste onto scrEditLibraries</h3>
+<div class="code-block">
+  <button class="copy-btn" onclick="copyPre(this)">Copy</button>
+  <pre>Screens:
+  scrEditLibraries:
+    Children:
+      - recNavBarBg:
+          Control: Classic/Button@2.2.0
+          Properties:
+            Text: =""
+            DisplayMode: =DisplayMode.View
+            Fill: =RGBA(30, 30, 45, 1)
+            HoverFill: =RGBA(30, 30, 45, 1)
+            PressedFill: =RGBA(30, 30, 45, 1)
+            BorderThickness: =0
+            X: =0
+            Y: =0
+            Width: =1000
+            Height: =48
+      - btnNavFilePlan:
+          Control: ModernButton@1.0.0
+          Properties:
+            Text: ="File Plan"
+            X: =16
+            Y: =6
+            Width: =140
+            Height: =36
+            OnSelect: |-
+              =Navigate(scrFilePlan)
+      - btnNavGroupSearch:
+          Control: ModernButton@1.0.0
+          Properties:
+            Text: ="Group Search"
+            X: =164
+            Y: =6
+            Width: =160
+            Height: =36
+            OnSelect: |-
+              =Navigate(scrGroupSearch)
+      - btnNavCreateLibrary:
+          Control: ModernButton@1.0.0
+          Properties:
+            Text: ="Create Library"
+            Visible: =varIsAdmin
+            X: =332
+            Y: =6
+            Width: =160
+            Height: =36
+            OnSelect: |-
+              =Navigate(scrAdminCreateLibrary)
+      - btnNavManagePermissions:
+          Control: ModernButton@1.0.0
+          Properties:
+            Text: ="Manage Permissions"
+            Visible: =varIsAdmin
+            X: =500
+            Y: =6
+            Width: =190
+            Height: =36
+            OnSelect: |-
+              =Navigate(scrManagePermissions)
+      - btnNavManageLibraries:
+          Control: ModernButton@1.0.0
+          Properties:
+            Text: ="Manage Libraries"
+            Visible: =varIsAdmin
+            X: =698
+            Y: =6
+            Width: =170
+            Height: =36
+            OnSelect: |-
+              =Navigate(scrManageLibraries)</pre>
+</div>
+<div class="note">Validated against the real Studio parser (Layer A of this Bible's own <code>payaml-validate</code> tool) — clean on all six, including zero unproven-property flags, since every control/property here has already been proven elsewhere in this app. One thing not independently confirmed: that Studio's paste, given a screen selected in the Tree view and a <code>Screens: scrName: Children: [...]</code> fragment on the clipboard, adds those as new children of that screen rather than something else. If it doesn't behave that way, fall back to inserting each control manually (Insert → the control type, then set the properties shown above) — same end result, just click-by-click instead of paste.</div>
 
 <h2>Issues</h2>
 <p>Found a problem? <a href="https://github.com/PhadeDev/library-file-plan-manager/issues" style="color:#7c4dff">Report it here</a>.</p>
