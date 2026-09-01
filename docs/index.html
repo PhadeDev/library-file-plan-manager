@@ -5,155 +5,210 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Library &amp; File Plan Manager — PowerApps</title>
   <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      font-family: 'Segoe UI', system-ui, sans-serif;
-      background: #0f0f1a;
-      color: #e8e8f0;
-      max-width: 900px;
-      margin: 0 auto;
-      padding: 40px 24px 80px;
+    :root {
+      --bg: #f6f8fb;
+      --paper: #ffffff;
+      --ink: #172033;
+      --muted: #637084;
+      --line: #d9e1ec;
+      --primary: #004e42;
+      --primary-soft: #e8f4ef;
+      --green: #1f7a4d;
+      --amber: #a86500;
+      --red: #a33a3a;
+      --code-bg: #111827;
+      --code-ink: #f8fafc;
+      --callout-warn-bg: #fff7e8;
+      --callout-ok-bg: #edf8f2;
+      --callout-danger-bg: #fdeeee;
+      --table-head-bg: #eef3f8;
+      --table-head-ink: #26364d;
+      --code-pill-bg: #eef3f8;
+      --code-pill-border: #dce5f0;
+      --link-card-bg: #fbfdff;
+      --radius: 10px;
+      --shadow: 0 12px 32px rgba(20, 34, 56, .10);
+      --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+      --sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     }
-    h1 { font-size: 1.8rem; font-weight: 600; color: #c8b8ff; margin-bottom: 8px; }
-    .version-tag { font-size: 0.7em; font-weight: 400; color: #4caf7d; vertical-align: middle; margin-left: 10px;
-      border: 1px solid #2a7d4e; background: #1a2a1a; padding: 2px 10px; border-radius: 20px; font-family: 'Cascadia Code','Consolas',monospace; }
-    .subtitle { color: #888; font-size: 0.95rem; margin-bottom: 8px; }
-    .buildstamp { font-size: 0.75rem; color: #666; font-family: 'Cascadia Code','Consolas',monospace; margin-bottom: 40px; }
-    h2 { font-size: 1.2rem; color: #a0c0e0; margin: 40px 0 16px; border-bottom: 1px solid #2a2a3a; padding-bottom: 8px; }
-    h3 { font-size: 1rem; color: #e8e8f0; margin: 24px 0 8px; }
-    p { color: #aaa; line-height: 1.6; margin-bottom: 12px; }
-    table { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-bottom: 24px; }
-    th { background: #1a1a2e; color: #c8b8ff; text-align: left; padding: 8px 12px; border: 1px solid #2a2a3a; }
-    td { padding: 8px 12px; border: 1px solid #2a2a3a; color: #d0d0e0; vertical-align: top; }
-    tr:nth-child(even) td { background: #131320; }
-    code { font-family: 'Cascadia Code','Consolas',monospace; background: #1a1a2e; padding: 1px 6px; border-radius: 4px; color: #c8d8f0; }
-    .code-block { position: relative; margin: 12px 0 24px; }
-    .snippet-stamp { font-size: 0.72rem; color: #7c4dff; font-family: 'Cascadia Code','Consolas',monospace; margin: 16px 0 4px; }
-    pre {
-      background: #1a1a2e;
-      color: #c8d8f0;
-      padding: 16px;
-      border-radius: 8px;
-      font-family: 'Cascadia Code', 'Consolas', monospace;
-      font-size: 0.82rem;
-      line-height: 1.55;
-      overflow-x: auto;
-      white-space: pre-wrap;
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) {
+        --bg: #0f1520; --paper: #161d2b; --ink: #e8ecf3; --muted: #93a1b8; --line: #2a3347;
+        --primary: #4fd1a5; --primary-soft: rgba(79,209,165,.14); --green: #52c98a; --amber: #d9a441; --red: #e2726f;
+        --callout-warn-bg: rgba(217,164,65,.14); --callout-ok-bg: rgba(82,201,138,.14); --callout-danger-bg: rgba(226,114,111,.14);
+        --table-head-bg: #1c2434; --table-head-ink: #cdd6e6;
+        --code-pill-bg: #1c2434; --code-pill-border: #34405a;
+        --link-card-bg: #1c2434;
+      }
     }
-    .copy-btn {
-      position: absolute;
-      top: 8px;
-      right: 8px;
-      padding: 4px 12px;
-      background: #7c4dff;
-      color: white;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 0.78rem;
-      transition: background 0.15s;
+    :root[data-theme="dark"] {
+      --bg: #0f1520; --paper: #161d2b; --ink: #e8ecf3; --muted: #93a1b8; --line: #2a3347;
+      --primary: #4fd1a5; --primary-soft: rgba(79,209,165,.14); --green: #52c98a; --amber: #d9a441; --red: #e2726f;
+      --callout-warn-bg: rgba(217,164,65,.14); --callout-ok-bg: rgba(82,201,138,.14); --callout-danger-bg: rgba(226,114,111,.14);
+      --table-head-bg: #1c2434; --table-head-ink: #cdd6e6;
+      --code-pill-bg: #1c2434; --code-pill-border: #34405a;
+      --link-card-bg: #1c2434;
     }
-    .copy-btn:hover { background: #6a3de8; }
-    .copy-btn.ok { background: #2a7d4e; }
-    .screen-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; margin-top: 16px; }
-    .screen-card {
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      background: #1a1a2e;
-      border: 1px solid #2a2a3a;
-      border-radius: 12px;
-      padding: 20px;
-      text-decoration: none;
-      color: inherit;
-      transition: border-color 0.15s, background 0.15s;
+    #theme-toggle {
+      position: fixed; top: 14px; right: 14px; z-index: 50;
+      width: 40px; height: 40px; border-radius: 50%;
+      border: 1px solid var(--line); background: var(--paper); color: var(--ink);
+      font-size: 1.1rem; cursor: pointer; box-shadow: var(--shadow);
     }
-    .screen-card:hover { border-color: #7c4dff; background: #1e1e35; }
-    .screen-number { font-size: 0.75rem; color: #666; margin-bottom: 8px; }
-    .screen-name { font-size: 1rem; font-weight: 600; color: #c8b8ff; margin-bottom: 6px; }
-    .screen-desc { font-size: 0.82rem; color: #888; line-height: 1.4; }
-    .screen-cta { margin-top: 16px; font-size: 0.82rem; color: #7c4dff; }
-    .note { background: #1a2a1a; border-left: 3px solid #2a7d4e; padding: 12px 16px; border-radius: 4px; font-size: 0.85rem; color: #aaa; margin: 16px 0; }
-    .warning { background: #2a1a1a; border-left: 3px solid #7d2a2a; padding: 12px 16px; border-radius: 4px; font-size: 0.85rem; color: #aaa; margin: 16px 0; }
-    .pending { background: #2a2410; border-left: 3px solid #a68a2a; padding: 12px 16px; border-radius: 4px; font-size: 0.85rem; color: #d0c090; margin: 16px 0; }
-    ol, ul { padding-left: 24px; color: #aaa; font-size: 0.9rem; line-height: 2; }
-    a.back { font-size: 0.82rem; color: #666; text-decoration: none; display: inline-block; margin-bottom: 32px; }
-    a.back:hover { color: #999; }
-    a.dl { color: #7c4dff; }
-    a.checklist-link { color: #7c4dff; text-decoration: none; }
-    a.checklist-link:hover { text-decoration: underline; }
-    .checklist { background: #16213a; border: 1px solid #2a3a5a; border-radius: 8px; padding: 20px 24px; margin: 16px 0 32px; }
-    .checklist li { margin-bottom: 10px; }
-    .checklist li:last-child { margin-bottom: 0; }
-    .pill { display: inline-block; background: #1a1a2e; border: 1px solid #2a2a3a; color: #a0c0e0; font-size: 0.72rem; padding: 3px 10px; border-radius: 20px; margin-right: 6px; }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--sans); line-height: 1.6; }
+    a { color: var(--primary); }
+    .shell { display: grid; grid-template-columns: 280px minmax(0, 1fr); gap: 24px; max-width: 1440px; margin: 0 auto; padding: 24px; }
+    aside {
+      position: sticky; top: 18px; align-self: start; max-height: calc(100vh - 36px); overflow: auto;
+      background: var(--paper); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); padding: 18px;
+    }
+    aside h2 { margin: 0 0 4px; font-size: 1.05rem; }
+    aside p { margin: 0 0 14px; color: var(--muted); font-size: .9rem; }
+    nav { display: grid; gap: 4px; }
+    nav a { text-decoration: none; color: var(--muted); border-radius: 8px; padding: 7px 9px; font-size: .9rem; }
+    nav a:hover { background: var(--primary-soft); color: var(--primary); }
+    main { min-width: 0; background: var(--paper); border: 1px solid var(--line); border-radius: 16px; box-shadow: var(--shadow); padding: 30px; }
+    .topline { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 18px; }
+    .pill {
+      display: inline-flex; align-items: center; min-height: 28px; padding: 4px 10px; border-radius: 999px;
+      background: var(--primary-soft); color: var(--primary); font-size: .82rem; font-weight: 700;
+    }
+    h1 { margin: 0 0 8px; font-size: clamp(2rem, 4vw, 3rem); line-height: 1.05; }
+    .lead { margin: 0 0 24px; max-width: 860px; color: var(--muted); font-size: 1.05rem; }
+    section { border-top: 1px solid var(--line); margin-top: 30px; padding-top: 26px; }
+    section:first-of-type { border-top: 0; margin-top: 0; padding-top: 0; }
+    h2 { margin: 0 0 12px; font-size: 1.5rem; }
+    h3 { margin: 24px 0 10px; font-size: 1.1rem; }
+    .callout { border-left: 4px solid var(--primary); background: var(--primary-soft); border-radius: 8px; padding: 14px 16px; margin: 16px 0; }
+    .callout.warn { border-left-color: var(--amber); background: var(--callout-warn-bg); }
+    .callout.ok { border-left-color: var(--green); background: var(--callout-ok-bg); }
+    .callout.danger { border-left-color: var(--red); background: var(--callout-danger-bg); }
+    .callout ol, .callout ul { margin: 0; }
+    table { width: 100%; border-collapse: collapse; margin: 14px 0 22px; overflow: hidden; border: 1px solid var(--line); border-radius: 8px; }
+    th, td { border-bottom: 1px solid var(--line); padding: 10px 12px; text-align: left; vertical-align: top; font-size: .88rem; }
+    th { background: var(--table-head-bg); color: var(--table-head-ink); font-size: .78rem; text-transform: uppercase; letter-spacing: .04em; }
+    tr:last-child td { border-bottom: 0; }
+    code { font-family: var(--mono); background: var(--code-pill-bg); border: 1px solid var(--code-pill-border); border-radius: 6px; padding: 1px 5px; font-size: .9em; }
+    .code-card { background: var(--code-bg); color: var(--code-ink); border-radius: 10px; overflow: hidden; margin: 14px 0 22px; }
+    .code-toolbar { display: flex; justify-content: space-between; gap: 10px; align-items: center; padding: 10px 12px; border-bottom: 1px solid rgba(255,255,255,.12); color: #cbd5e1; font-size: .85rem; }
+    .code-toolbar button { border: 0; border-radius: 8px; padding: 7px 10px; font-weight: 700; background: var(--primary-soft); color: var(--primary); cursor: pointer; font-family: var(--sans); font-size: .82rem; }
+    .code-toolbar button.ok { background: var(--callout-ok-bg); color: var(--green); }
+    pre { margin: 0; padding: 16px; overflow: auto; white-space: pre; font-family: var(--mono); font-size: .88rem; line-height: 1.55; }
+    ul, ol { padding-left: 1.3rem; }
+    li { margin: 6px 0; }
+    .links { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; margin-top: 14px; }
+    .link-card { display: flex; flex-direction: column; justify-content: space-between; gap: 10px; border: 1px solid var(--line); border-radius: 8px; padding: 16px; background: var(--link-card-bg); text-decoration: none; }
+    .link-card strong { color: var(--ink); display: block; font-size: 1rem; }
+    .link-card p { color: var(--muted); font-size: .85rem; margin: 4px 0 0; line-height: 1.4; }
+    .link-card .open { color: var(--primary); font-size: .85rem; font-weight: 700; }
+    @media (max-width: 860px) {
+      .shell { display: block; padding: 12px; }
+      aside { position: static; margin-bottom: 14px; }
+      main { padding: 18px; }
+      table { display: block; overflow-x: auto; }
+    }
   </style>
 </head>
 <body>
+  <button id="theme-toggle" type="button" aria-label="Toggle dark mode" title="Toggle dark mode">&#127769;</button>
+  <script>
+  (function(){
+    var key='pa-theme', root=document.documentElement, btn=document.getElementById('theme-toggle');
+    function apply(t){root.setAttribute('data-theme',t);btn.textContent=t==='dark'?'☀️':'🌙';}
+    apply(localStorage.getItem(key)||(matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light'));
+    btn.addEventListener('click',function(){
+      var next=root.getAttribute('data-theme')==='dark'?'light':'dark';
+      apply(next); localStorage.setItem(key,next);
+    });
+  })();
+  </script>
+  <div class="shell">
+    <aside>
+      <h2>Library &amp; File Plan Manager</h2>
+      <p>v4.3 build guide. Follow this end-to-end to set up the SharePoint lists, flows, and screens.</p>
+      <nav>
+        <a href="https://powerapps.pages.dev/">&larr; Guide library</a>
+        <a href="#lists">1. SharePoint Lists</a>
+        <a href="#flow-fix">2. Flow Field Fix</a>
+        <a href="#flow-fix-2">2b. Missing Libraries Fix</a>
+        <a href="#flows">3. Download &amp; Import Flows</a>
+        <a href="#build-app">4. Building the Power App</a>
+        <a href="#screens">5. Screens</a>
+        <a href="#navbar">6. Navigation Bar</a>
+        <a href="#issues">Issues</a>
+      </nav>
+    </aside>
 
-<a class="back" href="https://powerapps.pages.dev/">← Guide Library</a>
-<h1>Library &amp; File Plan Manager <span class="version-tag">v4.3</span></h1>
-<p class="subtitle">SharePoint permissions map (file-plan style, grouped by team) + an admin screen that creates document libraries correctly and registers them automatically, so nothing gets forgotten again.</p>
-<p class="buildstamp">Built 13 Aug 2026  10:23 BST</p>
+    <main>
+      <div class="topline">
+        <span class="pill">v4.3</span>
+        <span class="pill">Built 13 Aug 2026</span>
+        <span class="pill">Complete build &mdash; all 6 screens, 5 flows</span>
+      </div>
+      <h1>Library &amp; File Plan Manager</h1>
+      <p class="lead">SharePoint permissions map (file-plan style, grouped by team) + an admin screen that creates document libraries correctly and registers them automatically, so nothing gets forgotten again.</p>
 
-<p class="snippet-stamp">Every purple line like this one, directly above a copy box, shows the page version and the exact local time that specific box's content was last changed. If a copy still errors after re-pasting, check this stamp against what's shown before assuming the fix didn't take — refresh the page fully first.</p>
+      <div class="callout">
+        <strong>Action Checklist &mdash; do these in order:</strong>
+        <ol>
+          <li><a href="#lists">SharePoint lists</a> &mdash; create <code>LibraryFilePlan</code> and <code>PermissionIndex</code> via the CSV templates (fastest &mdash; creates every column for you), or manually per the schema tables. Column is <code>PrettyName</code>, not <code>DisplayName</code> &mdash; SharePoint silently drops writes to that name on this list.</li>
+          <li><a href="#flow-fix">Flow field fix</a> &mdash; in <strong>Create Library (App)</strong>, edit <code>Create_FilePlan_Row</code>'s Body so it writes <code>PrettyName</code> instead of <code>DisplayName</code>. One line, no re-import.</li>
+          <li><a href="#flow-fix-2">Flow field fix (missing libraries)</a> &mdash; in <strong>Rebuild Permission Index</strong>, add <code>&amp;$top=5000</code> to <code>Get_Unique_Perm_Libraries</code>'s Uri so it stops capping out around 20-30 libraries. One line, no re-import.</li>
+          <li><a href="#flows">Import all four flows</a> &mdash; Create Library (App), Backfill File Plan, Rebuild Permission Index, Manage Library Permissions. Test Create Library (App) manually before touching Power Apps.</li>
+          <li><a href="#build-app">Data connections + App.OnStart</a> &mdash; add both SharePoint lists and the flow as data sources, paste App.OnStart in full.</li>
+          <li><a href="#screens">All six screens</a> &mdash; delete and paste fresh (screens have had controls added since first built, so a partial paste over the top won't apply cleanly).</li>
+          <li><a href="#navbar">Navigation bar</a> &mdash; select each screen in the Tree view, paste that screen's snippet as an add-on (not a full replacement). Nudge existing top controls down afterward to clear the bar.</li>
+        </ol>
+      </div>
+      <div class="callout warn">Current state: all six planned screens are built. File Plan and Admin: Create Library are tested and working. Group Search and Manage Permissions are newer &mdash; not yet as heavily tested. This was the last screen in the original plan.</div>
 
-<h2>Action Checklist — Do These In Order</h2>
-<div class="checklist">
-  <ol>
-    <li><strong><a class="checklist-link" href="#lists">SharePoint lists</a></strong> — create <code>LibraryFilePlan</code> and <code>PermissionIndex</code> via the CSV templates (fastest — creates every column for you), or manually per the schema tables. Column is <code>PrettyName</code>, not <code>DisplayName</code> — SharePoint silently drops writes to that name on this list.</li>
-    <li><strong><a class="checklist-link" href="#flow-fix">Flow field fix</a></strong> — in <strong>Create Library (App)</strong>, edit <code>Create_FilePlan_Row</code>'s Body so it writes <code>PrettyName</code> instead of <code>DisplayName</code>. One line, no re-import.</li>
-    <li><strong><a class="checklist-link" href="#flow-fix-2">Flow field fix (missing libraries)</a></strong> — in <strong>Rebuild Permission Index</strong>, add <code>&amp;$top=5000</code> to <code>Get_Unique_Perm_Libraries</code>'s Uri so it stops capping out around 20-30 libraries. One line, no re-import.</li>
-    <li><strong><a class="checklist-link" href="#flows">Import all four flows</a></strong> — Create Library (App), Backfill File Plan, Rebuild Permission Index, Manage Library Permissions. Test Create Library (App) manually before touching Power Apps.</li>
-    <li><strong><a class="checklist-link" href="#build-app">Data connections + App.OnStart</a></strong> — add both SharePoint lists and the flow as data sources, paste App.OnStart in full.</li>
-    <li><strong><a class="checklist-link" href="#screens">All six screens</a></strong> — delete and paste fresh (screens have had controls added since first built, so a partial paste over the top won't apply cleanly).</li>
-    <li><strong><a class="checklist-link" href="#navbar">Navigation bar</a></strong> — select each screen in the Tree view, paste that screen's snippet as an add-on (not a full replacement). Nudge existing top controls down afterward to clear the bar.</li>
-  </ol>
-</div>
-<div class="pending">Current state: all four planned screens are built. File Plan and Admin: Create Library are tested and working. Group Search and Manage Permissions are new — not yet tested. This was the last screen in the original plan.</div>
+      <section id="lists">
+        <h2>1. SharePoint List: <code>LibraryFilePlan</code></h2>
+        <p>Location: your main site &mdash; <code>https://modgovuk.sharepoint.com/teams/1598/</code>.</p>
+        <p><a href="lists/LibraryFilePlan_list_template.csv">LibraryFilePlan_list_template.csv</a> &mdash; download this, then Site Contents &rarr; New &rarr; List &rarr; <strong>From CSV</strong> (or Excel) &rarr; upload it. SharePoint reads the embedded schema and creates every column with the correct type and Team's choices already filled in &mdash; no manual column-by-column setup. Delete the single placeholder row afterward, and rename the list to exactly <code>LibraryFilePlan</code> if it doesn't pick that up from the filename.</p>
+        <table>
+          <thead><tr><th>Column name (exact, no spaces)</th><th>Type</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr><td>Title</td><td>Single line of text</td><td>Built-in &mdash; the flow writes the library's pretty display name into it automatically</td></tr>
+            <tr><td>LibraryUrl</td><td>Single line of text</td><td>The real join key &mdash; a library's server-relative URL, survives display-name renames</td></tr>
+            <tr><td>Team</td><td>Choice</td><td>Top-level file-plan grouping. Fixed set &mdash; type in your known team names as the choices, no "Allow fill-in values"</td></tr>
+            <tr><td>SubTeam</td><td>Choice</td><td>Optional nested grouping. Tick <strong>"Allow fill-in values"</strong> &mdash; same pattern as the CAT column, so new sub-teams can be added on the fly</td></tr>
+            <tr><td>PrettyName</td><td>Single line of text</td><td>Optional override; falls back to live library Title if blank. <strong>Not</strong> "DisplayName" &mdash; SharePoint silently drops writes to a column with that exact name on this list (collides with a reserved sub-property on the two Person-or-Group columns, Created By/Modified By)</td></tr>
+            <tr><td>SiteUrl</td><td>Single line of text</td><td>Which of your sites the library is on</td></tr>
+            <tr><td>SortOrder</td><td>Number</td><td>Optional &mdash; controls order within a group</td></tr>
+            <tr><td>IsLimited</td><td>Yes/No</td><td>True if the library was created as Limited &mdash; lets you set conditional formatting on the list view to colour-code Limited rows</td></tr>
+          </tbody>
+        </table>
+        <div class="callout warn">Mark every column <strong>Not Required</strong>. Type names exactly as shown, no spaces &mdash; SharePoint silently converts spaces to <code>_x0020_</code> internally, and the flows' requests need the plain names to match exactly.</div>
+        <div class="callout ok">The CSV was built by hand to match the schema format seen in a real export from this exact list (same embedded-schema mechanism, not guessed) but hasn't been round-tripped through SharePoint's import wizard directly. If "From CSV" doesn't pick up the column types correctly, fall back to creating the columns manually per the table above &mdash; same end result either way.</div>
 
-<h2 id="lists">1. SharePoint List: <code>LibraryFilePlan</code></h2>
-<p>Location: your main site — <code>https://modgovuk.sharepoint.com/teams/1598/</code>.</p>
-<p><a class="dl" href="lists/LibraryFilePlan_list_template.csv">LibraryFilePlan_list_template.csv</a> — download this, then Site Contents → New → List → <strong>From CSV</strong> (or Excel) → upload it. SharePoint reads the embedded schema and creates every column with the correct type and Team's choices already filled in — no manual column-by-column setup. Delete the single placeholder row afterward, and rename the list to exactly <code>LibraryFilePlan</code> if it doesn't pick that up from the filename.</p>
-<table>
-  <thead><tr><th>Column name (exact, no spaces)</th><th>Type</th><th>Notes</th></tr></thead>
-  <tbody>
-    <tr><td>Title</td><td>Single line of text</td><td>Built-in — the flow writes the library's pretty display name into it automatically</td></tr>
-    <tr><td>LibraryUrl</td><td>Single line of text</td><td>The real join key — a library's server-relative URL, survives display-name renames</td></tr>
-    <tr><td>Team</td><td>Choice</td><td>Top-level file-plan grouping. Fixed set — type in your known team names as the choices, no "Allow fill-in values"</td></tr>
-    <tr><td>SubTeam</td><td>Choice</td><td>Optional nested grouping. Tick <strong>"Allow fill-in values"</strong> — same pattern as the CAT column, so new sub-teams can be added on the fly</td></tr>
-    <tr><td>PrettyName</td><td>Single line of text</td><td>Optional override; falls back to live library Title if blank. <strong>Not</strong> "DisplayName" — SharePoint silently drops writes to a column with that exact name on this list (collides with a reserved sub-property on the two Person-or-Group columns, Created By/Modified By)</td></tr>
-    <tr><td>SiteUrl</td><td>Single line of text</td><td>Which of your sites the library is on</td></tr>
-    <tr><td>SortOrder</td><td>Number</td><td>Optional — controls order within a group</td></tr>
-    <tr><td>IsLimited</td><td>Yes/No</td><td>True if the library was created as Limited — lets you set conditional formatting on the list view to colour-code Limited rows</td></tr>
-  </tbody>
-</table>
-<div class="warning">Mark every column <strong>Not Required</strong>. Type names exactly as shown, no spaces — SharePoint silently converts spaces to <code>_x0020_</code> internally, and the flows' requests need the plain names to match exactly.</div>
-<div class="note">The CSV was built by hand to match the schema format seen in a real export from this exact list (same embedded-schema mechanism, not guessed) but hasn't been round-tripped through SharePoint's import wizard directly. If "From CSV" doesn't pick up the column types correctly, fall back to creating the columns manually per the table above — same end result either way.</div>
+        <h2>SharePoint List: <code>PermissionIndex</code></h2>
+        <p>Location: your main site, same as <code>LibraryFilePlan</code>.</p>
+        <p><a href="lists/PermissionIndex_list_template.csv">PermissionIndex_list_template.csv</a> &mdash; same idea: Site Contents &rarr; New &rarr; List &rarr; <strong>From CSV</strong> &rarr; upload, delete the placeholder row, rename to exactly <code>PermissionIndex</code> if needed.</p>
+        <table>
+          <thead><tr><th>Column name (exact, no spaces)</th><th>Type</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr><td>Title</td><td>Single line of text</td><td>Built-in &mdash; set to the same value as GroupName, so the list is readable at a glance</td></tr>
+            <tr><td>LibraryUrl</td><td>Single line of text</td><td>Which library this permission row belongs to &mdash; joins back to <code>LibraryFilePlan.LibraryUrl</code></td></tr>
+            <tr><td>LibraryTitle</td><td>Single line of text</td><td>Display name, so search results don't need a lookup back to <code>LibraryFilePlan</code></td></tr>
+            <tr><td>GroupName</td><td>Single line of text</td><td>The actual SG_/DG_ group name (or username) this row represents &mdash; what the group-search screen filters on</td></tr>
+            <tr><td>PrincipalType</td><td>Single line of text</td><td>"SharePoint Group", "Security Group", or "User"</td></tr>
+            <tr><td>PermissionLevel</td><td>Single line of text</td><td>e.g. "Full Control", "Contribute", "Read"</td></tr>
+            <tr><td>NestedUnderGroup</td><td>Single line of text</td><td>Blank for a group/user granted directly on the library. If this row is a DG_ AD group found nested inside an SG_ group, this holds that SG_ group's name</td></tr>
+          </tbody>
+        </table>
+        <div class="callout warn">Mark every column <strong>Not Required</strong>, exact names, no spaces &mdash; same rule as <code>LibraryFilePlan</code>.</div>
+      </section>
 
-<h2>SharePoint List: <code>PermissionIndex</code></h2>
-<p>Location: your main site, same as <code>LibraryFilePlan</code>.</p>
-<p><a class="dl" href="lists/PermissionIndex_list_template.csv">PermissionIndex_list_template.csv</a> — same idea: Site Contents → New → List → <strong>From CSV</strong> → upload, delete the placeholder row, rename to exactly <code>PermissionIndex</code> if needed.</p>
-<table>
-  <thead><tr><th>Column name (exact, no spaces)</th><th>Type</th><th>Notes</th></tr></thead>
-  <tbody>
-    <tr><td>Title</td><td>Single line of text</td><td>Built-in — set to the same value as GroupName, so the list is readable at a glance</td></tr>
-    <tr><td>LibraryUrl</td><td>Single line of text</td><td>Which library this permission row belongs to — joins back to <code>LibraryFilePlan.LibraryUrl</code></td></tr>
-    <tr><td>LibraryTitle</td><td>Single line of text</td><td>Display name, so search results don't need a lookup back to <code>LibraryFilePlan</code></td></tr>
-    <tr><td>GroupName</td><td>Single line of text</td><td>The actual SG_/DG_ group name (or username) this row represents — what the group-search screen filters on</td></tr>
-    <tr><td>PrincipalType</td><td>Single line of text</td><td>"SharePoint Group", "Security Group", or "User"</td></tr>
-    <tr><td>PermissionLevel</td><td>Single line of text</td><td>e.g. "Full Control", "Contribute", "Read"</td></tr>
-    <tr><td>NestedUnderGroup</td><td>Single line of text</td><td>Blank for a group/user granted directly on the library. If this row is a DG_ AD group found nested inside an SG_ group, this holds that SG_ group's name</td></tr>
-  </tbody>
-</table>
-<div class="warning">Mark every column <strong>Not Required</strong>, exact names, no spaces — same rule as <code>LibraryFilePlan</code>.</div>
-
-<h2 id="flow-fix">2. Flow Field Fix: Create_FilePlan_Row</h2>
-<p>In Power Automate, open <strong>Create Library (App)</strong> → Edit → click <strong>Create_FilePlan_Row</strong> to expand it → click into its <strong>Body</strong> box → select all, delete → paste this in as the replacement → Save. Existing action, existing field, no re-import needed.</p>
-<div class="warning">Saving the flow is not enough on its own — a Power App that already calls this flow keeps running the <strong>old</strong> logic until its own connection to the flow is refreshed. After saving, go into Power Apps Studio → Data panel → find <strong>Create Library (App)</strong> under your data sources → refresh it (remove and re-add if there's no direct refresh option). Do this after every flow edit, not just this one.</div>
-<p class="snippet-stamp">v2.6 — Updated 12 Aug 2026 08:30 BST</p>
-<div class="code-block">
-  <button class="copy-btn" onclick="copyPre(this)">Copy</button>
-  <pre>{
+      <section id="flow-fix">
+        <h2>2. Flow Field Fix: Create_FilePlan_Row</h2>
+        <p>In Power Automate, open <strong>Create Library (App)</strong> &rarr; Edit &rarr; click <strong>Create_FilePlan_Row</strong> to expand it &rarr; click into its <strong>Body</strong> box &rarr; select all, delete &rarr; paste this in as the replacement &rarr; Save. Existing action, existing field, no re-import needed.</p>
+        <div class="callout warn">Saving the flow is not enough on its own &mdash; a Power App that already calls this flow keeps running the <strong>old</strong> logic until its own connection to the flow is refreshed. After saving, go into Power Apps Studio &rarr; Data panel &rarr; find <strong>Create Library (App)</strong> under your data sources &rarr; refresh it (remove and re-add if there's no direct refresh option). Do this after every flow edit, not just this one.</div>
+        <div class="code-card">
+          <div class="code-toolbar"><span>v2.6 &mdash; Updated 12 Aug 2026 08:30 BST</span><button onclick="copyCode(this)">Copy</button></div>
+          <pre>{
   "__metadata": { "type": "SP.Data.LibraryFilePlanListItem" },
   "Title": "@{triggerBody()?['DisplayName']}",
   "LibraryUrl": "@{body('Get_New_Library_Url')?['d']?['RootFolder']?['ServerRelativeUrl']}",
@@ -163,103 +218,106 @@
   "SiteUrl": "@{triggerBody()?['SiteUrl']}",
   "IsLimited": @{if(equals(triggerBody()?['IsLimited'], true), 'true', 'false')}
 }</pre>
-</div>
-<div class="note">Only the SharePoint field name changed (<code>DisplayName</code> → <code>PrettyName</code>). The value is still populated from <code>triggerBody()?['DisplayName']</code> — that's the Power Apps trigger's own parameter name, unrelated to the SharePoint column, and it hasn't changed.</div>
+        </div>
+        <div class="callout ok">Only the SharePoint field name changed (<code>DisplayName</code> &rarr; <code>PrettyName</code>). The value is still populated from <code>triggerBody()?['DisplayName']</code> &mdash; that's the Power Apps trigger's own parameter name, unrelated to the SharePoint column, and it hasn't changed.</div>
+      </section>
 
-<h2 id="flow-fix-2">2b. Flow Field Fix: Get_Unique_Perm_Libraries (missing libraries bug)</h2>
-<p><strong>Cause:</strong> this action asks SharePoint for every library with unique permissions, but never told it how many to return. SharePoint's <code>_api/web/lists</code> endpoint defaults to a page size of around 100 items per response and doesn't automatically continue to the next page — with enough lists on the site (including hidden/system ones counted before the filter narrows them down), the real Limited libraries near the end of that list never got reached, so the index silently stopped at whatever fit in the first page.</p>
-<p>In Power Automate, open <strong>Rebuild Permission Index</strong> → Edit → click <strong>Get_Unique_Perm_Libraries</strong> to expand it → click into its <strong>Uri</strong> box → add <code>&amp;$top=5000</code> to the end → Save. Existing action, one field, no re-import needed.</p>
-<p class="snippet-stamp">v4.2 — Updated 13 Aug 2026 09:26 BST</p>
-<div class="code-block">
-  <button class="copy-btn" onclick="copyPre(this)">Copy</button>
-  <pre>_api/web/lists?$filter=BaseTemplate eq 101 and Hidden eq false and HasUniqueRoleAssignments eq true&$select=Title,Id,RootFolder/ServerRelativeUrl&$expand=RootFolder&$top=5000</pre>
-</div>
-<div class="warning">This changes the flow's own logic, same as any other flow edit — refresh <strong>Rebuild Permission Index</strong>'s connection in the Power Apps Data panel afterward, then run the Rebuild button on the Admin screen once to repopulate the index with every library this time.</div>
-<div class="note">The downloadable flow zip for a fresh install already has this fix baked in — this section is only needed if you imported before 13 Aug 2026.</div>
+      <section id="flow-fix-2">
+        <h2>2b. Flow Field Fix: Get_Unique_Perm_Libraries (missing libraries bug)</h2>
+        <p><strong>Cause:</strong> this action asks SharePoint for every library with unique permissions, but never told it how many to return. SharePoint's <code>_api/web/lists</code> endpoint defaults to a page size of around 100 items per response and doesn't automatically continue to the next page &mdash; with enough lists on the site (including hidden/system ones counted before the filter narrows them down), the real Limited libraries near the end of that list never got reached, so the index silently stopped at whatever fit in the first page.</p>
+        <p>In Power Automate, open <strong>Rebuild Permission Index</strong> &rarr; Edit &rarr; click <strong>Get_Unique_Perm_Libraries</strong> to expand it &rarr; click into its <strong>Uri</strong> box &rarr; add <code>&amp;$top=5000</code> to the end &rarr; Save. Existing action, one field, no re-import needed.</p>
+        <div class="code-card">
+          <div class="code-toolbar"><span>v4.2 &mdash; Updated 13 Aug 2026 09:26 BST</span><button onclick="copyCode(this)">Copy</button></div>
+          <pre>_api/web/lists?$filter=BaseTemplate eq 101 and Hidden eq false and HasUniqueRoleAssignments eq true&$select=Title,Id,RootFolder/ServerRelativeUrl&$expand=RootFolder&$top=5000</pre>
+        </div>
+        <div class="callout warn">This changes the flow's own logic, same as any other flow edit &mdash; refresh <strong>Rebuild Permission Index</strong>'s connection in the Power Apps Data panel afterward, then run the Rebuild button on the Admin screen once to repopulate the index with every library this time.</div>
+        <div class="callout ok">The downloadable flow zip for a fresh install already has this fix baked in &mdash; this section is only needed if you imported before 13 Aug 2026.</div>
+      </section>
 
-<h2 id="flows">3. Download &amp; Import Flows</h2>
-<p><a class="dl" href="https://github.com/PhadeDev/library-file-plan-manager/raw/main/flows/CreateLibraryApp_flow_import.zip">CreateLibraryApp_flow_import.zip</a> — creates a library, registers it into <code>LibraryFilePlan</code>. The core flow everything else builds on.</p>
-<p><a class="dl" href="https://github.com/PhadeDev/library-file-plan-manager/raw/main/flows/BackfillFilePlan_flow_import.zip">BackfillFilePlan_flow_import.zip</a> — one-time scan of every existing library on the site, registers anything not already tracked.</p>
-<p><a class="dl" href="https://github.com/PhadeDev/library-file-plan-manager/raw/main/flows/RebuildPermissionIndex_flow_import.zip">RebuildPermissionIndex_flow_import.zip</a> — scans libraries with broken permissions and builds a fast, searchable index of their groups.</p>
-<p><a class="dl" href="https://github.com/PhadeDev/library-file-plan-manager/raw/main/flows/ManageLibraryPermissions_flow_import.zip">ManageLibraryPermissions_flow_import.zip</a> — lists, adds, or removes a group directly on a chosen library, called live from the Admin screen.</p>
-<p><a class="dl" href="https://github.com/PhadeDev/library-file-plan-manager/raw/main/flows/DeleteLibrariesApp_flow_import.zip">DeleteLibrariesApp_flow_import.zip</a> — checks each library for files, deletes the ones that are safe to delete (or all of them if overridden), and cleans up their <code>LibraryFilePlan</code>/<code>PermissionIndex</code> rows. Called live from the Manage Libraries screen.</p>
-<p>All five: Power Automate → My flows → Import → Import Package (Legacy).</p>
+      <section id="flows">
+        <h2>3. Download &amp; Import Flows</h2>
+        <p><a href="https://github.com/PhadeDev/library-file-plan-manager/raw/main/flows/CreateLibraryApp_flow_import.zip">CreateLibraryApp_flow_import.zip</a> &mdash; creates a library, registers it into <code>LibraryFilePlan</code>. The core flow everything else builds on.</p>
+        <p><a href="https://github.com/PhadeDev/library-file-plan-manager/raw/main/flows/BackfillFilePlan_flow_import.zip">BackfillFilePlan_flow_import.zip</a> &mdash; one-time scan of every existing library on the site, registers anything not already tracked.</p>
+        <p><a href="https://github.com/PhadeDev/library-file-plan-manager/raw/main/flows/RebuildPermissionIndex_flow_import.zip">RebuildPermissionIndex_flow_import.zip</a> &mdash; scans libraries with broken permissions and builds a fast, searchable index of their groups.</p>
+        <p><a href="https://github.com/PhadeDev/library-file-plan-manager/raw/main/flows/ManageLibraryPermissions_flow_import.zip">ManageLibraryPermissions_flow_import.zip</a> &mdash; lists, adds, or removes a group directly on a chosen library, called live from the Admin screen.</p>
+        <p><a href="https://github.com/PhadeDev/library-file-plan-manager/raw/main/flows/DeleteLibrariesApp_flow_import.zip">DeleteLibrariesApp_flow_import.zip</a> &mdash; checks each library for files, deletes the ones that are safe to delete (or all of them if overridden), and cleans up their <code>LibraryFilePlan</code>/<code>PermissionIndex</code> rows. Called live from the Manage Libraries screen.</p>
+        <p>All five: Power Automate &rarr; My flows &rarr; Import &rarr; Import Package (Legacy).</p>
 
-<h3>What Create Library (App) does</h3>
-<p>Triggered from Power Apps (or manually, for testing). Per library:</p>
-<ol>
-  <li>Creates the library (<code>BaseTemplate 101</code>) with the correct sensitivity label for Normal vs Limited</li>
-  <li>Adds a <strong>CAT</strong> choice column (fill-in-your-own enabled) and a <strong>Status</strong> choice column (Draft / Under Review / Reviewed / Published / Final / Superseded / Expired)</li>
-  <li>Creates <strong>WiP</strong> view (items without a retention label) and <strong>Records</strong> view (items with one), both grouped by CAT</li>
-  <li>Renames the library's Title to the pretty display name</li>
-  <li><strong>If Limited:</strong> breaks role inheritance completely, grants <strong>SG_Cadets-Admin-Ltd_MEM</strong> and <strong>SG_IHUB</strong> Full Control (fixed — nothing to fill in on the form, since a separate team owns creating/adding any other group later), then removes the flow-runner's own account (SharePoint auto-adds whoever breaks inheritance as a lockout safety net; the flow strips that back out)</li>
-  <li>Registers the new library into <code>LibraryFilePlan</code></li>
-</ol>
-<p><strong>Site URL</strong> defaults to the main site if left blank — every action falls back to it via <code>coalesce()</code>.</p>
+        <h3>What Create Library (App) does</h3>
+        <p>Triggered from Power Apps (or manually, for testing). Per library:</p>
+        <ol>
+          <li>Creates the library (<code>BaseTemplate 101</code>) with the correct sensitivity label for Normal vs Limited</li>
+          <li>Adds a <strong>CAT</strong> choice column (fill-in-your-own enabled) and a <strong>Status</strong> choice column (Draft / Under Review / Reviewed / Published / Final / Superseded / Expired)</li>
+          <li>Creates <strong>WiP</strong> view (items without a retention label) and <strong>Records</strong> view (items with one), both grouped by CAT</li>
+          <li>Renames the library's Title to the pretty display name</li>
+          <li><strong>If Limited:</strong> breaks role inheritance completely, grants <strong>SG_Cadets-Admin-Ltd_MEM</strong> and <strong>SG_IHUB</strong> Full Control (fixed &mdash; nothing to fill in on the form, since a separate team owns creating/adding any other group later), then removes the flow-runner's own account (SharePoint auto-adds whoever breaks inheritance as a lockout safety net; the flow strips that back out)</li>
+          <li>Registers the new library into <code>LibraryFilePlan</code></li>
+        </ol>
+        <p><strong>Site URL</strong> defaults to the main site if left blank &mdash; every action falls back to it via <code>coalesce()</code>.</p>
 
-<h3>Testing Create Library (App)</h3>
-<p>Power Automate → My flows → <strong>Create Library (App)</strong> → Test → Manually.</p>
-<table>
-  <thead><tr><th>Field</th><th>First test — plain</th><th>Second test — Limited</th></tr></thead>
-  <tbody>
-    <tr><td>Site URL</td><td>leave blank</td><td>leave blank</td></tr>
-    <tr><td>Technical Name</td><td><code>ZZTest_Library</code></td><td><code>ZZTest_LTD_Library</code></td></tr>
-    <tr><td>Display Name</td><td><code>ZZ Test Library</code></td><td><code>ZZ Test LTD Library</code></td></tr>
-    <tr><td>Is Limited</td><td>false / off</td><td>true / on</td></tr>
-    <tr><td>Team</td><td><code>Test</code></td><td><code>Test</code></td></tr>
-    <tr><td>SubTeam, Categories</td><td>leave blank</td><td>leave blank</td></tr>
-  </tbody>
-</table>
-<p>First test: check the library exists with CAT + Status columns and WiP/Records views, its Title shows the pretty name, and a new row appeared in <code>LibraryFilePlan</code> with <code>PrettyName</code> populated.</p>
-<div class="warning">Second test is the one part of the whole system that touches security directly. After it runs, manually open Library Settings → Permissions for that document library and confirm <strong>only</strong> <code>SG_Cadets-Admin-Ltd_MEM</code> and <code>SG_IHUB</code> are there — no inherited groups, no extra groups, no direct user entry for whoever ran the flow.</div>
-<div class="note">Clean-up: delete both test libraries and their two rows from <code>LibraryFilePlan</code> once both tests pass.</div>
+        <h3>Testing Create Library (App)</h3>
+        <p>Power Automate &rarr; My flows &rarr; <strong>Create Library (App)</strong> &rarr; Test &rarr; Manually.</p>
+        <table>
+          <thead><tr><th>Field</th><th>First test &mdash; plain</th><th>Second test &mdash; Limited</th></tr></thead>
+          <tbody>
+            <tr><td>Site URL</td><td>leave blank</td><td>leave blank</td></tr>
+            <tr><td>Technical Name</td><td><code>ZZTest_Library</code></td><td><code>ZZTest_LTD_Library</code></td></tr>
+            <tr><td>Display Name</td><td><code>ZZ Test Library</code></td><td><code>ZZ Test LTD Library</code></td></tr>
+            <tr><td>Is Limited</td><td>false / off</td><td>true / on</td></tr>
+            <tr><td>Team</td><td><code>Test</code></td><td><code>Test</code></td></tr>
+            <tr><td>SubTeam, Categories</td><td>leave blank</td><td>leave blank</td></tr>
+          </tbody>
+        </table>
+        <p>First test: check the library exists with CAT + Status columns and WiP/Records views, its Title shows the pretty name, and a new row appeared in <code>LibraryFilePlan</code> with <code>PrettyName</code> populated.</p>
+        <div class="callout danger">Second test is the one part of the whole system that touches security directly. After it runs, manually open Library Settings &rarr; Permissions for that document library and confirm <strong>only</strong> <code>SG_Cadets-Admin-Ltd_MEM</code> and <code>SG_IHUB</code> are there &mdash; no inherited groups, no extra groups, no direct user entry for whoever ran the flow.</div>
+        <div class="callout ok">Clean-up: delete both test libraries and their two rows from <code>LibraryFilePlan</code> once both tests pass.</div>
 
-<h3>Backfill Existing Libraries</h3>
-<p><code>LibraryFilePlan</code> only tracks libraries created <em>after</em> this system existed. This flow seeds it from what already exists: scans every real document library (skipping SharePoint's own system libraries), and for anything not already tracked, adds a row with <strong>LibraryUrl, PrettyName, Title, SiteUrl</strong> filled in automatically, and <strong>IsLimited</strong> guessed from whether the library already has broken permission inheritance. <strong>Team, SubTeam</strong> are left blank — fill those in by hand afterward via SharePoint's grid/quick-edit view. Safe to run more than once — only adds what's missing.</p>
-<div class="warning">Scans your whole library list — with ~500 libraries, expect several minutes. Runs 20 at a time in parallel. Let it finish; don't re-run while it's still going.</div>
+        <h3>Backfill Existing Libraries</h3>
+        <p><code>LibraryFilePlan</code> only tracks libraries created <em>after</em> this system existed. This flow seeds it from what already exists: scans every real document library (skipping SharePoint's own system libraries), and for anything not already tracked, adds a row with <strong>LibraryUrl, PrettyName, Title, SiteUrl</strong> filled in automatically, and <strong>IsLimited</strong> guessed from whether the library already has broken permission inheritance. <strong>Team, SubTeam</strong> are left blank &mdash; fill those in by hand afterward via SharePoint's grid/quick-edit view. Safe to run more than once &mdash; only adds what's missing.</p>
+        <div class="callout warn">Scans your whole library list &mdash; with ~500 libraries, expect several minutes. Runs 20 at a time in parallel. Let it finish; don't re-run while it's still going.</div>
 
-<h3>Rebuild Permission Index</h3>
-<p>Power Apps can't read SharePoint permissions directly, and a search screen can't afford to live-query every library's permissions on every keystroke. This flow scans permissions <strong>once</strong> and writes a flat, fast-searchable copy into <code>PermissionIndex</code>; the group-search screen just filters that list.</p>
-<p>Only scans libraries with <strong>broken/unique permissions</strong> (mostly your Limited libraries) — Normal libraries all inherit the exact same site-wide permissions, so indexing each individually would be pure noise. If a group is a native <strong>SharePoint Group</strong>, it also looks one level inside that group's own membership — this is how a nested <code>DG_...</code> AD group shows up in the index too, without needing Microsoft Graph.</p>
-<div class="warning">Deletes the entire contents of <code>PermissionIndex</code> and rebuilds it from scratch every run — intentional, avoids stale/duplicate rows.</div>
-<div class="note">Excludes SharePoint's own auto-generated <strong>"Limited Access System Group"</strong> — this isn't a real business group, it's internal bookkeeping SharePoint creates whenever anything inside a library (even a single folder or file) has broken permissions. Since it's technically a SharePoint Group, expanding its membership floods the index with individual named users nobody would search for by name. Confirmed live: a first run without this exclusion produced ~500 rows, nearly all of them this noise. Also excludes <strong>"System Account"</strong> wherever it shows up as a nested member — SharePoint's own internal service account, never a real permission grantee.</div>
+        <h3>Rebuild Permission Index</h3>
+        <p>Power Apps can't read SharePoint permissions directly, and a search screen can't afford to live-query every library's permissions on every keystroke. This flow scans permissions <strong>once</strong> and writes a flat, fast-searchable copy into <code>PermissionIndex</code>; the group-search screen just filters that list.</p>
+        <p>Only scans libraries with <strong>broken/unique permissions</strong> (mostly your Limited libraries) &mdash; Normal libraries all inherit the exact same site-wide permissions, so indexing each individually would be pure noise. If a group is a native <strong>SharePoint Group</strong>, it also looks one level inside that group's own membership &mdash; this is how a nested <code>DG_...</code> AD group shows up in the index too, without needing Microsoft Graph.</p>
+        <div class="callout warn">Deletes the entire contents of <code>PermissionIndex</code> and rebuilds it from scratch every run &mdash; intentional, avoids stale/duplicate rows.</div>
+        <div class="callout ok">Excludes SharePoint's own auto-generated <strong>"Limited Access System Group"</strong> &mdash; this isn't a real business group, it's internal bookkeeping SharePoint creates whenever anything inside a library (even a single folder or file) has broken permissions. Since it's technically a SharePoint Group, expanding its membership floods the index with individual named users nobody would search for by name. Confirmed live: a first run without this exclusion produced ~500 rows, nearly all of them this noise. Also excludes <strong>"System Account"</strong> wherever it shows up as a nested member &mdash; SharePoint's own internal service account, never a real permission grantee.</div>
 
-<h3>Manage Library Permissions</h3>
-<p>This is the write counterpart to Rebuild Permission Index / Group Search, which are both read-only snapshots. This flow is called live, on demand, from the Admin screen — one flow, one trigger, an <code>Action</code> field ("List" / "Add" / "Remove") decides what it does:</p>
-<ul>
-  <li><strong>List</strong> — live role assignments for one library, straight from SharePoint (not the cached index), so it's always current</li>
-  <li><strong>Add</strong> — grants a SharePoint group (<code>SG_...</code>) a permission level on that library, reusing the exact same <code>Get_Group_Id → Get_Role_Def_Id → Add_Role_Assignment</code> pattern already proven in <strong>Create Library (App)</strong></li>
-  <li><strong>Remove</strong> — removes a group's entire access to that library in one call (<code>roleassignments/getbyprincipalid(id)</code> with an HTTP DELETE), rather than needing to know which specific permission level to unwind</li>
-</ul>
-<div class="note">Only manages native <strong>SharePoint groups</strong> (<code>SG_...</code>) directly on a library — matches how every Limited library in this system is actually set up: a <code>DG_...</code> AD group is never granted directly, it's always nested inside an <code>SG_...</code> wrapper group. If a genuinely new AD group needs adding, the other team creates it and its <code>SG_</code> wrapper first, same as always — this screen doesn't change that workflow, just removes the "someone has to do it by hand in native SharePoint" step.</div>
+        <h3>Manage Library Permissions</h3>
+        <p>This is the write counterpart to Rebuild Permission Index / Group Search, which are both read-only snapshots. This flow is called live, on demand, from the Admin screen &mdash; one flow, one trigger, an <code>Action</code> field ("List" / "Add" / "Remove") decides what it does:</p>
+        <ul>
+          <li><strong>List</strong> &mdash; live role assignments for one library, straight from SharePoint (not the cached index), so it's always current</li>
+          <li><strong>Add</strong> &mdash; grants a SharePoint group (<code>SG_...</code>) a permission level on that library, reusing the exact same <code>Get_Group_Id &rarr; Get_Role_Def_Id &rarr; Add_Role_Assignment</code> pattern already proven in <strong>Create Library (App)</strong></li>
+          <li><strong>Remove</strong> &mdash; removes a group's entire access to that library in one call (<code>roleassignments/getbyprincipalid(id)</code> with an HTTP DELETE), rather than needing to know which specific permission level to unwind</li>
+        </ul>
+        <div class="callout ok">Only manages native <strong>SharePoint groups</strong> (<code>SG_...</code>) directly on a library &mdash; matches how every Limited library in this system is actually set up: a <code>DG_...</code> AD group is never granted directly, it's always nested inside an <code>SG_...</code> wrapper group. If a genuinely new AD group needs adding, the other team creates it and its <code>SG_</code> wrapper first, same as always &mdash; this screen doesn't change that workflow, just removes the "someone has to do it by hand in native SharePoint" step.</div>
 
-<h3>Delete Libraries (App)</h3>
-<p>Called from the Manage Libraries screen with a JSON array of library URLs, an <code>Action</code> (currently always <code>"Delete"</code> from the app — <code>"Check"</code> is accepted too but every branch other than Delete just reports counts and changes nothing, so it's there if you ever want a preview-only call), and a <code>Force</code> flag.</p>
-<p>Per library: gets its live <code>ItemCount</code> via <code>_api/web/GetList(url)</code> (server-relative URL, not title — the one join key in this whole system guaranteed not to drift if someone renames a library directly in SharePoint). If <code>Force</code> is false and <code>ItemCount &gt; 0</code>, that library is skipped and reported back, untouched. Otherwise it deletes the document library itself, its <code>LibraryFilePlan</code> row, and every <code>PermissionIndex</code> row that pointed at it.</p>
-<div class="warning">There is no undo. A skipped (non-empty) library only gets deleted if the app is told to override — but once that override is sent, the flow deletes exactly what it's told to, no second check.</div>
+        <h3>Delete Libraries (App)</h3>
+        <p>Called from the Manage Libraries screen with a JSON array of library URLs, an <code>Action</code> (currently always <code>"Delete"</code> from the app &mdash; <code>"Check"</code> is accepted too but every branch other than Delete just reports counts and changes nothing, so it's there if you ever want a preview-only call), and a <code>Force</code> flag.</p>
+        <p>Per library: gets its live <code>ItemCount</code> via <code>_api/web/GetList(url)</code> (server-relative URL, not title &mdash; the one join key in this whole system guaranteed not to drift if someone renames a library directly in SharePoint). If <code>Force</code> is false and <code>ItemCount &gt; 0</code>, that library is skipped and reported back, untouched. Otherwise it deletes the document library itself, its <code>LibraryFilePlan</code> row, and every <code>PermissionIndex</code> row that pointed at it.</p>
+        <div class="callout danger">There is no undo. A skipped (non-empty) library only gets deleted if the app is told to override &mdash; but once that override is sent, the flow deletes exactly what it's told to, no second check.</div>
+      </section>
 
-<h2 id="build-app">4. Building the Power App</h2>
-<p>Create a new blank canvas app in Power Apps Studio.</p>
+      <section id="build-app">
+        <h2>4. Building the Power App</h2>
+        <p>Create a new blank canvas app in Power Apps Studio.</p>
 
-<h3>Data connections</h3>
-<p>Data panel → Add data → add these before pasting any screen YAML:</p>
-<p class="snippet-stamp">v4.3 — Updated 13 Aug 2026 10:23 BST</p>
-<div class="code-block">
-  <button class="copy-btn" onclick="copyPre(this)">Copy</button>
-  <pre>'LibraryFilePlan'          (SharePoint → your main site → LibraryFilePlan)
+        <h3>Data connections</h3>
+        <p>Data panel &rarr; Add data &rarr; add these before pasting any screen YAML:</p>
+        <div class="code-card">
+          <div class="code-toolbar"><span>v4.3 &mdash; Updated 13 Aug 2026 10:23 BST</span><button onclick="copyCode(this)">Copy</button></div>
+          <pre>'LibraryFilePlan'          (SharePoint → your main site → LibraryFilePlan)
 'PermissionIndex'          (SharePoint → your main site → PermissionIndex)
 'Create Library (App)'     (search Power Automate flows in Add data)
 'Rebuild Permission Index' (search Power Automate flows in Add data)
 'Manage Library Permissions' (search Power Automate flows in Add data)
 'Delete Libraries (App)'   (search Power Automate flows in Add data)</pre>
-</div>
+        </div>
 
-<h3>App.OnStart</h3>
-<p>Select the <strong>App</strong> object (top of the tree, not any screen) → <strong>OnStart</strong> property → paste this in full:</p>
-<p class="snippet-stamp">v3.8 — Updated 13 Aug 2026 10:23 BST</p>
-<div class="code-block">
-  <button class="copy-btn" onclick="copyPre(this)">Copy</button>
-  <pre>Set(varTenantHost, "https://modgovuk.sharepoint.com");
+        <h3>App.OnStart</h3>
+        <p>Select the <strong>App</strong> object (top of the tree, not any screen) &rarr; <strong>OnStart</strong> property &rarr; paste this in full:</p>
+        <div class="code-card">
+          <div class="code-toolbar"><span>v3.8 &mdash; Updated 13 Aug 2026 10:23 BST</span><button onclick="copyCode(this)">Copy</button></div>
+          <pre>Set(varTenantHost, "https://modgovuk.sharepoint.com");
 ClearCollect(colFilePlan, 'LibraryFilePlan');
 ClearCollect(
     colFilePlanFiltered,
@@ -305,66 +363,62 @@ Set(varConfirmOverrideVisible, false);
 Set(varDeletedCount, 0);
 Set(varEditSaving, false);
 Set(varEditSaveStatus, "")</pre>
-</div>
-<div class="note"><code>EffectiveName</code> is <code>PrettyName</code> when filled in, otherwise falls back to <code>Title</code> — self-heals every library missing a pretty name, no data migration needed. <code>varIsAdmin</code> gates the Admin screen — edit the email list directly in this line if who's authorized ever changes. <code>colPermissionIndex</code>/<code>colPermissionFiltered</code> feed the Group Search screen — make sure you've run <strong>Rebuild Permission Index</strong> at least once first, or this loads empty.</div>
+        </div>
+        <div class="callout ok"><code>EffectiveName</code> is <code>PrettyName</code> when filled in, otherwise falls back to <code>Title</code> &mdash; self-heals every library missing a pretty name, no data migration needed. <code>varIsAdmin</code> gates the Admin screen &mdash; edit the email list directly in this line if who's authorized ever changes. <code>colPermissionIndex</code>/<code>colPermissionFiltered</code> feed the Group Search screen &mdash; make sure you've run <strong>Rebuild Permission Index</strong> at least once first, or this loads empty.</div>
+      </section>
 
-<h2 id="screens">5. Screens</h2>
-<p>For each: delete the existing screen if you already have one pasted, New screen (blank) → open the link → Copy YAML → paste. Rename the screen to match the name shown.</p>
-<div class="screen-grid">
-  <a class="screen-card" href="screens/scrFilePlan.html?v=2.2">
-    <div class="screen-number">Screen 1</div>
-    <div class="screen-name">scrFilePlan</div>
-    <div class="screen-desc">Read-only browse screen — search box, grouped-by-team collapsible list, Open and Copy link buttons per library, LTD badge on Limited libraries.</div>
-    <div class="screen-cta">Copy YAML →</div>
-  </a>
-  <a class="screen-card" href="screens/scrAdminCreateLibrary.html?v=1.5">
-    <div class="screen-number">Screen 2</div>
-    <div class="screen-name">scrAdminCreateLibrary</div>
-    <div class="screen-desc">Restricted to the admin email list. Fill in a library's details, Add to Queue as many times as needed, then Run Queue creates them all sequentially, with a progress overlay. Also has a Rebuild Permission Index button with a staleness indicator.</div>
-    <div class="screen-cta">Copy YAML →</div>
-  </a>
-  <a class="screen-card" href="screens/scrGroupSearch.html?v=3.2">
-    <div class="screen-number">Screen 3</div>
-    <div class="screen-name">scrGroupSearch</div>
-    <div class="screen-desc">Search by SG_/DG_ group name or library name. Results grouped by library in a collapsible accordion, same pattern as scrFilePlan. Reads the precomputed PermissionIndex list — instant, no live SharePoint crawl.</div>
-    <div class="screen-cta">Copy YAML →</div>
-  </a>
-  <a class="screen-card" href="screens/scrManagePermissions.html?v=1.0">
-    <div class="screen-number">Screen 4</div>
-    <div class="screen-name">scrManagePermissions</div>
-    <div class="screen-desc">Restricted to admins. Pick a Limited library, see its live current permissions, add or remove a SharePoint group directly — no more doing this by hand in native SharePoint.</div>
-    <div class="screen-cta">Copy YAML →</div>
-  </a>
-  <a class="screen-card" href="screens/scrManageLibraries.html?v=1.0">
-    <div class="screen-number">Screen 5</div>
-    <div class="screen-name">scrManageLibraries</div>
-    <div class="screen-desc">Restricted to admins. Tick libraries, bulk-delete them (empty ones go straight away, non-empty ones get an override prompt) or send the selection to the edit cart.</div>
-    <div class="screen-cta">Copy YAML →</div>
-  </a>
-  <a class="screen-card" href="screens/scrEditLibraries.html?v=1.0">
-    <div class="screen-number">Screen 6</div>
-    <div class="screen-name">scrEditLibraries</div>
-    <div class="screen-desc">Restricted to admins. The edit cart — one stacked form per library sent over from Manage Libraries, change whatever's needed on each, Save All applies every change in one pass.</div>
-    <div class="screen-cta">Copy YAML →</div>
-  </a>
-</div>
-<div class="note"><strong>scrFilePlan</strong>: one single flat gallery with uniform row height (a Team/Library discriminator column decides what each row shows) rather than nested galleries. Search is instant and local, no spinner needed, and auto-expands every Team with a match.</div>
-<div class="note"><strong>scrAdminCreateLibrary</strong>: Sub-Team is free text rather than a suggestion dropdown (Modern Combobox has a known instability issue). The queue is entirely local until you hit Run. Run Queue disables and shows "Creating..." immediately on click. The <strong>Rebuild Permission Index</strong> button is fire-and-forget — it doesn't wait for the flow to finish or show progress, since the run duration is unpredictable and Power Apps' <code>.Run()</code> call has no true non-blocking mode (a slow response is caught and shown as a friendly message rather than a raw error, but the flow itself always runs to completion on its own regardless). The status line above it shows how long ago the index was last rebuilt, and flags how many Limited libraries have been created since — both computed live from data already loaded, no extra flow or list needed.</div>
-<div class="note"><strong>scrGroupSearch</strong>: only finds results for libraries that were in scope for the last <strong>Rebuild Permission Index</strong> run (broken/unique-permission libraries — see that flow's section above). A Normal library never shows up here since it just inherits site-wide permissions; that's expected, not a bug. Searching matches the group name itself, the library name, or (for a nested AD group) the SharePoint group it's nested inside. v3.0 rebuilt the results as a <strong>three-tier accordion</strong> — Library → directly-granted group (matches SharePoint's own native Permissions panel exactly) → nested member, each level collapsed by default. Still one flat gallery underneath, just a third <code>RowType</code> and a second expand-tracking collection (<code>colExpandedGroups</code>) rather than nested galleries. v3.1 fixed a real sort-order bug where member rows sorted after <em>every</em> group in a library instead of clustering under their own parent group — the sort's column priority had rank ahead of the group-clustering key instead of after it. v3.2 moved the counts directly into each chevron instead of a separate pill: <code>4 &gt;</code> on a Library row (how many groups directly granted), <code>(2) &gt;</code> on a Group row (how many nested members) — visible whether the row is expanded or collapsed.</div>
-<div class="note"><strong>scrManagePermissions</strong>: unlike Rebuild Permission Index's fire-and-forget button, Add/Remove here wait for the result and immediately re-load the list — a single group operation is fast enough that blocking is the better UX, and there's a real result (success or a specific error) worth showing rather than "check back later." Uses <code>ThisItem.Title</code> (the library's real current SharePoint Title) when calling the flow, not <code>PrettyName</code>/<code>EffectiveName</code> — SharePoint's <code>getbytitle()</code> needs the actual current Title, and <strong>Create Library (App)</strong> renames every library's Title to the pretty name as its last real step, so by the time a library shows up here, its Title already <em>is</em> the pretty name.</div>
-<div class="note"><strong>scrManageLibraries</strong>: the delete button always sends <code>Force: false</code> on the first call — any empty library in your selection is deleted immediately, any non-empty one is skipped and reported back in one round trip, no separate "check" step needed first. If anything was skipped, an override panel lists exactly which ones and their item counts; "Delete Anyway" re-sends only those, this time with <code>Force: true</code>. First-time use of two controls new to this app: <code>CheckBox@0.0.30</code> (per-row tick, read/write via its <code>Checked</code> property) and <code>ModernButton</code>'s <code>BasePaletteColor</code> for the red delete buttons — Modern buttons don't have a direct <code>Fill</code> property, unlike Classic buttons used everywhere else in this app; light seed colours get overridden by Fluent 2's contrast rules, but the dark red used here renders correctly.</div>
-<div class="note"><strong>scrEditLibraries</strong>: the "edit cart" pattern — ticking libraries on scrManageLibraries and hitting Edit Selected copies them into a local collection (<code>colEditQueue</code>), shown here as one stacked card per library, all editable at once. Every field edit patches straight into that local collection as you type (no flow, no round trip); "Save All" is the only point anything actually writes to SharePoint, via a single <code>ForAll</code> + <code>Patch</code>. Library URL is deliberately not editable here — it's the join key this entire app relies on to survive renames, so changing it needs to stay a rare, manual, direct-in-SharePoint action, not a button.</div>
+      <section id="screens">
+        <h2>5. Screens</h2>
+        <p>For each: delete the existing screen if you already have one pasted, New screen (blank) &rarr; open the link &rarr; Copy YAML &rarr; paste. Rename the screen to match the name shown.</p>
+        <div class="links">
+          <a class="link-card" href="screens/scrFilePlan.html?v=2.2">
+            <div><span class="pill">Screen 1</span><strong style="margin-top:8px;display:block">scrFilePlan</strong>
+              <p>Read-only browse screen &mdash; search box, grouped-by-team collapsible list, Open and Copy link buttons per library, LTD badge on Limited libraries.</p></div>
+            <div class="open">Copy YAML &rarr;</div>
+          </a>
+          <a class="link-card" href="screens/scrAdminCreateLibrary.html?v=1.5">
+            <div><span class="pill">Screen 2</span><strong style="margin-top:8px;display:block">scrAdminCreateLibrary</strong>
+              <p>Restricted to the admin email list. Fill in a library's details, Add to Queue as many times as needed, then Run Queue creates them all sequentially, with a progress overlay. Also has a Rebuild Permission Index button with a staleness indicator.</p></div>
+            <div class="open">Copy YAML &rarr;</div>
+          </a>
+          <a class="link-card" href="screens/scrGroupSearch.html?v=3.2">
+            <div><span class="pill">Screen 3</span><strong style="margin-top:8px;display:block">scrGroupSearch</strong>
+              <p>Search by SG_/DG_ group name or library name. Results grouped by library in a collapsible accordion, same pattern as scrFilePlan. Reads the precomputed PermissionIndex list &mdash; instant, no live SharePoint crawl.</p></div>
+            <div class="open">Copy YAML &rarr;</div>
+          </a>
+          <a class="link-card" href="screens/scrManagePermissions.html?v=1.0">
+            <div><span class="pill">Screen 4</span><strong style="margin-top:8px;display:block">scrManagePermissions</strong>
+              <p>Restricted to admins. Pick a Limited library, see its live current permissions, add or remove a SharePoint group directly &mdash; no more doing this by hand in native SharePoint.</p></div>
+            <div class="open">Copy YAML &rarr;</div>
+          </a>
+          <a class="link-card" href="screens/scrManageLibraries.html?v=1.0">
+            <div><span class="pill">Screen 5</span><strong style="margin-top:8px;display:block">scrManageLibraries</strong>
+              <p>Restricted to admins. Tick libraries, bulk-delete them (empty ones go straight away, non-empty ones get an override prompt) or send the selection to the edit cart.</p></div>
+            <div class="open">Copy YAML &rarr;</div>
+          </a>
+          <a class="link-card" href="screens/scrEditLibraries.html?v=1.0">
+            <div><span class="pill">Screen 6</span><strong style="margin-top:8px;display:block">scrEditLibraries</strong>
+              <p>Restricted to admins. The edit cart &mdash; one stacked form per library sent over from Manage Libraries, change whatever's needed on each, Save All applies every change in one pass.</p></div>
+            <div class="open">Copy YAML &rarr;</div>
+          </a>
+        </div>
+        <div class="callout ok"><strong>scrFilePlan</strong>: one single flat gallery with uniform row height (a Team/Library discriminator column decides what each row shows) rather than nested galleries. Search is instant and local, no spinner needed, and auto-expands every Team with a match.</div>
+        <div class="callout ok"><strong>scrAdminCreateLibrary</strong>: Sub-Team is free text rather than a suggestion dropdown (Modern Combobox has a known instability issue). The queue is entirely local until you hit Run. Run Queue disables and shows "Creating..." immediately on click. The <strong>Rebuild Permission Index</strong> button is fire-and-forget &mdash; it doesn't wait for the flow to finish or show progress, since the run duration is unpredictable and Power Apps' <code>.Run()</code> call has no true non-blocking mode (a slow response is caught and shown as a friendly message rather than a raw error, but the flow itself always runs to completion on its own regardless). The status line above it shows how long ago the index was last rebuilt, and flags how many Limited libraries have been created since &mdash; both computed live from data already loaded, no extra flow or list needed.</div>
+        <div class="callout ok"><strong>scrGroupSearch</strong>: only finds results for libraries that were in scope for the last <strong>Rebuild Permission Index</strong> run (broken/unique-permission libraries &mdash; see that flow's section above). A Normal library never shows up here since it just inherits site-wide permissions; that's expected, not a bug. Searching matches the group name itself, the library name, or (for a nested AD group) the SharePoint group it's nested inside. v3.0 rebuilt the results as a <strong>three-tier accordion</strong> &mdash; Library &rarr; directly-granted group (matches SharePoint's own native Permissions panel exactly) &rarr; nested member, each level collapsed by default. Still one flat gallery underneath, just a third <code>RowType</code> and a second expand-tracking collection (<code>colExpandedGroups</code>) rather than nested galleries. v3.1 fixed a real sort-order bug where member rows sorted after <em>every</em> group in a library instead of clustering under their own parent group &mdash; the sort's column priority had rank ahead of the group-clustering key instead of after it. v3.2 moved the counts directly into each chevron instead of a separate pill: <code>4 &gt;</code> on a Library row (how many groups directly granted), <code>(2) &gt;</code> on a Group row (how many nested members) &mdash; visible whether the row is expanded or collapsed.</div>
+        <div class="callout ok"><strong>scrManagePermissions</strong>: unlike Rebuild Permission Index's fire-and-forget button, Add/Remove here wait for the result and immediately re-load the list &mdash; a single group operation is fast enough that blocking is the better UX, and there's a real result (success or a specific error) worth showing rather than "check back later." Uses <code>ThisItem.Title</code> (the library's real current SharePoint Title) when calling the flow, not <code>PrettyName</code>/<code>EffectiveName</code> &mdash; SharePoint's <code>getbytitle()</code> needs the actual current Title, and <strong>Create Library (App)</strong> renames every library's Title to the pretty name as its last real step, so by the time a library shows up here, its Title already <em>is</em> the pretty name.</div>
+        <div class="callout ok"><strong>scrManageLibraries</strong>: the delete button always sends <code>Force: false</code> on the first call &mdash; any empty library in your selection is deleted immediately, any non-empty one is skipped and reported back in one round trip, no separate "check" step needed first. If anything was skipped, an override panel lists exactly which ones and their item counts; "Delete Anyway" re-sends only those, this time with <code>Force: true</code>. First-time use of two controls new to this app: <code>CheckBox@0.0.30</code> (per-row tick, read/write via its <code>Checked</code> property) and <code>ModernButton</code>'s <code>BasePaletteColor</code> for the red delete buttons &mdash; Modern buttons don't have a direct <code>Fill</code> property, unlike Classic buttons used everywhere else in this app; light seed colours get overridden by Fluent 2's contrast rules, but the dark red used here renders correctly.</div>
+        <div class="callout ok"><strong>scrEditLibraries</strong>: the "edit cart" pattern &mdash; ticking libraries on scrManageLibraries and hitting Edit Selected copies them into a local collection (<code>colEditQueue</code>), shown here as one stacked card per library, all editable at once. Every field edit patches straight into that local collection as you type (no flow, no round trip); "Save All" is the only point anything actually writes to SharePoint, via a single <code>ForAll</code> + <code>Patch</code>. Library URL is deliberately not editable here &mdash; it's the join key this entire app relies on to survive renames, so changing it needs to stay a rare, manual, direct-in-SharePoint action, not a button.</div>
+      </section>
 
-<div class="note">v3.2 redesigned the counts: instead of a separate pill, the count now sits directly next to each chevron — <code>4 &gt;</code> on a Library row (how many groups directly granted, collapsed), <code>(2) &gt;</code> on a Group row (how many nested members). If you manually added <code>lblGroupMemberCount</code> per an earlier version of this guide, delete it — it's superseded by this and no longer needed.</div>
+      <section id="navbar">
+        <h2>6. Navigation Bar</h2>
+        <p>Add this small nav bar to each of the six screens. This is an add-on, not a full screen replacement: select the screen in the Tree view first, then paste. Four of the five buttons (everything except File Plan and Group Search) are gated by <code>varIsAdmin</code>, same check used everywhere else in this app.</p>
+        <div class="callout warn">The bar sits at <code>Y: 0</code>, <code>Height: 48</code> &mdash; it will visually overlap each screen's existing Title label (which starts around <code>Y: 24</code>). Nudge your screen's existing top controls down by about 50px afterward, or accept the overlap if it doesn't bother you &mdash; this wasn't worth reissuing every screen's full YAML just to shift everything down.</div>
 
-<h2 id="navbar">6. Navigation Bar</h2>
-<p>Add this small nav bar to each of the six screens. This is an add-on, not a full screen replacement: select the screen in the Tree view first, then paste. Four of the five buttons (everything except File Plan and Group Search) are gated by <code>varIsAdmin</code>, same check used everywhere else in this app.</p>
-<div class="warning">The bar sits at <code>Y: 0</code>, <code>Height: 48</code> — it will visually overlap each screen's existing Title label (which starts around <code>Y: 24</code>). Nudge your screen's existing top controls down by about 50px afterward, or accept the overlap if it doesn't bother you — this wasn't worth reissuing every screen's full YAML just to shift everything down.</div>
-<p class="snippet-stamp">v4.3 — Updated 13 Aug 2026 10:23 BST</p>
-<h3>Paste onto scrFilePlan</h3>
-<div class="code-block">
-  <button class="copy-btn" onclick="copyPre(this)">Copy</button>
-  <pre>Screens:
+        <h3>Paste onto scrFilePlan</h3>
+        <div class="code-card">
+          <div class="code-toolbar"><span>v4.3 &mdash; Updated 13 Aug 2026 10:23 BST</span><button onclick="copyCode(this)">Copy</button></div>
+          <pre>Screens:
   scrFilePlan:
     Children:
       - recNavBarBg:
@@ -433,11 +487,11 @@ Set(varEditSaveStatus, "")</pre>
             Height: =36
             OnSelect: |-
               =Navigate(scrManageLibraries)</pre>
-</div>
-<h3>Paste onto scrGroupSearch</h3>
-<div class="code-block">
-  <button class="copy-btn" onclick="copyPre(this)">Copy</button>
-  <pre>Screens:
+        </div>
+        <h3>Paste onto scrGroupSearch</h3>
+        <div class="code-card">
+          <div class="code-toolbar"><span>v4.3 &mdash; Updated 13 Aug 2026 10:23 BST</span><button onclick="copyCode(this)">Copy</button></div>
+          <pre>Screens:
   scrGroupSearch:
     Children:
       - recNavBarBg:
@@ -506,11 +560,11 @@ Set(varEditSaveStatus, "")</pre>
             Height: =36
             OnSelect: |-
               =Navigate(scrManageLibraries)</pre>
-</div>
-<h3>Paste onto scrAdminCreateLibrary</h3>
-<div class="code-block">
-  <button class="copy-btn" onclick="copyPre(this)">Copy</button>
-  <pre>Screens:
+        </div>
+        <h3>Paste onto scrAdminCreateLibrary</h3>
+        <div class="code-card">
+          <div class="code-toolbar"><span>v4.3 &mdash; Updated 13 Aug 2026 10:23 BST</span><button onclick="copyCode(this)">Copy</button></div>
+          <pre>Screens:
   scrAdminCreateLibrary:
     Children:
       - recNavBarBg:
@@ -579,11 +633,11 @@ Set(varEditSaveStatus, "")</pre>
             Height: =36
             OnSelect: |-
               =Navigate(scrManageLibraries)</pre>
-</div>
-<h3>Paste onto scrManagePermissions</h3>
-<div class="code-block">
-  <button class="copy-btn" onclick="copyPre(this)">Copy</button>
-  <pre>Screens:
+        </div>
+        <h3>Paste onto scrManagePermissions</h3>
+        <div class="code-card">
+          <div class="code-toolbar"><span>v4.3 &mdash; Updated 13 Aug 2026 10:23 BST</span><button onclick="copyCode(this)">Copy</button></div>
+          <pre>Screens:
   scrManagePermissions:
     Children:
       - recNavBarBg:
@@ -652,11 +706,11 @@ Set(varEditSaveStatus, "")</pre>
             Height: =36
             OnSelect: |-
               =Navigate(scrManageLibraries)</pre>
-</div>
-<h3>Paste onto scrManageLibraries</h3>
-<div class="code-block">
-  <button class="copy-btn" onclick="copyPre(this)">Copy</button>
-  <pre>Screens:
+        </div>
+        <h3>Paste onto scrManageLibraries</h3>
+        <div class="code-card">
+          <div class="code-toolbar"><span>v4.3 &mdash; Updated 13 Aug 2026 10:23 BST</span><button onclick="copyCode(this)">Copy</button></div>
+          <pre>Screens:
   scrManageLibraries:
     Children:
       - recNavBarBg:
@@ -725,11 +779,11 @@ Set(varEditSaveStatus, "")</pre>
             Height: =36
             OnSelect: |-
               =Navigate(scrManageLibraries)</pre>
-</div>
-<h3>Paste onto scrEditLibraries</h3>
-<div class="code-block">
-  <button class="copy-btn" onclick="copyPre(this)">Copy</button>
-  <pre>Screens:
+        </div>
+        <h3>Paste onto scrEditLibraries</h3>
+        <div class="code-card">
+          <div class="code-toolbar"><span>v4.3 &mdash; Updated 13 Aug 2026 10:23 BST</span><button onclick="copyCode(this)">Copy</button></div>
+          <pre>Screens:
   scrEditLibraries:
     Children:
       - recNavBarBg:
@@ -798,15 +852,20 @@ Set(varEditSaveStatus, "")</pre>
             Height: =36
             OnSelect: |-
               =Navigate(scrManageLibraries)</pre>
-</div>
-<div class="note">Validated against the real Studio parser (Layer A of this Bible's own <code>payaml-validate</code> tool) — clean on all six, including zero unproven-property flags, since every control/property here has already been proven elsewhere in this app. One thing not independently confirmed: that Studio's paste, given a screen selected in the Tree view and a <code>Screens: scrName: Children: [...]</code> fragment on the clipboard, adds those as new children of that screen rather than something else. If it doesn't behave that way, fall back to inserting each control manually (Insert → the control type, then set the properties shown above) — same end result, just click-by-click instead of paste.</div>
+        </div>
+        <div class="callout ok">Validated against the real Studio parser (Layer A of this Bible's own <code>payaml-validate</code> tool) &mdash; clean on all six, including zero unproven-property flags, since every control/property here has already been proven elsewhere in this app. One thing not independently confirmed: that Studio's paste, given a screen selected in the Tree view and a <code>Screens: scrName: Children: [...]</code> fragment on the clipboard, adds those as new children of that screen rather than something else. If it doesn't behave that way, fall back to inserting each control manually (Insert &rarr; the control type, then set the properties shown above) &mdash; same end result, just click-by-click instead of paste.</div>
+      </section>
 
-<h2>Issues</h2>
-<p>Found a problem? <a href="https://github.com/PhadeDev/library-file-plan-manager/issues" style="color:#7c4dff">Report it here</a>.</p>
+      <section id="issues">
+        <h2>Issues</h2>
+        <p>Found a problem? <a href="https://github.com/PhadeDev/library-file-plan-manager/issues">Report it here</a>.</p>
+      </section>
+    </main>
+  </div>
 
 <script>
-async function copyPre(btn) {
-  const pre = btn.parentElement.querySelector('pre');
+async function copyCode(btn) {
+  const pre = btn.closest('.code-card').querySelector('pre');
   const text = pre.innerText;
   const orig = btn.textContent;
   const showOk = () => { btn.textContent = 'Copied!'; btn.classList.add('ok'); setTimeout(() => { btn.textContent = orig; btn.classList.remove('ok'); }, 2500); };
