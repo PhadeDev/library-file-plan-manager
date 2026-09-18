@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<title>Library &amp; File Plan Manager — Screen YAML Vault</title>
+<style>
+:root {
+  --bg: #f7f8fb; --panel: #ffffff; --panel-2: #f1f5f9; --panel-hover: #fbfdff;
+  --ink: #18212f; --muted: #5d6b7d; --faint: #7f8da0; --line: #d8e0ea; --line-strong: #aebccd;
+  --blue: #004e42; --blue-soft: #e7f3ef; --green: #1f6d43; --green-soft: #e8f5ee; --red: #a32d2d;
+  --sans: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --mono: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f1520; --panel: #161d2b; --panel-2: #1c2434; --panel-hover: #1f2739; --ink: #e8ecf3; --muted: #93a1b8;
+    --faint: #6b7a91; --line: #2a3347; --line-strong: #3c4864;
+    --blue: #4fd1a5; --blue-soft: rgba(79,209,165,.14); --green: #52c98a; --green-soft: rgba(82,201,138,.14); --red: #e2726f;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f1520; --panel: #161d2b; --panel-2: #1c2434; --panel-hover: #1f2739; --ink: #e8ecf3; --muted: #93a1b8;
+  --faint: #6b7a91; --line: #2a3347; --line-strong: #3c4864;
+  --blue: #4fd1a5; --blue-soft: rgba(79,209,165,.14); --green: #52c98a; --green-soft: rgba(82,201,138,.14); --red: #e2726f;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; max-width: 100%; overflow-x: hidden; }
+body { min-height: 100vh; background: var(--bg); color: var(--ink); font-family: var(--sans); line-height: 1.5; }
+a { color: inherit; }
+.page { width: min(1180px, 100%); margin: 0 auto; padding: 22px; }
+.masthead { display: flex; align-items: flex-end; justify-content: space-between; gap: 18px; padding: 10px 2px 18px; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+.kicker { margin: 0 0 5px; color: var(--blue); font-size: .76rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+h1 { margin: 0; font-size: 1.5rem; line-height: 1.1; }
+.intro { margin: 8px 0 0; max-width: 720px; color: var(--muted); font-size: .92rem; }
+.back-link { font-size: .85rem; font-weight: 700; color: var(--blue); text-decoration: none; }
+.back-link:hover { text-decoration: underline; }
+#theme-toggle { position: fixed; top: 14px; right: 14px; z-index: 50; width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--line); background: var(--panel); color: var(--ink); cursor: pointer; font-size: 1.1rem; }
+
+/* Password gate */
+#gate { max-width: 420px; margin: 60px auto; background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 24px; text-align: center; }
+#gate h2 { margin: 0 0 6px; }
+#gate p { color: var(--muted); font-size: .9rem; }
+#gate input { width: 100%; padding: 10px 12px; border: 1px solid var(--line-strong); border-radius: 8px; background: var(--panel-2); color: var(--ink); font-size: 1rem; margin: 12px 0; }
+#gate button, .save-btn, .add-btn { background: var(--blue); color: #fff; border: none; border-radius: 8px; padding: 10px 16px; font-weight: 700; font-size: .9rem; cursor: pointer; }
+#gate button:hover, .save-btn:hover, .add-btn:hover { opacity: .9; }
+#gate-error { color: var(--red); font-size: .85rem; min-height: 1.2em; }
+
+/* Vault layout */
+#vault { display: none; margin-top: 20px; gap: 18px; grid-template-columns: 230px 1fr; }
+#vault.open { display: grid; }
+@media (max-width: 760px) { #vault.open { grid-template-columns: 1fr; } }
+.tab-list { display: flex; flex-direction: column; gap: 4px; }
+.tab-group-label { font-size: .72rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--faint); margin: 12px 0 4px; }
+.tab-group-label:first-child { margin-top: 0; }
+.tab-btn { text-align: left; padding: 9px 12px; border-radius: 8px; border: 1px solid transparent; background: none; color: var(--ink); font: inherit; cursor: pointer; display: flex; justify-content: space-between; gap: 8px; align-items: center; }
+.tab-btn:hover { background: var(--panel-hover); }
+.tab-btn.active { background: var(--blue-soft); border-color: var(--blue); font-weight: 700; }
+.tab-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); flex-shrink: 0; }
+.tab-dot.empty { background: var(--line-strong); }
+#add-screen-btn { margin-top: 14px; width: 100%; }
+
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 18px; min-width: 0; }
+.panel-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-bottom: 4px; flex-wrap: wrap; }
+.panel-head h2 { margin: 0; font-size: 1.15rem; }
+.panel-desc { color: var(--muted); font-size: .85rem; margin: 0 0 12px; }
+.updated-pill { font-size: .78rem; color: var(--faint); background: var(--panel-2); border: 1px solid var(--line); border-radius: 999px; padding: 3px 10px; white-space: nowrap; }
+textarea { width: 100%; min-height: 380px; resize: vertical; font-family: var(--mono); font-size: .85rem; padding: 12px; border: 1px solid var(--line-strong); border-radius: 8px; background: var(--panel-2); color: var(--ink); }
+.panel-actions { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; gap: 10px; flex-wrap: wrap; }
+.save-status { font-size: .85rem; color: var(--green); font-weight: 700; }
+.delete-btn { background: none; border: 1px solid var(--line-strong); color: var(--red); border-radius: 8px; padding: 8px 12px; font-size: .82rem; cursor: pointer; }
+.delete-btn:hover { background: var(--red); color: #fff; border-color: var(--red); }
+.hint { font-size: .78rem; color: var(--faint); }
+</style>
+</head>
+<body>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode" title="Toggle dark mode">&#127769;</button>
+<div class="page">
+  <div class="masthead">
+    <div class="title-block">
+      <p class="kicker">Screen YAML Vault</p>
+      <h1>Library &amp; File Plan Manager</h1>
+      <p class="intro">Paste each screen's YAML, App.OnStart or the app-wide Formulas dump here and save it. It's stored centrally so any future Claude session can read the current version back directly &mdash; no more notepad round-trips.</p>
+    </div>
+    <a class="back-link" href="index.html">&larr; Library &amp; File Plan Manager Guide</a>
+  </div>
+
+  <div id="gate">
+    <h2>Password required</h2>
+    <p>The same password as the file upload box. Remembered on this browser for 30 days.</p>
+    <input type="password" id="gate-password" autocomplete="off" placeholder="Password" />
+    <div id="gate-error"></div>
+    <button type="button" id="gate-unlock">Unlock</button>
+  </div>
+
+  <div id="vault">
+    <nav class="tab-list" id="tab-list" aria-label="Screens"></nav>
+    <section class="panel" id="panel">
+      <div class="panel-head">
+        <h2 id="panel-title">&nbsp;</h2>
+        <span class="updated-pill" id="panel-updated"></span>
+      </div>
+      <p class="panel-desc" id="panel-desc"></p>
+      <textarea id="panel-content" spellcheck="false" placeholder="Paste YAML here&hellip;"></textarea>
+      <div class="panel-actions">
+        <div>
+          <button type="button" class="save-btn" id="panel-save">Save</button>
+          <span class="save-status" id="panel-status"></span>
+        </div>
+        <button type="button" class="delete-btn" id="panel-delete" style="display:none;">Delete this screen</button>
+      </div>
+    </section>
+  </div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+  var API = "https://powerapps.pages.dev/api/screen-yaml";
+  var APP_SLUG = "library-file-plan-manager";
+  var PRESETS = [{"key":"scrGroupSearch","label":"scrGroupSearch","desc":"SharePoint group/permissions search."},{"key":"scrManagePermissions","label":"scrManagePermissions","desc":"Manage library permissions."},{"key":"scrManageLibraries","label":"scrManageLibraries","desc":"Manage document libraries."},{"key":"scrAdminCreateLibrary","label":"scrAdminCreateLibrary","desc":"Admin screen that creates document libraries correctly and auto-registers them."},{"key":"scrEditLibraries","label":"scrEditLibraries","desc":"Edit library metadata."},{"key":"scrFilePlan","label":"scrFilePlan","desc":"File plan view."}];
+  var PASS_KEY = "pa-yaml-pass-" + APP_SLUG;
+  var PASS_TTL_DAYS = 30;
+
+  // theme toggle
+  (function () {
+    var key = "pa-theme", root = document.documentElement, btn = document.getElementById("theme-toggle");
+    function apply(t) { root.setAttribute("data-theme", t); btn.textContent = t === "dark" ? "\u2600\uFE0F" : "\uD83C\uDF19"; }
+    apply(localStorage.getItem(key) || (matchMedia("(prefers-color-scheme:dark)").matches ? "dark" : "light"));
+    btn.addEventListener("click", function () {
+      var next = root.getAttribute("data-theme") === "dark" ? "light" : "dark";
+      apply(next); localStorage.setItem(key, next);
+    });
+  })();
+
+  var state = { password: null, data: { order: [], sections: {} }, activeKey: "app-onstart" };
+
+  var PINNED = [
+    { key: "app-onstart", label: "App.OnStart", desc: "The app's single App.OnStart formula (same for every screen)." },
+    { key: "app-formulas", label: "Formulas", desc: "Any other app-wide formulas that don't belong to one screen." },
+  ];
+
+  function fmtAgo(iso) {
+    if (!iso) return "Never saved";
+    var d = new Date(iso), diff = Date.now() - d.getTime();
+    var mins = Math.round(diff / 60000);
+    if (mins < 1) return "Saved just now";
+    if (mins < 60) return "Saved " + mins + "m ago";
+    var hrs = Math.round(mins / 60);
+    if (hrs < 24) return "Saved " + hrs + "h ago";
+    var days = Math.round(hrs / 24);
+    return "Saved " + days + "d ago (" + d.toLocaleDateString("en-GB") + ")";
+  }
+
+  function allTabs() {
+    var extra = state.data.order.filter(function (k) {
+      return !PINNED.some(function (p) { return p.key === k; }) && !PRESETS.some(function (p) { return p.key === k; });
+    }).map(function (k) { return { key: k, label: (state.data.sections[k] && state.data.sections[k].label) || k, desc: "" }; });
+    return { pinned: PINNED, screens: PRESETS.concat(extra) };
+  }
+
+  function renderTabs() {
+    var tabs = allTabs();
+    var list = document.getElementById("tab-list");
+    list.innerHTML = "";
+    function addBtn(t) {
+      var has = state.data.sections[t.key] && state.data.sections[t.key].content;
+      var btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "tab-btn" + (state.activeKey === t.key ? " active" : "");
+      btn.innerHTML = '<span>' + t.label.replace(/[&<>]/g, function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;"}[c];}) + '</span><span class="tab-dot' + (has ? "" : " empty") + '"></span>';
+      btn.addEventListener("click", function () { state.activeKey = t.key; renderTabs(); renderPanel(); });
+      list.appendChild(btn);
+    }
+    var lab1 = document.createElement("div"); lab1.className = "tab-group-label"; lab1.textContent = "App-wide"; list.appendChild(lab1);
+    tabs.pinned.forEach(addBtn);
+    var lab2 = document.createElement("div"); lab2.className = "tab-group-label"; lab2.textContent = "Screens"; list.appendChild(lab2);
+    tabs.screens.forEach(addBtn);
+    var addBtnEl = document.createElement("button");
+    addBtnEl.type = "button"; addBtnEl.id = "add-screen-btn"; addBtnEl.className = "add-btn";
+    addBtnEl.textContent = "+ Add screen";
+    addBtnEl.addEventListener("click", onAddScreen);
+    list.appendChild(addBtnEl);
+  }
+
+  function currentTabMeta() {
+    var tabs = allTabs();
+    return tabs.pinned.concat(tabs.screens).filter(function (t) { return t.key === state.activeKey; })[0] || { key: state.activeKey, label: state.activeKey, desc: "" };
+  }
+
+  function renderPanel() {
+    var meta = currentTabMeta();
+    var section = state.data.sections[meta.key];
+    document.getElementById("panel-title").textContent = meta.label;
+    document.getElementById("panel-desc").textContent = meta.desc || "";
+    document.getElementById("panel-updated").textContent = fmtAgo(section && section.updated);
+    document.getElementById("panel-content").value = (section && section.content) || "";
+    document.getElementById("panel-status").textContent = "";
+    var isPinnedOrPreset = PINNED.some(function (p) { return p.key === meta.key; }) || PRESETS.some(function (p) { return p.key === meta.key; });
+    document.getElementById("panel-delete").style.display = isPinnedOrPreset ? "none" : "inline-block";
+  }
+
+  async function fetchData(password) {
+    var res = await fetch(API + "?app=" + encodeURIComponent(APP_SLUG) + "&password=" + encodeURIComponent(password));
+    if (!res.ok) throw new Error(res.status === 401 ? "wrong password" : "server error");
+    return res.json();
+  }
+
+  function openVault() {
+    document.getElementById("gate").style.display = "none";
+    document.getElementById("vault").className = "open";
+    renderTabs();
+    renderPanel();
+  }
+
+  async function tryUnlock(password, silent) {
+    var err = document.getElementById("gate-error");
+    err.textContent = "";
+    try {
+      var data = await fetchData(password);
+      state.password = password;
+      state.data = data;
+      localStorage.setItem(PASS_KEY, JSON.stringify({ p: password, t: Date.now() }));
+      openVault();
+    } catch (e) {
+      if (!silent) err.textContent = e.message === "wrong password" ? "Wrong password." : "Couldn't reach the server.";
+      if (e.message === "wrong password") localStorage.removeItem(PASS_KEY);
+    }
+  }
+
+  document.getElementById("gate-unlock").addEventListener("click", function () {
+    var v = document.getElementById("gate-password").value;
+    if (v) tryUnlock(v, false);
+  });
+  document.getElementById("gate-password").addEventListener("keydown", function (e) {
+    if (e.key === "Enter") document.getElementById("gate-unlock").click();
+  });
+
+  document.getElementById("panel-save").addEventListener("click", async function () {
+    var meta = currentTabMeta();
+    var content = document.getElementById("panel-content").value;
+    var statusEl = document.getElementById("panel-status");
+    statusEl.textContent = "Saving\u2026";
+    try {
+      var res = await fetch(API, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ password: state.password, app: APP_SLUG, key: meta.key, label: meta.label, content: content }),
+      });
+      if (!res.ok) throw new Error("save failed");
+      state.data = await res.json();
+      statusEl.textContent = "Saved.";
+      renderTabs();
+      renderPanel();
+    } catch (e) {
+      statusEl.textContent = "Save failed - try again.";
+      statusEl.style.color = "var(--red)";
+    }
+  });
+
+  document.getElementById("panel-delete").addEventListener("click", async function () {
+    var meta = currentTabMeta();
+    if (!confirm('Delete "' + meta.label + '" and its saved content? This can\'t be undone.')) return;
+    var res = await fetch(API, {
+      method: "DELETE",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ password: state.password, app: APP_SLUG, key: meta.key }),
+    });
+    if (res.ok) {
+      state.data = await res.json();
+      state.activeKey = "app-onstart";
+      renderTabs();
+      renderPanel();
+    }
+  });
+
+  function onAddScreen() {
+    var name = prompt("Screen name (e.g. scrNewScreen):");
+    if (!name) return;
+    var key = name.trim().replace(/\s+/g, "");
+    if (!key) return;
+    if (!state.data.sections[key]) {
+      state.data.sections[key] = { label: key, content: "", updated: null };
+    }
+    if (state.data.order.indexOf(key) === -1) state.data.order.push(key);
+    state.activeKey = key;
+    renderTabs();
+    renderPanel();
+  }
+
+  // auto-unlock from remembered password
+  (function () {
+    var raw = localStorage.getItem(PASS_KEY);
+    if (!raw) return;
+    try {
+      var saved = JSON.parse(raw);
+      var ageDays = (Date.now() - saved.t) / 86400000;
+      if (ageDays <= PASS_TTL_DAYS && saved.p) {
+        document.getElementById("gate-password").value = saved.p;
+        tryUnlock(saved.p, true);
+      } else {
+        localStorage.removeItem(PASS_KEY);
+      }
+    } catch (e) { localStorage.removeItem(PASS_KEY); }
+  })();
+})();
+</script>
+</body>
+</html>
