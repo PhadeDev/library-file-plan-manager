@@ -129,13 +129,15 @@
   <div class="shell">
     <aside>
       <h2>Library &amp; File Plan Manager</h2>
-      <p>v4.4 build guide. Follow this end-to-end to set up the SharePoint lists, flows, and screens.</p>
+      <p>v4.5 build guide. Follow this end-to-end to set up the SharePoint lists, flows, and screens.</p>
       <nav>
         <a href="https://powerapps.pages.dev/">&larr; Guide library</a>
         <a href="yaml.html" style="font-weight:800;">📋 Screen YAML Vault</a>
         <a href="#lists">1. SharePoint Lists</a>
         <a href="#flow-fix">2. Flow Field Fix</a>
         <a href="#flow-fix-2">2b. Missing Libraries Fix</a>
+        <a href="#flow-fix-3">2c. Backfill Name Fix</a>
+        <a href="#flow-fix-4">2d. Register Existing Library</a>
         <a href="#flows">3. Download &amp; Import Flows</a>
         <a href="#build-app">4. Building the Power App</a>
         <a href="#screens">5. Screens</a>
@@ -146,10 +148,11 @@
 
     <main>
       <div class="topline">
-        <span class="pill">v4.4</span>
+        <span class="pill">v4.5</span>
         <span class="pill">Built 25 Sep 2026</span>
         <span class="pill">3 screens live</span>
-        <span class="pill warn">3 more designed, never built</span>
+        <span class="pill">2 ready to build (new)</span>
+        <span class="pill warn">1 more designed, never built</span>
         <a class="pill" href="yaml.html" style="text-decoration:none;">📋 Screen YAML Vault →</a>
       </div>
       <h1>Library &amp; File Plan Manager</h1>
@@ -161,9 +164,11 @@
           <li><a href="#lists">SharePoint lists</a> &mdash; create <code>LibraryFilePlan</code> and <code>PermissionIndex</code> via the CSV templates (fastest &mdash; creates every column for you), or manually per the schema tables. Column is <code>PrettyName</code>, not <code>DisplayName</code> &mdash; SharePoint silently drops writes to that name on this list.</li>
           <li><a href="#flow-fix">Flow field fix</a> &mdash; in <strong>Create Library (App)</strong>, edit <code>Create_FilePlan_Row</code>'s Body so it writes <code>PrettyName</code> instead of <code>DisplayName</code>. One line, no re-import.</li>
           <li><a href="#flow-fix-2">Flow field fix (missing libraries)</a> &mdash; in <strong>Rebuild Permission Index</strong>, add <code>&amp;$top=5000</code> to <code>Get_Unique_Perm_Libraries</code>'s Uri so it stops capping out around 20-30 libraries. One line, no re-import.</li>
+          <li><a href="#flow-fix-3">Backfill name fix (optional)</a> &mdash; same <code>DisplayName</code>&rarr;<code>PrettyName</code> bug as above, in <strong>Backfill File Plan</strong>. Only matters if you ever run Backfill again.</li>
+          <li><a href="#flow-fix-4">Register Existing Library (optional)</a> &mdash; adds a second path through <strong>Create Library (App)</strong> for registering a library that already exists, without creating a new one. Needed for scrAdminCreateLibrary v1.9's new toggle.</li>
           <li><a href="#flows">Import all four flows</a> &mdash; Create Library (App), Backfill File Plan, Rebuild Permission Index, Manage Library Permissions. Test Create Library (App) manually before touching Power Apps.</li>
           <li><a href="#build-app">Data connections + App.OnStart</a> &mdash; add both SharePoint lists and the flow as data sources, paste App.OnStart in full.</li>
-          <li><a href="#screens">All three real screens</a> &mdash; delete and paste fresh (screens have had controls added since first built, so a partial paste over the top won't apply cleanly). Three more screens were designed but never built &mdash; see the Screens section for what those were meant to do.</li>
+          <li><a href="#screens">All three live screens</a> &mdash; delete and paste fresh (screens have had controls added since first built, so a partial paste over the top won't apply cleanly). Then <strong>scrManageLibraries</strong> and <strong>scrEditLibraries</strong> &mdash; brand new, paste as new blank screens, nothing to delete first. <strong>scrManagePermissions</strong> remains just a design, not built &mdash; see the Screens section.</li>
           <li><a href="#navbar">Navigation bar</a> &mdash; select each screen in the Tree view, paste that screen's snippet as an add-on (not a full replacement). Nudge existing top controls down afterward to clear the bar.</li>
         </ol>
       </div>
@@ -237,6 +242,81 @@
         </div>
         <div class="callout warn">This changes the flow's own logic, same as any other flow edit &mdash; refresh <strong>Rebuild Permission Index</strong>'s connection in the Power Apps Data panel afterward, then run the Rebuild button on the Admin screen once to repopulate the index with every library this time.</div>
         <div class="callout ok">The downloadable flow zip for a fresh install already has this fix baked in &mdash; this section is only needed if you imported before 13 Aug 2026.</div>
+      </section>
+
+      <section id="flow-fix-3">
+        <h2>2c. Flow Field Fix: Backfill File Plan (same DisplayName bug as 2)</h2>
+        <p><strong>Cause:</strong> found 25 Sep 2026 while investigating why some libraries showed raw, ugly names in scrFilePlan instead of a proper Pretty Name. This flow's own <code>Create_FilePlan_Row</code> action was writing to <code>DisplayName</code>, not <code>PrettyName</code> &mdash; the exact same silently-dropped-write bug fixed in section 2 above for <strong>Create Library (App)</strong>, but never applied here since the two flows only share a pattern, not the actual action. Any library that was ever registered by running Backfill (rather than created through the app's own Create Library button) has no Pretty Name at all as a result.</p>
+        <p>In Power Automate, open <strong>Backfill File Plan</strong> &rarr; Edit &rarr; find the <strong>Create_FilePlan_Row</strong> action inside the <strong>If_Not_Already_Tracked</strong> condition, inside <strong>Apply_to_each_Library</strong> &rarr; click into its <strong>Body</strong> box &rarr; select all, delete &rarr; paste this in as the replacement &rarr; Save.</p>
+        <div class="code-card">
+          <div class="code-toolbar"><span>v1.1 &mdash; Updated 25 Sep 2026 14:00 BST</span><button onclick="copyCode(this)">Copy</button></div>
+          <pre>{
+  "__metadata": { "type": "SP.Data.LibraryFilePlanListItem" },
+  "Title": "@{items('Apply_to_each_Library')?['Title']}",
+  "LibraryUrl": "@{items('Apply_to_each_Library')?['Url']}",
+  "PrettyName": "@{items('Apply_to_each_Library')?['Title']}",
+  "SiteUrl": "@{coalesce(triggerBody()?['SiteUrl'], 'https://modgovuk.sharepoint.com/teams/1598')}",
+  "Team": "",
+  "SubTeam": "",
+  "IsLimited": @{if(equals(items('Apply_to_each_Library')?['Unique'], true), 'true', 'false')}
+}</pre>
+        </div>
+        <div class="callout warn">This flow isn't added as a data source in the app (it's only ever run manually from Power Automate), so there's no Power Apps connection to refresh here &mdash; just Save the flow. This fix only affects libraries registered by a <strong>future</strong> run of Backfill; it does nothing for the ugly names already sitting in <code>LibraryFilePlan</code> right now. For those, export the list, fill in Pretty Name yourself (AI-assisted or by hand), re-import, then refresh <code>colFilePlan</code> in the app (reload, or hit any button that re-pulls it).</div>
+      </section>
+
+      <section id="flow-fix-4">
+        <h2>2d. Flow Surgery: Create Library (App) &mdash; Register Existing Library</h2>
+        <p>Needed for scrAdminCreateLibrary v1.9's new "Register an existing library only" toggle. This adds a second path through the <strong>same</strong> flow &mdash; nothing gets deleted or recreated, and no new flow needs registering as a data source in the app.</p>
+        <div class="callout warn">This is a genuine structural change, not a one-line field edit like the fixes above. Take it slowly, one step at a time, and test with the flow's own manual Test panel before touching Power Apps.</div>
+        <ol>
+          <li><strong>Add two new trigger inputs.</strong> Open <strong>Create Library (App)</strong> &rarr; Edit &rarr; click the trigger (<em>Power Apps</em>) &rarr; under its inputs, add: <code>RegisterOnly</code> (type Yes/No, not required) and <code>ExistingLibraryTitle</code> (type Text, not required).</li>
+          <li><strong>Add two "Initialize variable" actions right after the trigger</strong>, before <code>Select_Categories</code>: <code>varOutDisplayName</code> (String, leave the value blank) and <code>varOutLibraryUrl</code> (String, leave the value blank).</li>
+          <li><strong>Add a Condition action</strong> right after those two, still before <code>Select_Categories</code>. Set it to check <code>RegisterOnly is equal to true</code>.</li>
+          <li><strong>Move the existing chain into the "No" branch.</strong> Select <code>Select_Categories</code> through <code>Create_FilePlan_Row</code> (everything except the final <strong>Response</strong> action) &mdash; multi-select them (click the first, shift-click the last, or use the "..." menu &rarr; Select actions), <strong>Cut</strong>, then click inside the Condition's <strong>No</strong> branch and <strong>Paste</strong>.</li>
+          <li><strong>At the end of the "No" branch</strong> (after <code>Create_FilePlan_Row</code>), add two <strong>Set variable</strong> actions:
+            <ul>
+              <li><code>Set varOutDisplayName</code> to <code>triggerBody()?['DisplayName']</code></li>
+              <li><code>Set varOutLibraryUrl</code> to <code>body('Get_New_Library_Url')?['d']?['RootFolder']?['ServerRelativeUrl']</code></li>
+            </ul>
+          </li>
+          <li><strong>In the "Yes" branch</strong>, add these actions in order:
+            <ol style="margin-top:8px">
+              <li>An HTTP action (Send an HTTP request to SharePoint) named <code>Get_Existing_Library_Url</code>: GET <code>_api/web/lists/getbytitle('@{triggerBody()?['ExistingLibraryTitle']}')/RootFolder/ServerRelativeUrl</code>, Site Address = the same dataset expression already used elsewhere in this flow (<code>coalesce(triggerBody()?['SiteUrl'], 'https://modgovuk.sharepoint.com/teams/1598')</code>).</li>
+              <li>Another HTTP GET, <code>Get_Existing_Row</code>: <code>_api/web/lists/getbytitle('LibraryFilePlan')/items?$filter=LibraryUrl eq '@{body('Get_Existing_Library_Url')?['d']?['ServerRelativeUrl']}'&amp;$select=Id&amp;$top=1</code> &mdash; same dedupe check Backfill already uses.</li>
+              <li>A Condition, <code>If_Not_Already_Tracked</code>: <code>length(body('Get_Existing_Row')?['d']?['results'])</code> is equal to <code>0</code>.</li>
+              <li>Inside its "Yes": an HTTP POST, <code>Create_FilePlan_Row_Register</code>, same URI as the existing <code>Create_FilePlan_Row</code> (<code>_api/web/lists/getbytitle('LibraryFilePlan')/items</code>), with this body:
+                <div class="code-card">
+                  <div class="code-toolbar"><span>New action body</span><button onclick="copyCode(this)">Copy</button></div>
+                  <pre>{
+  "__metadata": { "type": "SP.Data.LibraryFilePlanListItem" },
+  "Title": "@{triggerBody()?['ExistingLibraryTitle']}",
+  "LibraryUrl": "@{body('Get_Existing_Library_Url')?['d']?['ServerRelativeUrl']}",
+  "PrettyName": "@{coalesce(triggerBody()?['DisplayName'], triggerBody()?['ExistingLibraryTitle'])}",
+  "Team": "@{triggerBody()?['Team']}",
+  "SubTeam": "@{triggerBody()?['SubTeam']}",
+  "SiteUrl": "@{coalesce(triggerBody()?['SiteUrl'], 'https://modgovuk.sharepoint.com/teams/1598')}",
+  "IsLimited": @{if(equals(triggerBody()?['IsLimited'], true), 'true', 'false')}
+}</pre>
+                </div>
+              </li>
+              <li>Still inside the "Yes" branch of <code>If_Not_Already_Tracked</code>, after that action: <code>Set varOutDisplayName</code> to <code>triggerBody()?['ExistingLibraryTitle']</code>, and <code>Set varOutLibraryUrl</code> to <code>body('Get_Existing_Library_Url')?['d']?['ServerRelativeUrl']</code>.</li>
+              <li>In the "No" branch of <code>If_Not_Already_Tracked</code> (already registered): the same two Set variable actions, so the flow still responds cleanly instead of leaving the variables blank.</li>
+            </ol>
+          </li>
+          <li><strong>Move the existing <code>Response</code> action</strong> out from directly after <code>Create_FilePlan_Row</code> to sit <strong>after the whole Condition block</strong> (both branches). Update its body to read from the variables instead of the old direct references:
+            <div class="code-card">
+              <div class="code-toolbar"><span>Updated Response body</span><button onclick="copyCode(this)">Copy</button></div>
+              <pre>{
+  "Success": true,
+  "DisplayName": "@{variables('varOutDisplayName')}",
+  "LibraryUrl": "@{variables('varOutLibraryUrl')}"
+}</pre>
+            </div>
+          </li>
+          <li>Save. Test both paths manually before touching Power Apps: once with <code>RegisterOnly</code> off (normal creation, unchanged), once with it on and a real existing library's title.</li>
+        </ol>
+        <div class="callout warn">Same rule as every other flow edit: refresh <strong>Create Library (App)</strong>'s connection in the Power Apps Data panel afterward, or scrAdminCreateLibrary keeps calling the old version.</div>
+        <div class="callout ok">Why restructure this way instead of a simpler <code>Terminate</code> action in the "Yes" branch: a flow that never reaches its own <code>Response</code> action can surface as an error on the Power Apps side. Routing both paths through one shared Response, fed by variables set in whichever branch actually ran, is the same fix pattern already proven elsewhere in this app family for "flow needs one shared response after branching logic."</div>
       </section>
 
       <section id="flows">
@@ -389,7 +469,7 @@ Set(varEditSaveStatus, "")</pre>
       <section id="screens">
         <h2>5. Screens</h2>
         <p>For each: delete the existing screen if you already have one pasted, New screen (blank) &rarr; open the link &rarr; Copy YAML &rarr; paste. Rename the screen to match the name shown.</p>
-        <div class="callout ok"><strong>This app has 3 real screens, not 6.</strong> Confirmed directly against Studio, 2026-09-25 &mdash; three more were designed at various points but never actually built. They're kept below for reference in case that ever changes, clearly marked, not mixed in with what's actually live.</div>
+        <div class="callout ok"><strong>3 screens are live, 2 more are newly built and ready to paste, 1 remains just a design.</strong> Confirmed directly against Studio, 2026-09-25. All clearly marked below, not mixed together.</div>
         <div class="links">
           <a class="link-card" href="screens/scrFilePlan.html?v=2.8">
             <div><span class="pill">Screen 1</span><strong style="margin-top:8px;display:block">scrFilePlan</strong>
