@@ -129,7 +129,7 @@
   <div class="shell">
     <aside>
       <h2>Library &amp; File Plan Manager</h2>
-      <p>v4.5 build guide. Follow this end-to-end to set up the SharePoint lists, flows, and screens.</p>
+      <p>v4.6 build guide. Follow this end-to-end to set up the SharePoint lists, flows, and screens.</p>
       <nav>
         <a href="https://powerapps.pages.dev/">&larr; Guide library</a>
         <a href="yaml.html" style="font-weight:800;">📋 Screen YAML Vault</a>
@@ -149,8 +149,8 @@
 
     <main>
       <div class="topline">
-        <span class="pill">v4.5</span>
-        <span class="pill">Built 25 Sep 2026</span>
+        <span class="pill">v4.6</span>
+        <span class="pill">Built 26 Sep 2026</span>
         <span class="pill">3 screens live</span>
         <span class="pill">2 ready to build (new)</span>
         <span class="pill warn">1 more designed, never built</span>
@@ -161,15 +161,17 @@
 
       <section id="right-now" style="border:0;margin:0;padding:0;">
         <div class="callout ok">
-          <strong>Start here &mdash; what's actually left right now (25 Sep 2026).</strong> Everything below this box is the full from-scratch build guide, kept for reference &mdash; you don't need any of it for today's update. This box is the only thing that changes as work progresses; ask for it to be updated whenever something's done or something new lands, rather than re-reading the whole guide.
+          <strong>Start here &mdash; what's actually left right now (26 Sep 2026).</strong> Everything below this box is the full from-scratch build guide, kept for reference &mdash; you don't need any of it for today's update. This box is the only thing that changes as work progresses; ask for it to be updated whenever something's done or something new lands, rather than re-reading the whole guide.
           <ol style="margin-top:10px">
             <li><s>App.OnStart (v3.12)</s> &mdash; done, per Allan, 25 Sep 2026.</li>
+            <li><strong>New, ready to paste: App.OnStart v3.13</strong> (see the App.OnStart section below) &mdash; small addition on top of the confirmed-live v3.12, needed for scrGroupSearch v3.9's new indicator and refresh button. Paste this before pasting scrGroupSearch v3.9.</li>
             <li><s>Paste the 3 updated screens</s> &mdash; done: scrFilePlan v2.9, scrAdminCreateLibrary v1.9, scrGroupSearch v3.8 all pasted successfully.</li>
             <li><s>Paste scrManageLibraries</s> &mdash; pasted, v2.1 had two real bugs (wrong flow name + a syntax error), both fixed in v2.2. A third error remains, but it's not a code bug: <strong>FP-DeleteLibraries(App) has never actually been run, so Power Apps has no sample response to learn its shape from</strong> &mdash; every field inside <code>Results</code> shows as type "Error" until it has. Fix: Power Automate &rarr; FP-DeleteLibraries(App) &rarr; Test &rarr; Manually, run it once with <code>Action</code> = <code>"Check"</code> (this mode never deletes anything, entirely safe) and any real library URL in <code>LibraryUrlsJson</code>. Then refresh the connection in the Power Apps Data panel and re-check.</li>
             <li><s>scrEditLibraries errored on v2.0</s> &mdash; fixed in v2.1, ready to retry: <a href="screens/scrEditLibraries.html">scrEditLibraries v2.1</a>. Two real control-property bugs, explained in the Screens section below. Delete any partially-pasted screen first, then paste fresh.</li>
             <li><strong>Confirmed 25 Sep 2026: the "Delete Libraries" flow's current name is <code>FP-DeleteLibraries(App)</code></strong> (Allan's own rename). It didn't exist in Power Automate at all until imported from <a href="https://github.com/PhadeDev/library-file-plan-manager/raw/main/flows/DeleteLibrariesApp_flow_import.zip">DeleteLibrariesApp_flow_import.zip</a> &mdash; if not done yet, import it (My flows &rarr; Import &rarr; Import Package (Legacy)) and add it as a data source before pasting scrManageLibraries.</li>
             <li><strong>Once scrManageLibraries v2.2 and scrEditLibraries v2.1 are both in:</strong> test the actual intended flow &mdash; tick a library's checkbox on Manage Libraries, click Edit Selected, confirm you land on populated cards (not empty ones). Report back if that specific path doesn't work.</li>
             <li><strong>Optional, whenever you want that specific feature:</strong> <a href="#flow-fix-4">Register Existing Library flow surgery (2d)</a> for the new toggle on Create Library, and/or the <a href="#flow-fix-3">Backfill name fix (2c)</a> if you plan to run Backfill again.</li>
+            <li><strong>New, ready to paste: <a href="screens/scrGroupSearch.html">scrGroupSearch v3.9</a></strong> (needs App.OnStart v3.13 above pasted first) &mdash; two additions on top of v3.8. First, a dual-signal LTD indicator: every library on this screen already has genuinely unique SharePoint permissions (that's how the Rebuild Permission Index flow decides what goes in the list), so each row now cross-checks that against <code>LibraryFilePlan.IsLimited</code> &mdash; red padlock when they agree, purple warning triangle when the flag says "not Limited" but the real permissions disagree (a data-quality flag, not a bug). Second, a "Refresh Index" button using the same <code>RebuildPermissionIndex.Run(...)</code> data-source reference already used by scrAdminCreateLibrary's own Rebuild Permission Index button, so it reuses whatever's already wired up rather than adding a second copy of that flow as a data source. This one also reloads the screen's data automatically afterwards, which the older button doesn't. Confirmed by a real test run to take about 1m 45s, long enough to risk Power Apps' own synchronous call timeout on some devices; if that happens the button shows a warning rather than silently failing, and the rebuild itself keeps running server-side regardless, so waiting a minute and pressing it again picks up the finished result. <strong>Open question carried over from before the flow rename:</strong> is <code>RebuildPermissionIndex</code> (the bare data-source identifier both buttons use) still correct now the flow itself is called <code>FP - Rebuild Permission Index</code>? Data-source identifiers usually survive a flow rename unlike the quoted-string <code>.Run()</code> style that broke on Delete Libraries, but this hasn't been directly confirmed since the rename. Worth a quick check in Studio's Data panel before relying on either button.</li>
             <li>Once anything above is pasted and confirmed live, tell me &mdash; I'll re-pull the exact flow names (they'll have changed since your rename) and update this box.</li>
           </ol>
         </div>
@@ -417,9 +419,10 @@
 
         <h3>App.OnStart</h3>
         <p>Select the <strong>App</strong> object (top of the tree, not any screen) &rarr; <strong>OnStart</strong> property &rarr; paste this in full:</p>
-        <div class="callout warn"><strong>Draft, not yet pasted.</strong> v3.9 filters <code>colPermissionIndex</code> at the single load point so every screen that reads it (currently just scrGroupSearch) automatically excludes "Limited Access" rows (SharePoint's own auto-generated per-item grant noise) and any individual "User" rows &mdash; this is meant to be a group-only view. v3.10 gives any library with a blank Team an "Uncategorised" label instead of grouping under a blank/invisible header, and force-sorts that group to the bottom regardless of alphabetical order &mdash; needs the matching scrFilePlan v2.7 and scrAdminCreateLibrary v1.7 pasted too, since the same grouping logic is rebuilt in both those screens. v3.11 adds a genuine third grouping tier using the existing (until now unused-for-grouping) SubTeam field: Team &rarr; SubTeam (only when set) &rarr; Library, same flat-gallery pattern scrGroupSearch already proves. Also splits the sort key away from the display name &mdash; sorting is now on the real <code>Title</code>, not <code>PrettyName</code>/<code>EffectiveName</code>, so giving a library a nicer display name never silently reorders the list. v3.12 adds two new columns to <code>colQueue</code>'s seed table &mdash; <code>RegisterOnly</code> and <code>ExistingLibraryTitle</code> &mdash; for the new "register an existing library" path on scrAdminCreateLibrary. Needs the matching Create Library flow change (see the Flows section) before Run Queue will work correctly for that path.</div>
+        <div class="callout ok"><strong>v3.12 confirmed live &mdash; pasted and working, per Allan, 25 Sep 2026.</strong></div>
+        <div class="callout warn"><strong>v3.13 draft, not yet pasted.</strong> Adds <code>FlagSaysLimited</code> to <code>colLibraryGroups</code> &mdash; cross-references each library's real permission-index membership against <code>LibraryFilePlan.IsLimited</code>, feeding the new dual-signal padlock/warning indicator on scrGroupSearch v3.9. Also initialises <code>varIndexRefreshing</code>, a busy-state flag for that screen's new Refresh Index button (reuses the existing <code>varIndexRunError</code> variable for error tracking, already declared below, same one scrAdminCreateLibrary's Rebuild Permission Index button uses).</div>
         <div class="code-card">
-          <div class="code-toolbar"><span>v3.12 &mdash; Updated 25 Sep 2026 13:10 BST</span><button onclick="copyCode(this)">Copy</button></div>
+          <div class="code-toolbar"><span>v3.13 &mdash; Updated 26 Sep 2026 00:35 BST</span><button onclick="copyCode(this)">Copy</button></div>
           <pre>Set(varTenantHost, "https://modgovuk.sharepoint.com");
 ClearCollect(colFilePlan, 'LibraryFilePlan');
 ClearCollect(
@@ -460,9 +463,10 @@ Set(varQueueRunning, false);
 Set(varQueueTotal, 0);
 Set(varQueueDone, 0);
 Set(varIndexRunError, false);
+Set(varIndexRefreshing, false);
 ClearCollect(colPermissionIndex, Filter('PermissionIndex', PermissionLevel <> "Limited Access" && PrincipalType <> "User"));
 ClearCollect(colPermissionFiltered, colPermissionIndex);
-ClearCollect(colLibraryGroups, Sort(AddColumns(GroupBy(colPermissionFiltered, LibraryUrl, LibraryTitle, GroupedItems), ItemCount, CountRows(GroupedItems)), LibraryTitle, SortOrder.Ascending));
+ClearCollect(colLibraryGroups, Sort(AddColumns(GroupBy(colPermissionFiltered, LibraryUrl, LibraryTitle, GroupedItems), ItemCount, CountRows(GroupedItems), FlagSaysLimited, With({_lu: LibraryUrl}, Coalesce(LookUp(colFilePlan, LibraryUrl = _lu, IsLimited), false))), LibraryTitle, SortOrder.Ascending));
 Clear(colPermFlatSource);
 Collect(colPermFlatSource, AddColumns(colLibraryGroups, RowType, "Library", SortKey, LibraryUrl, RankInGroup, 0, GroupSortKey, "", DirectGroupCount, With({_lu: LibraryUrl}, CountRows(Filter(colPermissionFiltered, LibraryUrl = _lu && (IsBlank(NestedUnderGroup) || NestedUnderGroup = ""))))));
 Collect(colPermFlatSource, AddColumns(Filter(colPermissionFiltered, IsBlank(NestedUnderGroup) || NestedUnderGroup = ""), RowType, "Group", SortKey, LibraryUrl, RankInGroup, 1, GroupSortKey, GroupName, MemberCount, With({_gn: GroupName, _lu: LibraryUrl}, CountRows(Filter(colPermissionFiltered, NestedUnderGroup = _gn && LibraryUrl = _lu)))));
@@ -500,10 +504,10 @@ Set(varEditSaveStatus, "")</pre>
               <span class="ver">v1.9 &mdash; 25 Sep 2026 &mdash; draft, not yet pasted</span></div>
             <div class="open">Copy YAML &rarr;</div>
           </a>
-          <a class="link-card" href="screens/scrGroupSearch.html?v=3.8">
+          <a class="link-card" href="screens/scrGroupSearch.html?v=3.9">
             <div><span class="pill">Screen 3</span><strong style="margin-top:8px;display:block">scrGroupSearch</strong>
-              <p>Search by SG_/DG_ group name or library name. Results grouped by library in a collapsible accordion, same pattern as scrFilePlan. Reads the precomputed PermissionIndex list &mdash; instant, no live SharePoint crawl.</p>
-              <span class="ver">v3.8 &mdash; 25 Sep 2026 &mdash; draft, not yet pasted</span></div>
+              <p>Search by SG_/DG_ group name or library name. Results grouped by library in a collapsible accordion, same pattern as scrFilePlan. Reads the precomputed PermissionIndex list &mdash; instant, no live SharePoint crawl. New: red padlock/purple warning dual-signal LTD indicator per library (flag vs. real permissions), plus a Refresh Index button that reruns <code>FP - Rebuild Permission Index</code> on demand.</p>
+              <span class="ver">v3.9 &mdash; 26 Sep 2026 &mdash; draft, not yet pasted</span></div>
             <div class="open">Copy YAML &rarr;</div>
           </a>
         </div>
