@@ -133,6 +133,7 @@
       <nav>
         <a href="https://powerapps.pages.dev/">&larr; Guide library</a>
         <a href="yaml.html" style="font-weight:800;">📋 Screen YAML Vault</a>
+        <a href="#right-now" style="font-weight:800;color:var(--green);">▶ Start Here (What's Left)</a>
         <a href="#lists">1. SharePoint Lists</a>
         <a href="#flow-fix">2. Flow Field Fix</a>
         <a href="#flow-fix-2">2b. Missing Libraries Fix</a>
@@ -158,8 +159,22 @@
       <h1>Library &amp; File Plan Manager</h1>
       <p class="lead">SharePoint permissions map (file-plan style, grouped by team) + an admin screen that creates document libraries correctly and registers them automatically, so nothing gets forgotten again.</p>
 
+      <section id="right-now" style="border:0;margin:0;padding:0;">
+        <div class="callout ok">
+          <strong>Start here &mdash; what's actually left right now (25 Sep 2026).</strong> Everything below this box is the full from-scratch build guide, kept for reference &mdash; you don't need any of it for today's update. This box is the only thing that changes as work progresses; ask for it to be updated whenever something's done or something new lands, rather than re-reading the whole guide.
+          <ol style="margin-top:10px">
+            <li><s>App.OnStart (v3.12)</s> &mdash; done, per Allan, 25 Sep 2026.</li>
+            <li><strong>Paste the 3 updated screens</strong>, straight over the existing ones, nothing to delete first: <a href="screens/scrFilePlan.html">scrFilePlan v2.9</a>, <a href="screens/scrAdminCreateLibrary.html">scrAdminCreateLibrary v1.9</a>, <a href="screens/scrGroupSearch.html">scrGroupSearch v3.8</a>.</li>
+            <li><strong>Before pasting scrManageLibraries:</strong> add the "Delete Libraries" flow as a data source in the Data panel &mdash; check its exact current name first, you renamed your flows recently.</li>
+            <li><strong>Paste the 2 brand new screens</strong> as new blank screens (they've never existed before, nothing to delete): <a href="screens/scrManageLibraries.html">scrManageLibraries v2.1</a>, <a href="screens/scrEditLibraries.html">scrEditLibraries v2.0</a>.</li>
+            <li><strong>Optional, whenever you want that specific feature:</strong> <a href="#flow-fix-4">Register Existing Library flow surgery (2d)</a> for the new toggle on Create Library, and/or the <a href="#flow-fix-3">Backfill name fix (2c)</a> if you plan to run Backfill again.</li>
+            <li>Once anything above is pasted and confirmed live, tell me &mdash; I'll re-pull the exact flow names (they'll have changed since your rename) and update this box.</li>
+          </ol>
+        </div>
+      </section>
+
       <div class="callout">
-        <strong>Action Checklist &mdash; do these in order:</strong>
+        <strong>Action Checklist &mdash; full from-scratch build, not needed for today's update:</strong>
         <ol>
           <li><a href="#lists">SharePoint lists</a> &mdash; create <code>LibraryFilePlan</code> and <code>PermissionIndex</code> via the CSV templates (fastest &mdash; creates every column for you), or manually per the schema tables. Column is <code>PrettyName</code>, not <code>DisplayName</code> &mdash; SharePoint silently drops writes to that name on this list.</li>
           <li><a href="#flow-fix">Flow field fix</a> &mdash; in <strong>Create Library (App)</strong>, edit <code>Create_FilePlan_Row</code>'s Body so it writes <code>PrettyName</code> instead of <code>DisplayName</code>. One line, no re-import.</li>
