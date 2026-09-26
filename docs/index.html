@@ -347,15 +347,22 @@
         <p><strong>How it's possible:</strong> SharePoint's classic "Permissions for this document library" page is <code>{site}/_layouts/15/user.aspx?obj={GUID}&amp;List={GUID}</code>, where the GUID is that specific list's internal ID. Confirmed 26 Sep 2026 from a real URL Allan copied out of Studio. Nothing we currently store has that GUID &mdash; <code>LibraryFilePlan</code> and <code>PermissionIndex</code> both only have the server-relative URL &mdash; but <strong>FP - Rebuild Permission Index</strong> already fetches it for every library it scans (its <code>Get_Unique_Perm_Libraries</code> step selects <code>Id</code> alongside <code>Title</code> and the URL), it just never saves it anywhere. Cheapest fix: capture it.</p>
         <ol>
           <li><strong>Add one column to <code>PermissionIndex</code>:</strong> SharePoint list settings &rarr; Create column &rarr; <code>LibraryId</code>, type Single line of text, Not Required.</li>
+          <li><strong>Fix <code>Select_Libraries</code> first.</strong> This action runs right after <code>Get_Unique_Perm_Libraries</code> and reshapes its results down to just <code>Title</code> and <code>Url</code> before <code>Apply_to_each_Library</code> ever sees them &mdash; <code>Id</code> gets fetched from SharePoint one step earlier, then thrown away here. Open <code>Select_Libraries</code> &rarr; its Select box already has Title and Url mapped &rarr; add a third field:
+            <div class="code-card">
+              <div class="code-toolbar"><span>New field in Select_Libraries</span><button onclick="copyCode(this)">Copy</button></div>
+              <pre>Id &rarr; @item()?['Id']</pre>
+            </div>
+          </li>
           <li><strong>Edit the flow.</strong> Power Automate &rarr; <strong>FP - Rebuild Permission Index</strong> &rarr; Edit &rarr; find both <code>Create_Index_Row</code> and <code>Create_Nested_Index_Row</code> (inside <code>Apply_to_each_Assignment</code> &rarr; <code>If_Not_System_Group</code>, and inside the nested <code>If_SharePoint_Group</code> &rarr; <code>Apply_to_each_Nested_Member</code>) &rarr; click into each one's <strong>Body</strong> box &rarr; add one new line before the closing brace:
             <div class="code-card">
               <div class="code-toolbar"><span>New line for both actions</span><button onclick="copyCode(this)">Copy</button></div>
               <pre>  "LibraryId": "@{items('Apply_to_each_Library')?['Id']}"</pre>
             </div>
-            Same expression in both actions &mdash; <code>Apply_to_each_Library</code> is the outer loop both actions already run inside, so its <code>Id</code> is available in each without any new lookup.
+            Same expression in both actions &mdash; <code>Apply_to_each_Library</code> is the outer loop both actions already run inside, so its <code>Id</code> is available in each without any new lookup, <strong>once step 2 above has put it there</strong>.
           </li>
           <li>Save the flow.</li>
         </ol>
+        <div class="callout danger">First version of this write-up missed step 2 &mdash; it said to reference <code>items('Apply_to_each_Library')?['Id']</code> without checking that <code>Select_Libraries</code> actually carries an <code>Id</code> field through. It doesn't, by default, so the column came back completely blank even though the flow ran with no errors (a missing field via <code>?['Id']</code> just resolves to nothing, it doesn't fail). Confirmed and fixed 26 Sep 2026 after Allan hit exactly this.</div>
         <div class="callout warn">This is a data-source-refresh situation like every other flow edit, but the trigger to actually watch for here is different: since <strong>FP - Rebuild Permission Index</strong> deletes and rebuilds <code>PermissionIndex</code> from scratch every run, existing rows won't get <code>LibraryId</code> retroactively just from the flow change &mdash; you need to run it again (the Refresh Index button on scrGroupSearch, or Rebuild Permission Index on scrAdminCreateLibrary) after saving, for every row to actually carry the new field.</div>
         <p>Once the column and flow edit are done and a rebuild's been run, tell me and I'll add the actual button to scrGroupSearch &mdash; the Power Fx side is simple, a <code>Launch()</code> call using the new <code>LibraryId</code> field:</p>
         <div class="code-card">
