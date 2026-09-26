@@ -129,7 +129,7 @@
   <div class="shell">
     <aside>
       <h2>Library &amp; File Plan Manager</h2>
-      <p>v4.6 build guide. Follow this end-to-end to set up the SharePoint lists, flows, and screens.</p>
+      <p>v4.7 build guide. Follow this end-to-end to set up the SharePoint lists, flows, and screens.</p>
       <nav>
         <a href="https://powerapps.pages.dev/">&larr; Guide library</a>
         <a href="yaml.html" style="font-weight:800;">📋 Screen YAML Vault</a>
@@ -150,7 +150,7 @@
 
     <main>
       <div class="topline">
-        <span class="pill">v4.6</span>
+        <span class="pill">v4.7</span>
         <span class="pill">Built 26 Sep 2026</span>
         <span class="pill">3 screens live</span>
         <span class="pill">2 ready to build (new)</span>
@@ -164,18 +164,14 @@
         <div class="callout ok">
           <strong>Start here &mdash; what's actually left right now (26 Sep 2026).</strong> Everything below this box is the full from-scratch build guide, kept for reference &mdash; you don't need any of it for today's update. This box is the only thing that changes as work progresses; ask for it to be updated whenever something's done or something new lands, rather than re-reading the whole guide.
           <ol style="margin-top:10px">
-            <li><s>App.OnStart (v3.12)</s> &mdash; done, per Allan, 25 Sep 2026.</li>
-            <li><strong>New, ready to paste: App.OnStart v3.13</strong> (see the App.OnStart section below) &mdash; small addition on top of the confirmed-live v3.12, needed for scrGroupSearch v3.9's new indicator and refresh button. Paste this before pasting scrGroupSearch v3.9.</li>
-            <li><s>Paste the 3 updated screens</s> &mdash; done: scrFilePlan v2.9, scrAdminCreateLibrary v1.9, scrGroupSearch v3.8 all pasted successfully.</li>
-            <li><s>Paste scrManageLibraries</s> &mdash; pasted, v2.1 had two real bugs (wrong flow name + a syntax error), both fixed in v2.2. A third error remains, but it's not a code bug: <strong>FP-DeleteLibraries(App) has never actually been run, so Power Apps has no sample response to learn its shape from</strong> &mdash; every field inside <code>Results</code> shows as type "Error" until it has. Fix: Power Automate &rarr; FP-DeleteLibraries(App) &rarr; Test &rarr; Manually, run it once with <code>Action</code> = <code>"Check"</code> (this mode never deletes anything, entirely safe) and any real library URL in <code>LibraryUrlsJson</code>. Then refresh the connection in the Power Apps Data panel and re-check.</li>
-            <li><s>scrEditLibraries errored on v2.0</s> &mdash; fixed in v2.1, ready to retry: <a href="screens/scrEditLibraries.html">scrEditLibraries v2.1</a>. Two real control-property bugs, explained in the Screens section below. Delete any partially-pasted screen first, then paste fresh.</li>
-            <li><strong>Confirmed 25 Sep 2026: the "Delete Libraries" flow's current name is <code>FP-DeleteLibraries(App)</code></strong> (Allan's own rename). It didn't exist in Power Automate at all until imported from <a href="https://github.com/PhadeDev/library-file-plan-manager/raw/main/flows/DeleteLibrariesApp_flow_import.zip">DeleteLibrariesApp_flow_import.zip</a> &mdash; if not done yet, import it (My flows &rarr; Import &rarr; Import Package (Legacy)) and add it as a data source before pasting scrManageLibraries.</li>
-            <li><strong>Once scrManageLibraries v2.2 and scrEditLibraries v2.1 are both in:</strong> test the actual intended flow &mdash; tick a library's checkbox on Manage Libraries, click Edit Selected, confirm you land on populated cards (not empty ones). Report back if that specific path doesn't work.</li>
-            <li><strong>Optional, whenever you want that specific feature:</strong> <a href="#flow-fix-4">Register Existing Library flow surgery (2d)</a> for the new toggle on Create Library, and/or the <a href="#flow-fix-3">Backfill name fix (2c)</a> if you plan to run Backfill again.</li>
-            <li><strong>New idea, not built yet:</strong> <a href="#flow-fix-5">Open Permissions Link (2e)</a> &mdash; a button on scrGroupSearch to jump straight to a library's real SharePoint permissions page in a new tab. Needs a new <code>LibraryId</code> column on <code>PermissionIndex</code> and a one-line addition to <strong>FP - Rebuild Permission Index</strong> first (both described in 2e) before the button itself can be added.</li>
-            <li><strong>New, ready to paste: <a href="screens/scrGroupSearch.html">scrGroupSearch v3.9</a></strong> (needs App.OnStart v3.13 above pasted first) &mdash; two additions on top of v3.8. First, a dual-signal LTD indicator: every library on this screen already has genuinely unique SharePoint permissions (that's how the Rebuild Permission Index flow decides what goes in the list), so each row now cross-checks that against <code>LibraryFilePlan.IsLimited</code> &mdash; red padlock when they agree, purple warning triangle when the flag says "not Limited" but the real permissions disagree (a data-quality flag, not a bug). Second, a "Refresh Index" button using the same <code>RebuildPermissionIndex.Run(...)</code> data-source reference already used by scrAdminCreateLibrary's own Rebuild Permission Index button, so it reuses whatever's already wired up rather than adding a second copy of that flow as a data source. This one also reloads the screen's data automatically afterwards, which the older button doesn't. Confirmed by a real test run to take about 1m 45s, long enough to risk Power Apps' own synchronous call timeout on some devices; if that happens the button shows a warning rather than silently failing, and the rebuild itself keeps running server-side regardless, so waiting a minute and pressing it again picks up the finished result. <strong>Open question carried over from before the flow rename:</strong> is <code>RebuildPermissionIndex</code> (the bare data-source identifier both buttons use) still correct now the flow itself is called <code>FP - Rebuild Permission Index</code>? Data-source identifiers usually survive a flow rename unlike the quoted-string <code>.Run()</code> style that broke on Delete Libraries, but this hasn't been directly confirmed since the rename. Worth a quick check in Studio's Data panel before relying on either button.</li>
-            <li><strong>Fixed on all 5 screens (26 Sep 2026):</strong> the disabled "Manage Permissions" nav button on every screen still had <code>OnSelect: =Navigate(scrManagePermissions)</code> &mdash; a leftover from when all 6 screens were planned. Since it's <code>DisplayMode.Disabled</code> it could never actually fire, but Studio flags the reference as unresolved (Allan spotted the red squiggle on it while pasting). Swapped to a harmless <code>=false</code> on all 5. If you already pasted a screen before this fix, either re-paste it or just click into that one formula bar and change it yourself &mdash; not worth re-pasting the whole screen just for this.</li>
-            <li>Once anything above is pasted and confirmed live, tell me &mdash; I'll re-pull the exact flow names (they'll have changed since your rename) and update this box.</li>
+            <li><s>All 5 screens built and pasted</s> &mdash; confirmed live by Allan, 26 Sep 2026: scrFilePlan, scrAdminCreateLibrary, scrGroupSearch, scrManageLibraries, scrEditLibraries. Allan also removed the dead "Manage Permissions" nav button himself in Studio and shifted Manage Libraries left to fill the gap &mdash; done, no further action needed on that.</li>
+            <li><strong>Two things left to paste, in this order:</strong> <a href="#build-app">App.OnStart v3.14</a>, then <a href="screens/scrGroupSearch.html">scrGroupSearch v3.11</a>. Both are small additions on top of what's already live, needed to finish the "View Permissions" button Allan added himself to scrGroupSearch (opens a library's real SharePoint permissions page in a new tab).</li>
+            <li><s><a href="#flow-fix-5">Open Permissions Link flow surgery (2e)</a></s> &mdash; done: <code>LibraryId</code> column added to <code>PermissionIndex</code>, <code>Select_Libraries</code> and both Create Index Row actions in <strong>FP - Rebuild Permission Index</strong> updated, rebuild re-run. Found one gap in the original write-up along the way (<code>Select_Libraries</code> was dropping <code>Id</code> before the loop ever saw it) &mdash; fixed and documented in 2e.</li>
+            <li><s>Dual-signal LTD indicator on scrGroupSearch</s> &mdash; confirmed live and working. Allan's already found a real example with it (a library carrying an <code>SG_Cadets_LTD</code> group whose <code>IsLimited</code> flag was false) &mdash; working as intended, a housekeeping signal rather than a strict pass/fail check.</li>
+            <li><s>Refresh Index button</s> &mdash; confirmed live and working. Also confirms the <code>RebuildPermissionIndex</code> data-source identifier survived the flow's rename to <code>FP - Rebuild Permission Index</code> fine, so that open question from earlier is settled.</li>
+            <li><strong>Deprioritised by Allan, come back to later:</strong> <code>FP-DeleteLibraries(App)</code>'s missing Response schema (every field under <code>Results</code> shows as type "Error" until the flow's been run once with a real sample &mdash; see section 3 for the fix). Not urgent, deleting libraries matters far less than creating them.</li>
+            <li><strong>Optional, whenever you want that specific feature:</strong> <a href="#flow-fix-4">Register Existing Library flow surgery (2d)</a> for the toggle on Create Library, and/or the <a href="#flow-fix-3">Backfill name fix (2c)</a> if you plan to run Backfill again.</li>
+            <li>Once App.OnStart v3.14 and scrGroupSearch v3.11 are pasted and confirmed, tell me and this box shrinks right down.</li>
           </ol>
         </div>
       </section>
@@ -453,10 +449,10 @@
 
         <h3>App.OnStart</h3>
         <p>Select the <strong>App</strong> object (top of the tree, not any screen) &rarr; <strong>OnStart</strong> property &rarr; paste this in full:</p>
-        <div class="callout ok"><strong>v3.12 confirmed live &mdash; pasted and working, per Allan, 25 Sep 2026.</strong></div>
-        <div class="callout warn"><strong>v3.13 draft, not yet pasted.</strong> Adds <code>FlagSaysLimited</code> to <code>colLibraryGroups</code> &mdash; cross-references each library's real permission-index membership against <code>LibraryFilePlan.IsLimited</code>, feeding the new dual-signal padlock/warning indicator on scrGroupSearch v3.9. Also initialises <code>varIndexRefreshing</code>, a busy-state flag for that screen's new Refresh Index button (reuses the existing <code>varIndexRunError</code> variable for error tracking, already declared below, same one scrAdminCreateLibrary's Rebuild Permission Index button uses).</div>
+        <div class="callout ok"><strong>v3.12 confirmed live &mdash; pasted and working, per Allan, 25 Sep 2026.</strong> (v3.13's <code>FlagSaysLimited</code> addition is also confirmed live &mdash; the dual-signal indicator on scrGroupSearch is genuinely working, Allan's tested it against a real mismatch.)</div>
+        <div class="callout warn"><strong>v3.14 draft, not yet pasted.</strong> Adds one more column, <code>LibraryId</code>, to the same <code>colLibraryGroups</code> line &mdash; needed for the new "View Permissions" button Allan's already added to scrGroupSearch. Found the hard way: the button opened a broken link (<code>obj={}&amp;List={}</code>, both empty) because <code>colLibraryGroups</code> only ever carried <code>LibraryUrl</code>/<code>LibraryTitle</code>/<code>ItemCount</code>/<code>FlagSaysLimited</code> through from the raw <code>PermissionIndex</code> rows &mdash; <code>LibraryId</code> (added to that list in section 2e) was never one of the columns pulled through, even once every row had it. Fix pulls it from the nested <code>GroupedItems</code> table the grouping already keeps: <code>LibraryId, First(GroupedItems).LibraryId</code>.</div>
         <div class="code-card">
-          <div class="code-toolbar"><span>v3.13 &mdash; Updated 26 Sep 2026 00:35 BST</span><button onclick="copyCode(this)">Copy</button></div>
+          <div class="code-toolbar"><span>v3.14 &mdash; Updated 26 Sep 2026 01:45 BST</span><button onclick="copyCode(this)">Copy</button></div>
           <pre>Set(varTenantHost, "https://modgovuk.sharepoint.com");
 ClearCollect(colFilePlan, 'LibraryFilePlan');
 ClearCollect(
@@ -500,7 +496,7 @@ Set(varIndexRunError, false);
 Set(varIndexRefreshing, false);
 ClearCollect(colPermissionIndex, Filter('PermissionIndex', PermissionLevel <> "Limited Access" && PrincipalType <> "User"));
 ClearCollect(colPermissionFiltered, colPermissionIndex);
-ClearCollect(colLibraryGroups, Sort(AddColumns(GroupBy(colPermissionFiltered, LibraryUrl, LibraryTitle, GroupedItems), ItemCount, CountRows(GroupedItems), FlagSaysLimited, With({_lu: LibraryUrl}, Coalesce(LookUp(colFilePlan, LibraryUrl = _lu, IsLimited), false))), LibraryTitle, SortOrder.Ascending));
+ClearCollect(colLibraryGroups, Sort(AddColumns(GroupBy(colPermissionFiltered, LibraryUrl, LibraryTitle, GroupedItems), ItemCount, CountRows(GroupedItems), FlagSaysLimited, With({_lu: LibraryUrl}, Coalesce(LookUp(colFilePlan, LibraryUrl = _lu, IsLimited), false)), LibraryId, First(GroupedItems).LibraryId), LibraryTitle, SortOrder.Ascending));
 Clear(colPermFlatSource);
 Collect(colPermFlatSource, AddColumns(colLibraryGroups, RowType, "Library", SortKey, LibraryUrl, RankInGroup, 0, GroupSortKey, "", DirectGroupCount, With({_lu: LibraryUrl}, CountRows(Filter(colPermissionFiltered, LibraryUrl = _lu && (IsBlank(NestedUnderGroup) || NestedUnderGroup = ""))))));
 Collect(colPermFlatSource, AddColumns(Filter(colPermissionFiltered, IsBlank(NestedUnderGroup) || NestedUnderGroup = ""), RowType, "Group", SortKey, LibraryUrl, RankInGroup, 1, GroupSortKey, GroupName, MemberCount, With({_gn: GroupName, _lu: LibraryUrl}, CountRows(Filter(colPermissionFiltered, NestedUnderGroup = _gn && LibraryUrl = _lu)))));
@@ -524,40 +520,36 @@ Set(varEditSaveStatus, "")</pre>
       <section id="screens">
         <h2>5. Screens</h2>
         <p>For each: delete the existing screen if you already have one pasted, New screen (blank) &rarr; open the link &rarr; Copy YAML &rarr; paste. Rename the screen to match the name shown.</p>
-        <div class="callout ok"><strong>3 screens are live, 2 more are newly built and ready to paste, 1 remains just a design.</strong> Confirmed directly against Studio, 2026-09-25. All clearly marked below, not mixed together.</div>
+        <div class="callout ok"><strong>All 5 screens confirmed live &mdash; per Allan, 26 Sep 2026.</strong> Only scrGroupSearch has one small addition still outstanding (v3.11, needs App.OnStart v3.14 pasted alongside it) &mdash; everything else below is for reference or re-pasting from scratch if a screen ever needs rebuilding.</div>
         <div class="links">
           <a class="link-card" href="screens/scrFilePlan.html?v=2.10">
             <div><span class="pill">Screen 1</span><strong style="margin-top:8px;display:block">scrFilePlan</strong>
               <p>Read-only browse screen &mdash; search box, Team &rarr; SubTeam &rarr; Library collapsible accordion, Open and icon-only Copy buttons per library, small padlock icon + red/salmon row tint on Limited libraries.</p>
-              <span class="ver">v2.10 &mdash; 26 Sep 2026 &mdash; draft, not yet pasted</span></div>
+              <span class="ver">v2.10 &mdash; 26 Sep 2026 &mdash; confirmed live</span></div>
             <div class="open">Copy YAML &rarr;</div>
           </a>
           <a class="link-card" href="screens/scrAdminCreateLibrary.html?v=1.10">
             <div><span class="pill">Screen 2</span><strong style="margin-top:8px;display:block">scrAdminCreateLibrary</strong>
               <p>Restricted to the admin email list. Fill in a library's details, Add to Queue as many times as needed, then Run Queue creates them all sequentially, with a progress overlay. New toggle lets you register an existing library instead of creating one. Also has a Rebuild Permission Index button with a staleness indicator.</p>
-              <span class="ver">v1.10 &mdash; 26 Sep 2026 &mdash; draft, not yet pasted</span></div>
+              <span class="ver">v1.10 &mdash; 26 Sep 2026 &mdash; confirmed live</span></div>
             <div class="open">Copy YAML &rarr;</div>
           </a>
-          <a class="link-card" href="screens/scrGroupSearch.html?v=3.10">
+          <a class="link-card" href="screens/scrGroupSearch.html?v=3.11">
             <div><span class="pill">Screen 3</span><strong style="margin-top:8px;display:block">scrGroupSearch</strong>
-              <p>Search by SG_/DG_ group name or library name. Results grouped by library in a collapsible accordion, same pattern as scrFilePlan. Reads the precomputed PermissionIndex list &mdash; instant, no live SharePoint crawl. New: red padlock/purple warning dual-signal LTD indicator per library (flag vs. real permissions), plus a Refresh Index button that reruns <code>FP - Rebuild Permission Index</code> on demand.</p>
-              <span class="ver">v3.10 &mdash; 26 Sep 2026 &mdash; draft, not yet pasted</span></div>
+              <p>Search by SG_/DG_ group name or library name. Results grouped by library in a collapsible accordion, same pattern as scrFilePlan. Reads the precomputed PermissionIndex list &mdash; instant, no live SharePoint crawl. Red padlock/purple warning dual-signal LTD indicator per library (confirmed live), a Refresh Index button, and Allan's own "View Permissions" button. New in v3.11: fixes that last button, which was opening a broken link &mdash; <code>colLibraryGroups</code> never carried <code>LibraryId</code> through to the row, even after the flow started writing it. Needs App.OnStart v3.14 pasted first.</p>
+              <span class="ver">v3.11 &mdash; 26 Sep 2026 &mdash; draft, not yet pasted (v3.10 confirmed live otherwise)</span></div>
             <div class="open">Copy YAML &rarr;</div>
           </a>
-        </div>
-        <h3 style="margin-top:28px">Ready to build</h3>
-        <p style="color:var(--muted);font-size:.9rem">These two are newly built from scratch (25 Sep 2026), rebuilt from an old August design that was never actually pasted into Studio. Paste as a brand new blank screen &mdash; there's nothing existing to delete first. Nav bar is already included in the paste, no separate add-on step needed.</p>
-        <div class="links">
           <a class="link-card" href="screens/scrManageLibraries.html?v=2.3">
             <div><span class="pill">Screen 4</span><strong style="margin-top:8px;display:block">scrManageLibraries</strong>
               <p>Restricted to admins. Tick libraries, bulk-delete them (empty ones go straight away, non-empty ones get an override prompt) or send the selection to the edit cart.</p>
-              <span class="ver">v2.3 &mdash; 26 Sep 2026 &mdash; v2.1 errored on paste, see below</span></div>
+              <span class="ver">v2.3 &mdash; 26 Sep 2026 &mdash; confirmed live</span></div>
             <div class="open">Copy YAML &rarr;</div>
           </a>
           <a class="link-card" href="screens/scrEditLibraries.html?v=2.2">
             <div><span class="pill">Screen 5</span><strong style="margin-top:8px;display:block">scrEditLibraries</strong>
               <p>Restricted to admins. The edit cart &mdash; one stacked form per library sent over from Manage Libraries, change whatever's needed on each (including Limited access, now editable here), Save All applies every change in one pass.</p>
-              <span class="ver">v2.2 &mdash; 26 Sep 2026 &mdash; new, not yet pasted (v2.0 errored on paste, see below)</span></div>
+              <span class="ver">v2.2 &mdash; 26 Sep 2026 &mdash; confirmed live</span></div>
             <div class="open">Copy YAML &rarr;</div>
           </a>
         </div>
