@@ -172,6 +172,7 @@
             <li><strong>Once scrManageLibraries v2.2 and scrEditLibraries v2.1 are both in:</strong> test the actual intended flow &mdash; tick a library's checkbox on Manage Libraries, click Edit Selected, confirm you land on populated cards (not empty ones). Report back if that specific path doesn't work.</li>
             <li><strong>Optional, whenever you want that specific feature:</strong> <a href="#flow-fix-4">Register Existing Library flow surgery (2d)</a> for the new toggle on Create Library, and/or the <a href="#flow-fix-3">Backfill name fix (2c)</a> if you plan to run Backfill again.</li>
             <li><strong>New, ready to paste: <a href="screens/scrGroupSearch.html">scrGroupSearch v3.9</a></strong> (needs App.OnStart v3.13 above pasted first) &mdash; two additions on top of v3.8. First, a dual-signal LTD indicator: every library on this screen already has genuinely unique SharePoint permissions (that's how the Rebuild Permission Index flow decides what goes in the list), so each row now cross-checks that against <code>LibraryFilePlan.IsLimited</code> &mdash; red padlock when they agree, purple warning triangle when the flag says "not Limited" but the real permissions disagree (a data-quality flag, not a bug). Second, a "Refresh Index" button using the same <code>RebuildPermissionIndex.Run(...)</code> data-source reference already used by scrAdminCreateLibrary's own Rebuild Permission Index button, so it reuses whatever's already wired up rather than adding a second copy of that flow as a data source. This one also reloads the screen's data automatically afterwards, which the older button doesn't. Confirmed by a real test run to take about 1m 45s, long enough to risk Power Apps' own synchronous call timeout on some devices; if that happens the button shows a warning rather than silently failing, and the rebuild itself keeps running server-side regardless, so waiting a minute and pressing it again picks up the finished result. <strong>Open question carried over from before the flow rename:</strong> is <code>RebuildPermissionIndex</code> (the bare data-source identifier both buttons use) still correct now the flow itself is called <code>FP - Rebuild Permission Index</code>? Data-source identifiers usually survive a flow rename unlike the quoted-string <code>.Run()</code> style that broke on Delete Libraries, but this hasn't been directly confirmed since the rename. Worth a quick check in Studio's Data panel before relying on either button.</li>
+            <li><strong>Fixed on all 5 screens (26 Sep 2026):</strong> the disabled "Manage Permissions" nav button on every screen still had <code>OnSelect: =Navigate(scrManagePermissions)</code> &mdash; a leftover from when all 6 screens were planned. Since it's <code>DisplayMode.Disabled</code> it could never actually fire, but Studio flags the reference as unresolved (Allan spotted the red squiggle on it while pasting). Swapped to a harmless <code>=false</code> on all 5. If you already pasted a screen before this fix, either re-paste it or just click into that one formula bar and change it yourself &mdash; not worth re-pasting the whole screen just for this.</li>
             <li>Once anything above is pasted and confirmed live, tell me &mdash; I'll re-pull the exact flow names (they'll have changed since your rename) and update this box.</li>
           </ol>
         </div>
@@ -492,38 +493,38 @@ Set(varEditSaveStatus, "")</pre>
         <p>For each: delete the existing screen if you already have one pasted, New screen (blank) &rarr; open the link &rarr; Copy YAML &rarr; paste. Rename the screen to match the name shown.</p>
         <div class="callout ok"><strong>3 screens are live, 2 more are newly built and ready to paste, 1 remains just a design.</strong> Confirmed directly against Studio, 2026-09-25. All clearly marked below, not mixed together.</div>
         <div class="links">
-          <a class="link-card" href="screens/scrFilePlan.html?v=2.9">
+          <a class="link-card" href="screens/scrFilePlan.html?v=2.10">
             <div><span class="pill">Screen 1</span><strong style="margin-top:8px;display:block">scrFilePlan</strong>
               <p>Read-only browse screen &mdash; search box, Team &rarr; SubTeam &rarr; Library collapsible accordion, Open and icon-only Copy buttons per library, small padlock icon + red/salmon row tint on Limited libraries.</p>
-              <span class="ver">v2.9 &mdash; 25 Sep 2026 &mdash; draft, not yet pasted</span></div>
+              <span class="ver">v2.10 &mdash; 26 Sep 2026 &mdash; draft, not yet pasted</span></div>
             <div class="open">Copy YAML &rarr;</div>
           </a>
-          <a class="link-card" href="screens/scrAdminCreateLibrary.html?v=1.9">
+          <a class="link-card" href="screens/scrAdminCreateLibrary.html?v=1.10">
             <div><span class="pill">Screen 2</span><strong style="margin-top:8px;display:block">scrAdminCreateLibrary</strong>
               <p>Restricted to the admin email list. Fill in a library's details, Add to Queue as many times as needed, then Run Queue creates them all sequentially, with a progress overlay. New toggle lets you register an existing library instead of creating one. Also has a Rebuild Permission Index button with a staleness indicator.</p>
-              <span class="ver">v1.9 &mdash; 25 Sep 2026 &mdash; draft, not yet pasted</span></div>
+              <span class="ver">v1.10 &mdash; 26 Sep 2026 &mdash; draft, not yet pasted</span></div>
             <div class="open">Copy YAML &rarr;</div>
           </a>
-          <a class="link-card" href="screens/scrGroupSearch.html?v=3.9">
+          <a class="link-card" href="screens/scrGroupSearch.html?v=3.10">
             <div><span class="pill">Screen 3</span><strong style="margin-top:8px;display:block">scrGroupSearch</strong>
               <p>Search by SG_/DG_ group name or library name. Results grouped by library in a collapsible accordion, same pattern as scrFilePlan. Reads the precomputed PermissionIndex list &mdash; instant, no live SharePoint crawl. New: red padlock/purple warning dual-signal LTD indicator per library (flag vs. real permissions), plus a Refresh Index button that reruns <code>FP - Rebuild Permission Index</code> on demand.</p>
-              <span class="ver">v3.9 &mdash; 26 Sep 2026 &mdash; draft, not yet pasted</span></div>
+              <span class="ver">v3.10 &mdash; 26 Sep 2026 &mdash; draft, not yet pasted</span></div>
             <div class="open">Copy YAML &rarr;</div>
           </a>
         </div>
         <h3 style="margin-top:28px">Ready to build</h3>
         <p style="color:var(--muted);font-size:.9rem">These two are newly built from scratch (25 Sep 2026), rebuilt from an old August design that was never actually pasted into Studio. Paste as a brand new blank screen &mdash; there's nothing existing to delete first. Nav bar is already included in the paste, no separate add-on step needed.</p>
         <div class="links">
-          <a class="link-card" href="screens/scrManageLibraries.html?v=2.2">
+          <a class="link-card" href="screens/scrManageLibraries.html?v=2.3">
             <div><span class="pill">Screen 4</span><strong style="margin-top:8px;display:block">scrManageLibraries</strong>
               <p>Restricted to admins. Tick libraries, bulk-delete them (empty ones go straight away, non-empty ones get an override prompt) or send the selection to the edit cart.</p>
-              <span class="ver">v2.2 &mdash; 25 Sep 2026 &mdash; v2.1 errored on paste, see below</span></div>
+              <span class="ver">v2.3 &mdash; 26 Sep 2026 &mdash; v2.1 errored on paste, see below</span></div>
             <div class="open">Copy YAML &rarr;</div>
           </a>
-          <a class="link-card" href="screens/scrEditLibraries.html?v=2.1">
+          <a class="link-card" href="screens/scrEditLibraries.html?v=2.2">
             <div><span class="pill">Screen 5</span><strong style="margin-top:8px;display:block">scrEditLibraries</strong>
               <p>Restricted to admins. The edit cart &mdash; one stacked form per library sent over from Manage Libraries, change whatever's needed on each (including Limited access, now editable here), Save All applies every change in one pass.</p>
-              <span class="ver">v2.1 &mdash; 25 Sep 2026 &mdash; new, not yet pasted (v2.0 errored on paste, see below)</span></div>
+              <span class="ver">v2.2 &mdash; 26 Sep 2026 &mdash; new, not yet pasted (v2.0 errored on paste, see below)</span></div>
             <div class="open">Copy YAML &rarr;</div>
           </a>
         </div>
