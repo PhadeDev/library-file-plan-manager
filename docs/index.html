@@ -139,6 +139,7 @@
         <a href="#flow-fix-2">2b. Missing Libraries Fix</a>
         <a href="#flow-fix-3">2c. Backfill Name Fix</a>
         <a href="#flow-fix-4">2d. Register Existing Library</a>
+        <a href="#flow-fix-5">2e. Open Permissions Link</a>
         <a href="#flows">3. Download &amp; Import Flows</a>
         <a href="#build-app">4. Building the Power App</a>
         <a href="#screens">5. Screens</a>
@@ -171,6 +172,7 @@
             <li><strong>Confirmed 25 Sep 2026: the "Delete Libraries" flow's current name is <code>FP-DeleteLibraries(App)</code></strong> (Allan's own rename). It didn't exist in Power Automate at all until imported from <a href="https://github.com/PhadeDev/library-file-plan-manager/raw/main/flows/DeleteLibrariesApp_flow_import.zip">DeleteLibrariesApp_flow_import.zip</a> &mdash; if not done yet, import it (My flows &rarr; Import &rarr; Import Package (Legacy)) and add it as a data source before pasting scrManageLibraries.</li>
             <li><strong>Once scrManageLibraries v2.2 and scrEditLibraries v2.1 are both in:</strong> test the actual intended flow &mdash; tick a library's checkbox on Manage Libraries, click Edit Selected, confirm you land on populated cards (not empty ones). Report back if that specific path doesn't work.</li>
             <li><strong>Optional, whenever you want that specific feature:</strong> <a href="#flow-fix-4">Register Existing Library flow surgery (2d)</a> for the new toggle on Create Library, and/or the <a href="#flow-fix-3">Backfill name fix (2c)</a> if you plan to run Backfill again.</li>
+            <li><strong>New idea, not built yet:</strong> <a href="#flow-fix-5">Open Permissions Link (2e)</a> &mdash; a button on scrGroupSearch to jump straight to a library's real SharePoint permissions page in a new tab. Needs a new <code>LibraryId</code> column on <code>PermissionIndex</code> and a one-line addition to <strong>FP - Rebuild Permission Index</strong> first (both described in 2e) before the button itself can be added.</li>
             <li><strong>New, ready to paste: <a href="screens/scrGroupSearch.html">scrGroupSearch v3.9</a></strong> (needs App.OnStart v3.13 above pasted first) &mdash; two additions on top of v3.8. First, a dual-signal LTD indicator: every library on this screen already has genuinely unique SharePoint permissions (that's how the Rebuild Permission Index flow decides what goes in the list), so each row now cross-checks that against <code>LibraryFilePlan.IsLimited</code> &mdash; red padlock when they agree, purple warning triangle when the flag says "not Limited" but the real permissions disagree (a data-quality flag, not a bug). Second, a "Refresh Index" button using the same <code>RebuildPermissionIndex.Run(...)</code> data-source reference already used by scrAdminCreateLibrary's own Rebuild Permission Index button, so it reuses whatever's already wired up rather than adding a second copy of that flow as a data source. This one also reloads the screen's data automatically afterwards, which the older button doesn't. Confirmed by a real test run to take about 1m 45s, long enough to risk Power Apps' own synchronous call timeout on some devices; if that happens the button shows a warning rather than silently failing, and the rebuild itself keeps running server-side regardless, so waiting a minute and pressing it again picks up the finished result. <strong>Open question carried over from before the flow rename:</strong> is <code>RebuildPermissionIndex</code> (the bare data-source identifier both buttons use) still correct now the flow itself is called <code>FP - Rebuild Permission Index</code>? Data-source identifiers usually survive a flow rename unlike the quoted-string <code>.Run()</code> style that broke on Delete Libraries, but this hasn't been directly confirmed since the rename. Worth a quick check in Studio's Data panel before relying on either button.</li>
             <li><strong>Fixed on all 5 screens (26 Sep 2026):</strong> the disabled "Manage Permissions" nav button on every screen still had <code>OnSelect: =Navigate(scrManagePermissions)</code> &mdash; a leftover from when all 6 screens were planned. Since it's <code>DisplayMode.Disabled</code> it could never actually fire, but Studio flags the reference as unresolved (Allan spotted the red squiggle on it while pasting). Swapped to a harmless <code>=false</code> on all 5. If you already pasted a screen before this fix, either re-paste it or just click into that one formula bar and change it yourself &mdash; not worth re-pasting the whole screen just for this.</li>
             <li>Once anything above is pasted and confirmed live, tell me &mdash; I'll re-pull the exact flow names (they'll have changed since your rename) and update this box.</li>
@@ -337,6 +339,30 @@
         </ol>
         <div class="callout warn">Same rule as every other flow edit: refresh <strong>Create Library (App)</strong>'s connection in the Power Apps Data panel afterward, or scrAdminCreateLibrary keeps calling the old version.</div>
         <div class="callout ok">Why restructure this way instead of a simpler <code>Terminate</code> action in the "Yes" branch: a flow that never reaches its own <code>Response</code> action can surface as an error on the Power Apps side. Routing both paths through one shared Response, fed by variables set in whichever branch actually ran, is the same fix pattern already proven elsewhere in this app family for "flow needs one shared response after branching logic."</div>
+      </section>
+
+      <section id="flow-fix-5">
+        <h2>2e. Flow Field Fix + New Column: Open Permissions Link</h2>
+        <p><strong>Want:</strong> a button on scrGroupSearch's library rows that opens that specific library's real SharePoint permissions page directly, in a new tab &mdash; no more hunting for it manually.</p>
+        <p><strong>How it's possible:</strong> SharePoint's classic "Permissions for this document library" page is <code>{site}/_layouts/15/user.aspx?obj={GUID}&amp;List={GUID}</code>, where the GUID is that specific list's internal ID. Confirmed 26 Sep 2026 from a real URL Allan copied out of Studio. Nothing we currently store has that GUID &mdash; <code>LibraryFilePlan</code> and <code>PermissionIndex</code> both only have the server-relative URL &mdash; but <strong>FP - Rebuild Permission Index</strong> already fetches it for every library it scans (its <code>Get_Unique_Perm_Libraries</code> step selects <code>Id</code> alongside <code>Title</code> and the URL), it just never saves it anywhere. Cheapest fix: capture it.</p>
+        <ol>
+          <li><strong>Add one column to <code>PermissionIndex</code>:</strong> SharePoint list settings &rarr; Create column &rarr; <code>LibraryId</code>, type Single line of text, Not Required.</li>
+          <li><strong>Edit the flow.</strong> Power Automate &rarr; <strong>FP - Rebuild Permission Index</strong> &rarr; Edit &rarr; find both <code>Create_Index_Row</code> and <code>Create_Nested_Index_Row</code> (inside <code>Apply_to_each_Assignment</code> &rarr; <code>If_Not_System_Group</code>, and inside the nested <code>If_SharePoint_Group</code> &rarr; <code>Apply_to_each_Nested_Member</code>) &rarr; click into each one's <strong>Body</strong> box &rarr; add one new line before the closing brace:
+            <div class="code-card">
+              <div class="code-toolbar"><span>New line for both actions</span><button onclick="copyCode(this)">Copy</button></div>
+              <pre>  "LibraryId": "@{items('Apply_to_each_Library')?['Id']}"</pre>
+            </div>
+            Same expression in both actions &mdash; <code>Apply_to_each_Library</code> is the outer loop both actions already run inside, so its <code>Id</code> is available in each without any new lookup.
+          </li>
+          <li>Save the flow.</li>
+        </ol>
+        <div class="callout warn">This is a data-source-refresh situation like every other flow edit, but the trigger to actually watch for here is different: since <strong>FP - Rebuild Permission Index</strong> deletes and rebuilds <code>PermissionIndex</code> from scratch every run, existing rows won't get <code>LibraryId</code> retroactively just from the flow change &mdash; you need to run it again (the Refresh Index button on scrGroupSearch, or Rebuild Permission Index on scrAdminCreateLibrary) after saving, for every row to actually carry the new field.</div>
+        <p>Once the column and flow edit are done and a rebuild's been run, tell me and I'll add the actual button to scrGroupSearch &mdash; the Power Fx side is simple, a <code>Launch()</code> call using the new <code>LibraryId</code> field:</p>
+        <div class="code-card">
+          <div class="code-toolbar"><span>Preview &mdash; not yet added to any screen</span><button onclick="copyCode(this)">Copy</button></div>
+          <pre>Launch(varTenantHost & "/_layouts/15/user.aspx?obj={" & ThisItem.LibraryId & "}&List={" & ThisItem.LibraryId & "}")</pre>
+        </div>
+        <div class="callout ok">Not built into any screen yet &mdash; this section is the groundwork (list column + flow edit) so the data exists first. No point wiring up a button that reads a field nothing has written yet.</div>
       </section>
 
       <section id="flows">
