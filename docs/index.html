@@ -133,6 +133,7 @@
       <nav>
         <a href="https://powerapps.pages.dev/">&larr; Guide library</a>
         <a href="yaml.html" style="font-weight:800;">📋 Screen YAML Vault</a>
+        <a href="#action-items" style="font-weight:800;color:var(--green);">▶ Outstanding Flow Work</a>
         <a href="#right-now" style="font-weight:800;color:var(--green);">▶ Start Here (What's Left)</a>
         <a href="#lists">1. SharePoint Lists</a>
         <a href="#flow-fix">2. Flow Field Fix</a>
@@ -162,13 +163,144 @@
       <h1>Library &amp; File Plan Manager</h1>
       <p class="lead">SharePoint permissions map (file-plan style, grouped by team) + an admin screen that creates document libraries correctly and registers them automatically, so nothing gets forgotten again.</p>
 
+      <section id="action-items">
+        <h2>Outstanding Flow Work &mdash; Work Through These In Order</h2>
+        <p>Everything below is a real, still-pending flow edit gathered into one place, so you can work top to bottom instead of hunting across the guide. Each one names the exact flow, the exact action, and what to click.</p>
+
+        <h3>1. Backfill File Plan</h3>
+        <p>Adds CCF sub-site scanning, and fixes a real bug found along the way: this flow's insert has been silently failing to save a Pretty Name for every library it's ever backfilled.</p>
+        <ol>
+          <li><strong>Fix the Pretty Name bug.</strong> Open <strong>Backfill File Plan</strong> &rarr; Edit &rarr; find <code>Create_FilePlan_Row</code> (inside <code>If_Not_Already_Tracked</code>, inside <code>Apply_to_each_Library</code>) &rarr; click into its <strong>Body</strong> box &rarr; find <code>"DisplayName"</code> &rarr; change it to <code>"PrettyName"</code>. Just that one word &mdash; the value next to it stays the same.</li>
+          <li><strong>Wrap the site-scanning logic in a new outer loop.</strong> Select <code>Get_All_Libraries</code>, <code>Select_Libraries</code>, and <code>Apply_to_each_Library</code> together (shift-click, or the "..." menu &rarr; Select actions) &rarr; Cut. Add a new <strong>Apply to each</strong> action, name it <code>Apply_to_each_Site</code>, and set its "Select an output from previous steps" field to:
+            <div class="code-card">
+              <div class="code-toolbar"><span>Apply_to_each_Site &mdash; foreach expression</span><button onclick="copyCode(this)">Copy</button></div>
+              <pre>@createArray(coalesce(triggerBody()?['SiteUrl'], 'https://modgovuk.sharepoint.com/teams/1598'), 'https://modgovuk.sharepoint.com/teams/1598/CCF')</pre>
+            </div>
+            Click inside the new loop and Paste &mdash; the three cut actions drop back in, now running once per site.
+          </li>
+          <li><strong>Point every Site Address at the current loop site.</strong> On <code>Get_All_Libraries</code>, <code>Get_Existing_Row</code>, and <code>Create_FilePlan_Row</code>, find the Site Address field (currently <code>coalesce(triggerBody()?['SiteUrl'], 'https://modgovuk.sharepoint.com/teams/1598')</code>) and replace it with:
+            <div class="code-card">
+              <div class="code-toolbar"><span>New Site Address &mdash; all three actions</span><button onclick="copyCode(this)">Copy</button></div>
+              <pre>@items('Apply_to_each_Site')</pre>
+            </div>
+          </li>
+          <li><strong>Auto-assign the CCF team.</strong> In <code>Create_FilePlan_Row</code>'s Body, find <code>"Team": ""</code> and replace the empty quotes with:
+            <div class="code-card">
+              <div class="code-toolbar"><span>Create_FilePlan_Row Body &mdash; Team field</span><button onclick="copyCode(this)">Copy</button></div>
+              <pre>"Team": "@{if(equals(items('Apply_to_each_Site'), 'https://modgovuk.sharepoint.com/teams/1598/CCF'), '09_Combined Cadet Force', '')}"</pre>
+            </div>
+          </li>
+          <li>In that same Body, find <code>"SiteUrl": "@{coalesce(triggerBody()?['SiteUrl'], 'https://modgovuk.sharepoint.com/teams/1598')}"</code> and change it to <code>"SiteUrl": "@{items('Apply_to_each_Site')}"</code>.</li>
+          <li><strong>Save.</strong> Nothing to refresh in Power Apps &mdash; this flow is only ever run manually from Power Automate, it's not a data source in the app.</li>
+        </ol>
+        <div class="callout warn">After this, every run always scans both sites &mdash; the old <code>SiteUrl</code> input still lets you override the <em>main</em> site slot, but CCF can no longer be skipped. That's the intended behaviour here.</div>
+
+        <h3>2. FP - Rebuild Permission Index</h3>
+        <p>The tricky part here: the "wipe everything and start fresh" step must stay <strong>before</strong> the new site loop, running once for both sites &mdash; not once per site, which would let the second site's run delete the first site's rows.</p>
+        <ol>
+          <li>Open <strong>FP - Rebuild Permission Index</strong> &rarr; Edit. Select everything from <code>Get_Unique_Perm_Libraries</code> to the end of <code>Apply_to_each_Library</code> &mdash; i.e. everything <em>after</em> the existing delete step (<code>Apply_to_each_Delete_Existing_Row</code>) &rarr; Cut.</li>
+          <li>Add a new <strong>Apply to each</strong>, name it <code>Apply_to_each_Site</code>, placed to run after <code>Apply_to_each_Delete_Existing_Row</code> succeeds. Same foreach expression as step 2 above (<code>@createArray(coalesce(triggerBody()?['SiteUrl'], 'https://modgovuk.sharepoint.com/teams/1598'), 'https://modgovuk.sharepoint.com/teams/1598/CCF')</code>). Paste the cut actions inside it.</li>
+          <li>On <code>Get_Unique_Perm_Libraries</code>, <code>Get_Role_Assignments</code>, and <code>Get_Group_Members</code>, replace the Site Address field with <code>@items('Apply_to_each_Site')</code>, same as Backfill above.</li>
+          <li>Add one new line to <strong>both</strong> <code>Create_Index_Row</code>'s and <code>Create_Nested_Index_Row</code>'s Body:
+            <div class="code-card">
+              <div class="code-toolbar"><span>New line &mdash; both Create Index Row actions</span><button onclick="copyCode(this)">Copy</button></div>
+              <pre>  "SiteUrl": "@{items('Apply_to_each_Site')}"</pre>
+            </div>
+          </li>
+          <li><strong>Save.</strong> Then in Power Apps: Data panel &rarr; find this flow &rarr; Refresh.</li>
+        </ol>
+
+        <h3>3. FP - Rebuild Library Stats</h3>
+        <ol>
+          <li>Open <strong>FP - Rebuild Library Stats</strong> &rarr; Edit. Select <code>Get_Libraries</code>, <code>Select_LibraryStats</code>, and <code>Apply_to_each_Library</code> &rarr; Cut.</li>
+          <li>Add <code>Apply_to_each_Site</code> (same foreach expression as items 1 and 2 above), paste the three actions inside it.</li>
+          <li>On <code>Get_Libraries</code> and <code>Get_Existing_Row</code>, replace the Site Address field with <code>@items('Apply_to_each_Site')</code>.</li>
+          <li><strong>Save.</strong> Then in Power Apps: Data panel &rarr; find this flow &rarr; Refresh.</li>
+        </ol>
+
+        <h3>4. Create Library (App)</h3>
+        <p>Two separate pieces of surgery on the same flow &mdash; do them in one sitting since both touch the same actions. Part A adds the "Register an existing library" path (needed for scrAdminCreateLibrary's toggle). Part B makes CCF libraries route to the CCF sub-site automatically.</p>
+        <div class="callout danger">This is the single most safety-critical flow in the app &mdash; the one that locks down permissions on Limited libraries. Go slowly, and test both parts with a throwaway library before trusting either for anything real.</div>
+        <p><strong>Part A &mdash; Register Existing Library:</strong></p>
+        <ol>
+          <li>Open <strong>Create Library (App)</strong> &rarr; Edit &rarr; click the trigger (<em>Power Apps</em>) &rarr; add two new inputs: <code>RegisterOnly</code> (Yes/No, not required) and <code>ExistingLibraryTitle</code> (Text, not required).</li>
+          <li>Add two <strong>Initialize variable</strong> actions right after the trigger, before <code>Select_Categories</code>: <code>varOutDisplayName</code> (String, blank) and <code>varOutLibraryUrl</code> (String, blank).</li>
+          <li>Add a <strong>Condition</strong> right after those two, still before <code>Select_Categories</code>: <code>RegisterOnly is equal to true</code>.</li>
+          <li><strong>Move the existing chain into the "No" branch.</strong> Select <code>Select_Categories</code> through <code>Create_FilePlan_Row</code> (everything except the final <strong>Response</strong> action) &rarr; Cut &rarr; click inside the Condition's <strong>No</strong> branch &rarr; Paste.</li>
+          <li>At the end of the "No" branch (after <code>Create_FilePlan_Row</code>), add two <strong>Set variable</strong> actions: <code>Set varOutDisplayName</code> to <code>triggerBody()?['DisplayName']</code>, and <code>Set varOutLibraryUrl</code> to <code>body('Get_New_Library_Url')?['d']?['RootFolder']?['ServerRelativeUrl']</code>.</li>
+          <li>In the <strong>"Yes"</strong> branch, add these in order:
+            <ol style="margin-top:8px">
+              <li>HTTP GET, <code>Get_Existing_Library_Url</code>: <code>_api/web/lists/getbytitle('@{triggerBody()?['ExistingLibraryTitle']}')/RootFolder/ServerRelativeUrl</code></li>
+              <li>HTTP GET, <code>Get_Existing_Row</code>: <code>_api/web/lists/getbytitle('LibraryFilePlan')/items?$filter=LibraryUrl eq '@{body('Get_Existing_Library_Url')?['d']?['ServerRelativeUrl']}'&amp;$select=Id&amp;$top=1</code></li>
+              <li>Condition, <code>If_Not_Already_Tracked</code>: <code>length(body('Get_Existing_Row')?['d']?['results'])</code> is equal to <code>0</code>.</li>
+              <li>Inside its "Yes": HTTP POST, <code>Create_FilePlan_Row_Register</code>, same URI as <code>Create_FilePlan_Row</code> (<code>_api/web/lists/getbytitle('LibraryFilePlan')/items</code>), Body:
+                <div class="code-card">
+                  <div class="code-toolbar"><span>Create_FilePlan_Row_Register Body</span><button onclick="copyCode(this)">Copy</button></div>
+                  <pre>{
+  "__metadata": { "type": "SP.Data.LibraryFilePlanListItem" },
+  "Title": "@{triggerBody()?['ExistingLibraryTitle']}",
+  "LibraryUrl": "@{body('Get_Existing_Library_Url')?['d']?['ServerRelativeUrl']}",
+  "PrettyName": "@{coalesce(triggerBody()?['DisplayName'], triggerBody()?['ExistingLibraryTitle'])}",
+  "Team": "@{triggerBody()?['Team']}",
+  "SubTeam": "@{triggerBody()?['SubTeam']}",
+  "SiteUrl": "@{coalesce(triggerBody()?['SiteUrl'], 'https://modgovuk.sharepoint.com/teams/1598')}",
+  "IsLimited": @{if(equals(triggerBody()?['IsLimited'], true), 'true', 'false')}
+}</pre>
+                </div>
+              </li>
+              <li>Still in that "Yes" branch, after the action above: <code>Set varOutDisplayName</code> to <code>triggerBody()?['ExistingLibraryTitle']</code>, and <code>Set varOutLibraryUrl</code> to <code>body('Get_Existing_Library_Url')?['d']?['ServerRelativeUrl']</code>.</li>
+              <li>In the "No" branch of <code>If_Not_Already_Tracked</code> (already registered): the same two Set variable actions, so the flow still responds cleanly.</li>
+            </ol>
+          </li>
+          <li><strong>Move the existing <code>Response</code> action</strong> to sit after the whole Condition block (both branches), and update its Body:
+            <div class="code-card">
+              <div class="code-toolbar"><span>Updated Response Body</span><button onclick="copyCode(this)">Copy</button></div>
+              <pre>{
+  "Success": true,
+  "DisplayName": "@{variables('varOutDisplayName')}",
+  "LibraryUrl": "@{variables('varOutLibraryUrl')}"
+}</pre>
+            </div>
+          </li>
+          <li>Save. Test both paths in the flow's own Test panel: once with <code>RegisterOnly</code> off, once on with a real existing library's title.</li>
+        </ol>
+        <p><strong>Part B &mdash; route CCF libraries to the CCF sub-site:</strong></p>
+        <ol>
+          <li>Every action in this flow that creates/renames/registers something has its own Site Address field, currently <code>coalesce(triggerBody()?['SiteUrl'], 'https://modgovuk.sharepoint.com/teams/1598')</code>. Replace it, in <strong>every</strong> action that has it &mdash; <code>Make_Document_Library</code>, <code>Create_CAT_Column</code>, <code>Create_Status_Column</code>, <code>Create_WiP_View</code>, <code>Create_Records_View</code>, <code>Rename_Library_to_Display_Name</code>, <code>Get_New_Library_Url</code>, <code>Create_FilePlan_Row</code>, and the three new actions from Part A (<code>Get_Existing_Library_Url</code>, <code>Get_Existing_Row</code>, <code>Create_FilePlan_Row_Register</code>) &mdash; with:
+            <div class="code-card">
+              <div class="code-toolbar"><span>New Site Address &mdash; every action in this flow</span><button onclick="copyCode(this)">Copy</button></div>
+              <pre>@if(equals(triggerBody()?['Team'], '09_Combined Cadet Force'), 'https://modgovuk.sharepoint.com/teams/1598/CCF', coalesce(triggerBody()?['SiteUrl'], 'https://modgovuk.sharepoint.com/teams/1598'))</pre>
+            </div>
+            Team <code>09_Combined Cadet Force</code> always wins, regardless of whatever <code>SiteUrl</code> the app sends &mdash; the app-side <code>.Run()</code> call doesn't need to change.
+          </li>
+          <li><strong>Save.</strong> Test with a throwaway library on both paths: a normal Team (should still land on the main site), and Team <code>09_Combined Cadet Force</code> (should land on CCF). Delete both test libraries and their <code>LibraryFilePlan</code> rows once confirmed. Then, back in Power Apps: Data panel &rarr; find this flow &rarr; Refresh.</li>
+        </ol>
+
+        <h3>5. FP-DeleteLibraries(App)</h3>
+        <p>Not urgent &mdash; deprioritised by Allan ("deleting libraries matters far less than creating them"), included here so it's not lost, do it whenever. This flow's <code>Response</code> action has no declared schema, so Power Apps can't infer the shape of anything inside <code>Results</code> until the flow has actually produced one real sample to learn from &mdash; every field shows as type "Error" until then, which is exactly the error scrManageLibraries hit the first time this flow was ever called.</p>
+        <ol>
+          <li>Open <strong>FP-DeleteLibraries(App)</strong> &rarr; Edit &rarr; click the final <strong>Response</strong> action.</li>
+          <li>Under its Body field, click <strong>"Use sample payload to generate schema"</strong> (a small link under the box) and paste this in:
+            <div class="code-card">
+              <div class="code-toolbar"><span>Sample Response payload</span><button onclick="copyCode(this)">Copy</button></div>
+              <pre>{
+  "Results": [
+    { "LibraryUrl": "/teams/1598/04_Training_ZZTest", "Title": "ZZTest", "ItemCount": 0, "Deleted": true }
+  ]
+}</pre>
+            </div>
+          </li>
+          <li>Save. Back in Power Apps: Data panel &rarr; find <strong>FP-DeleteLibraries(App)</strong> &rarr; Refresh.</li>
+          <li>Test on scrManageLibraries with a real throwaway empty library before trusting it for anything real.</li>
+        </ol>
+      </section>
+
       <section id="right-now" style="border:0;margin:0;padding:0;">
         <div class="callout ok">
           <strong>Start here &mdash; what's actually left right now (26 Sep 2026).</strong> Everything below this box is the full from-scratch build guide, kept for reference &mdash; you don't need any of it day-to-day. This box is the only thing that changes as work progresses; ask for it to be updated whenever something's done or something new lands, rather than re-reading the whole guide.
           <p style="margin:10px 0 0 0">All 5 screens plus App.OnStart confirmed live and working, per Allan (29 Sep 2026, after a couple of days' real use). Full build history is in the Screens section and flow-fix sections below, not repeated here.</p>
           <p style="margin:10px 0 0 0"><strong>New, ready to paste: <a href="screens/scrAdminCreateLibrary.html">scrAdminCreateLibrary v1.12</a></strong> &mdash; Technical Name auto-prefixed with the selected Team's number, plus an optional "Extra URL prefix" field. Confirmed against Allan's own worked example, small and self-contained, no flow changes needed.</p>
-          <p style="margin:10px 0 0 0"><strong>Multi-site support for the CCF sub-site &mdash; approved, real flow surgery, not yet done by Allan.</strong> Full numbered steps in <a href="#flow-fix-7">section 2g</a>: Backfill/Rebuild Permission Index/Rebuild Library Stats each need restructuring to loop over the main site and <code>/teams/1598/CCF</code> together (Backfill also gets a real pre-existing bug fixed along the way &mdash; it was writing to <code>DisplayName</code>, not <code>PrettyName</code>, same silently-dropped-write bug as section 2). Also needs a new <code>SiteUrl</code> column on <code>PermissionIndex</code> (section 1) and matching app changes (<strong><a href="screens/scrGroupSearch.html">scrGroupSearch v3.13</a></strong> + <a href="#build-app">App.OnStart v3.17</a>, both ready to paste once the flow side is done) so View Permissions opens the right site. <strong>Create Library (App) routing to CCF automatically is included too</strong>, per Allan's explicit go-ahead 29 Sep 2026, even though he says it's rarely needed &mdash; flagged as the highest-risk part since it's the flow that locks down Limited-library permissions, test with a throwaway library first. Confirmed before any of this was written: Backfill's "only insert if not already tracked" logic already protects Allan's manual Team/Sub-Team/PrettyName corrections from ever being overwritten by a re-run, checked directly against its real definition &mdash; extending it to a second site doesn't change that guarantee.</p>
-          <p style="margin:10px 0 0 0">Also outstanding, both optional, both at Allan's own pace: <code>FP-DeleteLibraries(App)</code>'s missing Response schema (deprioritised by Allan, fix in section 3), and flow surgery not yet done &mdash; <a href="#flow-fix-4">Register Existing Library (2d)</a>, <a href="#flow-fix-3">Backfill name fix (2c)</a>. Also floated but not built: grouping Limited libraries separately as a visual touch (needs a design decision first), and the fully-scoped-but-not-started sub-site migration idea in <a href="#future-migration">section 7</a> (a different, older idea &mdash; migrating a *Limited* sub-site's libraries permanently to the main site, not the same as the CCF scanning work above).</p>
+          <p style="margin:10px 0 0 0"><strong>Every other outstanding item &mdash; CCF multi-site support (approved, including Create Library routing), and the Delete Libraries Response-schema fix &mdash; is gathered into one place now: <a href="#action-items">Outstanding Flow Work</a>, right above this box.</strong> Work through it top to bottom; once App.OnStart v3.17 and scrGroupSearch v3.13 are pasted to match, tell me and this box shrinks down again.</p>
         </div>
       </section>
 
@@ -264,77 +396,13 @@
 
       <section id="flow-fix-3">
         <h2>2c. Flow Field Fix: Backfill File Plan (same DisplayName bug as 2)</h2>
-        <p><strong>Cause:</strong> found 25 Sep 2026 while investigating why some libraries showed raw, ugly names in scrFilePlan instead of a proper Pretty Name. This flow's own <code>Create_FilePlan_Row</code> action was writing to <code>DisplayName</code>, not <code>PrettyName</code> &mdash; the exact same silently-dropped-write bug fixed in section 2 above for <strong>Create Library (App)</strong>, but never applied here since the two flows only share a pattern, not the actual action. Any library that was ever registered by running Backfill (rather than created through the app's own Create Library button) has no Pretty Name at all as a result.</p>
-        <p>In Power Automate, open <strong>Backfill File Plan</strong> &rarr; Edit &rarr; find the <strong>Create_FilePlan_Row</strong> action inside the <strong>If_Not_Already_Tracked</strong> condition, inside <strong>Apply_to_each_Library</strong> &rarr; click into its <strong>Body</strong> box &rarr; select all, delete &rarr; paste this in as the replacement &rarr; Save.</p>
-        <div class="code-card">
-          <div class="code-toolbar"><span>v1.1 &mdash; Updated 25 Sep 2026 14:00 BST</span><button onclick="copyCode(this)">Copy</button></div>
-          <pre>{
-  "__metadata": { "type": "SP.Data.LibraryFilePlanListItem" },
-  "Title": "@{items('Apply_to_each_Library')?['Title']}",
-  "LibraryUrl": "@{items('Apply_to_each_Library')?['Url']}",
-  "PrettyName": "@{items('Apply_to_each_Library')?['Title']}",
-  "SiteUrl": "@{coalesce(triggerBody()?['SiteUrl'], 'https://modgovuk.sharepoint.com/teams/1598')}",
-  "Team": "",
-  "SubTeam": "",
-  "IsLimited": @{if(equals(items('Apply_to_each_Library')?['Unique'], true), 'true', 'false')}
-}</pre>
-        </div>
-        <div class="callout warn">This flow isn't added as a data source in the app (it's only ever run manually from Power Automate), so there's no Power Apps connection to refresh here &mdash; just Save the flow. This fix only affects libraries registered by a <strong>future</strong> run of Backfill; it does nothing for the ugly names already sitting in <code>LibraryFilePlan</code> right now. For those, export the list, fill in Pretty Name yourself (AI-assisted or by hand), re-import, then refresh <code>colFilePlan</code> in the app (reload, or hit any button that re-pulls it).</div>
+        <div class="callout ok">This exact fix is now step 1 of <a href="#action-items">work item 1 in the Outstanding Flow Work checklist</a>, bundled together with the CCF multi-site changes to the same flow &mdash; do it there, not here, so you're not doing overlapping edits to the same action twice.</div>
+        <div class="callout warn">This fix only affects libraries registered by a <strong>future</strong> run of Backfill; it does nothing for ugly names already sitting in <code>LibraryFilePlan</code> right now. For those, export the list, fill in Pretty Name yourself (AI-assisted or by hand), re-import, then refresh <code>colFilePlan</code> in the app.</div>
       </section>
 
       <section id="flow-fix-4">
         <h2>2d. Flow Surgery: Create Library (App) &mdash; Register Existing Library</h2>
-        <p>Needed for scrAdminCreateLibrary v1.9's new "Register an existing library only" toggle. This adds a second path through the <strong>same</strong> flow &mdash; nothing gets deleted or recreated, and no new flow needs registering as a data source in the app.</p>
-        <div class="callout warn">This is a genuine structural change, not a one-line field edit like the fixes above. Take it slowly, one step at a time, and test with the flow's own manual Test panel before touching Power Apps.</div>
-        <ol>
-          <li><strong>Add two new trigger inputs.</strong> Open <strong>Create Library (App)</strong> &rarr; Edit &rarr; click the trigger (<em>Power Apps</em>) &rarr; under its inputs, add: <code>RegisterOnly</code> (type Yes/No, not required) and <code>ExistingLibraryTitle</code> (type Text, not required).</li>
-          <li><strong>Add two "Initialize variable" actions right after the trigger</strong>, before <code>Select_Categories</code>: <code>varOutDisplayName</code> (String, leave the value blank) and <code>varOutLibraryUrl</code> (String, leave the value blank).</li>
-          <li><strong>Add a Condition action</strong> right after those two, still before <code>Select_Categories</code>. Set it to check <code>RegisterOnly is equal to true</code>.</li>
-          <li><strong>Move the existing chain into the "No" branch.</strong> Select <code>Select_Categories</code> through <code>Create_FilePlan_Row</code> (everything except the final <strong>Response</strong> action) &mdash; multi-select them (click the first, shift-click the last, or use the "..." menu &rarr; Select actions), <strong>Cut</strong>, then click inside the Condition's <strong>No</strong> branch and <strong>Paste</strong>.</li>
-          <li><strong>At the end of the "No" branch</strong> (after <code>Create_FilePlan_Row</code>), add two <strong>Set variable</strong> actions:
-            <ul>
-              <li><code>Set varOutDisplayName</code> to <code>triggerBody()?['DisplayName']</code></li>
-              <li><code>Set varOutLibraryUrl</code> to <code>body('Get_New_Library_Url')?['d']?['RootFolder']?['ServerRelativeUrl']</code></li>
-            </ul>
-          </li>
-          <li><strong>In the "Yes" branch</strong>, add these actions in order:
-            <ol style="margin-top:8px">
-              <li>An HTTP action (Send an HTTP request to SharePoint) named <code>Get_Existing_Library_Url</code>: GET <code>_api/web/lists/getbytitle('@{triggerBody()?['ExistingLibraryTitle']}')/RootFolder/ServerRelativeUrl</code>, Site Address = the same dataset expression already used elsewhere in this flow (<code>coalesce(triggerBody()?['SiteUrl'], 'https://modgovuk.sharepoint.com/teams/1598')</code>).</li>
-              <li>Another HTTP GET, <code>Get_Existing_Row</code>: <code>_api/web/lists/getbytitle('LibraryFilePlan')/items?$filter=LibraryUrl eq '@{body('Get_Existing_Library_Url')?['d']?['ServerRelativeUrl']}'&amp;$select=Id&amp;$top=1</code> &mdash; same dedupe check Backfill already uses.</li>
-              <li>A Condition, <code>If_Not_Already_Tracked</code>: <code>length(body('Get_Existing_Row')?['d']?['results'])</code> is equal to <code>0</code>.</li>
-              <li>Inside its "Yes": an HTTP POST, <code>Create_FilePlan_Row_Register</code>, same URI as the existing <code>Create_FilePlan_Row</code> (<code>_api/web/lists/getbytitle('LibraryFilePlan')/items</code>), with this body:
-                <div class="code-card">
-                  <div class="code-toolbar"><span>New action body</span><button onclick="copyCode(this)">Copy</button></div>
-                  <pre>{
-  "__metadata": { "type": "SP.Data.LibraryFilePlanListItem" },
-  "Title": "@{triggerBody()?['ExistingLibraryTitle']}",
-  "LibraryUrl": "@{body('Get_Existing_Library_Url')?['d']?['ServerRelativeUrl']}",
-  "PrettyName": "@{coalesce(triggerBody()?['DisplayName'], triggerBody()?['ExistingLibraryTitle'])}",
-  "Team": "@{triggerBody()?['Team']}",
-  "SubTeam": "@{triggerBody()?['SubTeam']}",
-  "SiteUrl": "@{coalesce(triggerBody()?['SiteUrl'], 'https://modgovuk.sharepoint.com/teams/1598')}",
-  "IsLimited": @{if(equals(triggerBody()?['IsLimited'], true), 'true', 'false')}
-}</pre>
-                </div>
-              </li>
-              <li>Still inside the "Yes" branch of <code>If_Not_Already_Tracked</code>, after that action: <code>Set varOutDisplayName</code> to <code>triggerBody()?['ExistingLibraryTitle']</code>, and <code>Set varOutLibraryUrl</code> to <code>body('Get_Existing_Library_Url')?['d']?['ServerRelativeUrl']</code>.</li>
-              <li>In the "No" branch of <code>If_Not_Already_Tracked</code> (already registered): the same two Set variable actions, so the flow still responds cleanly instead of leaving the variables blank.</li>
-            </ol>
-          </li>
-          <li><strong>Move the existing <code>Response</code> action</strong> out from directly after <code>Create_FilePlan_Row</code> to sit <strong>after the whole Condition block</strong> (both branches). Update its body to read from the variables instead of the old direct references:
-            <div class="code-card">
-              <div class="code-toolbar"><span>Updated Response body</span><button onclick="copyCode(this)">Copy</button></div>
-              <pre>{
-  "Success": true,
-  "DisplayName": "@{variables('varOutDisplayName')}",
-  "LibraryUrl": "@{variables('varOutLibraryUrl')}"
-}</pre>
-            </div>
-          </li>
-          <li>Save. Test both paths manually before touching Power Apps: once with <code>RegisterOnly</code> off (normal creation, unchanged), once with it on and a real existing library's title.</li>
-        </ol>
-        <div class="callout warn">Same rule as every other flow edit: refresh <strong>Create Library (App)</strong>'s connection in the Power Apps Data panel afterward, or scrAdminCreateLibrary keeps calling the old version.</div>
-        <div class="callout ok">Why restructure this way instead of a simpler <code>Terminate</code> action in the "Yes" branch: a flow that never reaches its own <code>Response</code> action can surface as an error on the Power Apps side. Routing both paths through one shared Response, fed by variables set in whichever branch actually ran, is the same fix pattern already proven elsewhere in this app family for "flow needs one shared response after branching logic."</div>
+        <div class="callout ok">Now <strong>Part A</strong> of <a href="#action-items">work item 4 in the Outstanding Flow Work checklist</a>, done together with the CCF routing surgery (Part B) since both touch the same flow &mdash; do it there, not here.</div>
       </section>
 
       <section id="flow-fix-5">
@@ -417,73 +485,8 @@ ItemCount: item()?['ItemCount']</pre>
 
       <section id="flow-fix-7">
         <h2>2g. Flow Surgery: Multi-Site Support (CCF Sub-Site)</h2>
-        <p><strong>Why:</strong> a real second site, <code>https://modgovuk.sharepoint.com/teams/1598/CCF</code>, holds a whole series of libraries that need scanning into this app too, auto-assigned Team <code>09_Combined Cadet Force</code>. Every flow in this app currently assumes one site. This section makes three of them loop over two sites instead, and optionally makes <strong>Create Library (App)</strong> route to CCF automatically.</p>
-        <div class="callout ok"><strong>Confirmed before writing any of this, not assumed:</strong> checked <strong>Backfill File Plan</strong>'s real definition directly. Its only write action, <code>Create_FilePlan_Row</code>, sits entirely inside the "0 existing rows found" branch of <code>If_Not_Already_Tracked</code> &mdash; the "already tracked" branch is a genuinely empty <code>{"actions": {}}</code>. There is no code path anywhere in this flow that can touch an existing row's Team, Sub-Team, or PrettyName. Every change below preserves this exactly &mdash; the site loop only widens what gets <em>discovered</em>, never what gets <em>overwritten</em>.</div>
-
-        <h3>2g-i. Backfill File Plan</h3>
-        <ol>
-          <li><strong>Fix a real pre-existing bug while here:</strong> <code>Create_FilePlan_Row</code>'s body writes to a column called <code>"DisplayName"</code>, which SharePoint silently drops (same reserved-name collision as <a href="#flow-fix">section 2</a>) &mdash; every library this flow has ever backfilled has a blank <code>PrettyName</code> as a result. Change <code>"DisplayName"</code> to <code>"PrettyName"</code> in that action's Body.</li>
-          <li><strong>Wrap the existing site-scanning logic in a new outer loop.</strong> Select <code>Get_All_Libraries</code>, <code>Select_Libraries</code>, and <code>Apply_to_each_Library</code> together (shift-click, or the "..." menu &rarr; Select actions) &rarr; Cut. Add a new <strong>Apply to each</strong> action named <code>Apply_to_each_Site</code>, set its "Select an output from previous steps" field to this expression:
-            <div class="code-card">
-              <div class="code-toolbar"><span>Apply_to_each_Site foreach</span><button onclick="copyCode(this)">Copy</button></div>
-              <pre>@createArray(coalesce(triggerBody()?['SiteUrl'], 'https://modgovuk.sharepoint.com/teams/1598'), 'https://modgovuk.sharepoint.com/teams/1598/CCF')</pre>
-            </div>
-            Then click inside it and Paste &mdash; this drops the three cut actions back in, now nested one level deeper, running once per site.
-          </li>
-          <li><strong>Update every Site Address field</strong> inside <code>Apply_to_each_Site</code> (on <code>Get_All_Libraries</code>, <code>Get_Existing_Row</code>, and <code>Create_FilePlan_Row</code>) from <code>coalesce(triggerBody()?['SiteUrl'], 'https://modgovuk.sharepoint.com/teams/1598')</code> to simply:
-            <div class="code-card">
-              <div class="code-toolbar"><span>New Site Address, all three actions</span><button onclick="copyCode(this)">Copy</button></div>
-              <pre>@items('Apply_to_each_Site')</pre>
-            </div>
-            The array built in step 2 already handles the "use the override, or default to the main site" logic, so nothing downstream needs the old <code>coalesce(...)</code> any more.
-          </li>
-          <li><strong>Auto-assign Team for CCF.</strong> In <code>Create_FilePlan_Row</code>'s Body, change <code>"Team": ""</code> to:
-            <div class="code-card">
-              <div class="code-toolbar"><span>Create_FilePlan_Row Body, Team field</span><button onclick="copyCode(this)">Copy</button></div>
-              <pre>"Team": "@{if(equals(items('Apply_to_each_Site'), 'https://modgovuk.sharepoint.com/teams/1598/CCF'), '09_Combined Cadet Force', '')}"</pre>
-            </div>
-          </li>
-          <li>Also in that same Body, change <code>"SiteUrl": "@{coalesce(triggerBody()?['SiteUrl'], 'https://modgovuk.sharepoint.com/teams/1598')}"</code> to <code>"SiteUrl": "@{items('Apply_to_each_Site')}"</code> &mdash; same reasoning as step 3.</li>
-          <li>Save. Refresh this flow's connection in Power Apps if it's ever added as a data source (it isn't currently &mdash; Backfill is run manually from Power Automate only).</li>
-        </ol>
-        <div class="callout warn">After this, the flow always scans both sites on every run &mdash; the old <code>SiteUrl</code> trigger input still works as an override for the <em>main</em> site slot, but there's no way to skip CCF any more. Fine given the goal here, just worth knowing.</div>
-
-        <h3>2g-ii. FP - Rebuild Permission Index</h3>
-        <p>Same site-loop idea, but the wipe step (<code>Get_Existing_Index_Items</code> &rarr; <code>Select_Existing_Index_Ids</code> &rarr; <code>Apply_to_each_Delete_Existing_Row</code>) must stay <strong>outside and before</strong> the new site loop &mdash; it needs to run once, covering both sites, not once per site (which would let the second site's run delete the first site's rows).</p>
-        <ol>
-          <li>Select <code>Get_Unique_Perm_Libraries</code> through the end of <code>Apply_to_each_Library</code> (everything <em>after</em> the existing delete step) &rarr; Cut.</li>
-          <li>Add a new <strong>Apply to each</strong>, <code>Apply_to_each_Site</code>, placed to run after <code>Apply_to_each_Delete_Existing_Row</code> succeeds, same foreach expression as 2g-i step 2 above. Paste the cut actions inside it.</li>
-          <li>Update the Site Address on <code>Get_Unique_Perm_Libraries</code> and <code>Get_Role_Assignments</code> and <code>Get_Group_Members</code> (every action still referencing the old <code>coalesce(...)</code> expression) to <code>@items('Apply_to_each_Site')</code>, same as before.</li>
-          <li>Add a new field to both <code>Create_Index_Row</code>'s and <code>Create_Nested_Index_Row</code>'s Body:
-            <div class="code-card">
-              <div class="code-toolbar"><span>New line, both Create Index Row actions</span><button onclick="copyCode(this)">Copy</button></div>
-              <pre>  "SiteUrl": "@{items('Apply_to_each_Site')}"</pre>
-            </div>
-          </li>
-          <li>Save. Refresh the connection in Power Apps (Data panel &rarr; find this flow &rarr; Refresh) &mdash; same as any flow edit.</li>
-        </ol>
-
-        <h3>2g-iii. FP - Rebuild Library Stats</h3>
-        <ol>
-          <li>Select <code>Get_Libraries</code>, <code>Select_LibraryStats</code>, and <code>Apply_to_each_Library</code> &rarr; Cut.</li>
-          <li>Add <code>Apply_to_each_Site</code>, same foreach expression as above, paste the three actions inside.</li>
-          <li>Update the Site Address on <code>Get_Libraries</code> and <code>Get_Existing_Row</code> to <code>@items('Apply_to_each_Site')</code>.</li>
-          <li>Save. Refresh the connection in Power Apps.</li>
-        </ol>
-
-        <h3>2g-iv. Create Library (App) &mdash; optional, lower priority</h3>
-        <p>Allan's own words: "not needed so much... but I want to keep that functionality." Routes a new library to the CCF sub-site automatically when Team <code>09_Combined Cadet Force</code> is selected, instead of always creating on the main site.</p>
-        <div class="callout danger">This is the single most safety-critical flow in the app &mdash; it's the one that locks down permissions on Limited libraries. Test carefully with a throwaway library on both paths (normal Team, and CCF Team) before trusting it for anything real, same as the very first time this flow was ever tested.</div>
-        <ol>
-          <li>Every action in this flow that creates/renames/registers something has its own Site Address field, currently <code>coalesce(triggerBody()?['SiteUrl'], 'https://modgovuk.sharepoint.com/teams/1598')</code>. Replace it, in <strong>every</strong> action that has it (<code>Make_Document_Library</code>, <code>Create_CAT_Column</code>, <code>Create_Status_Column</code>, <code>Create_WiP_View</code>, <code>Create_Records_View</code>, <code>Rename_Library_to_Display_Name</code>, <code>Get_New_Library_Url</code>, <code>Create_FilePlan_Row</code>, and the Register-Existing-Library branch's actions if that's been built &mdash; section 2d), with:
-            <div class="code-card">
-              <div class="code-toolbar"><span>New Site Address, every action in this flow</span><button onclick="copyCode(this)">Copy</button></div>
-              <pre>@if(equals(triggerBody()?['Team'], '09_Combined Cadet Force'), 'https://modgovuk.sharepoint.com/teams/1598/CCF', coalesce(triggerBody()?['SiteUrl'], 'https://modgovuk.sharepoint.com/teams/1598'))</pre>
-            </div>
-            Team <code>09_Combined Cadet Force</code> always wins, regardless of whatever <code>SiteUrl</code> the app happens to send &mdash; the app-side <code>.Run()</code> call doesn't need to change at all.
-          </li>
-          <li>Save. Test both paths with a throwaway library before trusting it live: a normal Team (should still land on the main site, unaffected), and Team <code>09_Combined Cadet Force</code> (should land on the CCF sub-site instead). Delete both test libraries and their <code>LibraryFilePlan</code> rows once confirmed.</li>
-        </ol>
+        <div class="callout ok">Fully written out as <a href="#action-items">work items 1&ndash;4 in the Outstanding Flow Work checklist</a> near the top of this guide &mdash; Backfill, Rebuild Permission Index, Rebuild Library Stats, and Create Library (App), in that order, with copy-ready code blocks for each. Work through them there.</div>
+        <div class="callout warn"><strong>Confirmed before any of it was written, not assumed:</strong> checked <strong>Backfill File Plan</strong>'s real definition directly. Its only write action sits entirely inside the "0 existing rows found" branch &mdash; the "already tracked" branch is a genuinely empty <code>{"actions": {}}</code>. There is no code path anywhere in that flow that can touch an existing row's Team, Sub-Team, or PrettyName. The site loop only widens what gets <em>discovered</em>, never what gets <em>overwritten</em>.</div>
       </section>
 
       <section id="flows">
