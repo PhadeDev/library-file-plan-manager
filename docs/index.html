@@ -141,6 +141,7 @@
         <a href="#flow-fix-4">2d. Register Existing Library</a>
         <a href="#flow-fix-5">2e. Open Permissions Link</a>
         <a href="#flow-fix-6">2f. Rebuild Library Stats (new flow)</a>
+        <a href="#flow-fix-7">2g. Multi-Site Support (CCF)</a>
         <a href="#flows">3. Download &amp; Import Flows</a>
         <a href="#build-app">4. Building the Power App</a>
         <a href="#screens">5. Screens</a>
@@ -166,7 +167,7 @@
           <strong>Start here &mdash; what's actually left right now (26 Sep 2026).</strong> Everything below this box is the full from-scratch build guide, kept for reference &mdash; you don't need any of it day-to-day. This box is the only thing that changes as work progresses; ask for it to be updated whenever something's done or something new lands, rather than re-reading the whole guide.
           <p style="margin:10px 0 0 0">All 5 screens plus App.OnStart confirmed live and working, per Allan (29 Sep 2026, after a couple of days' real use). Full build history is in the Screens section and flow-fix sections below, not repeated here.</p>
           <p style="margin:10px 0 0 0"><strong>New, ready to paste: <a href="screens/scrAdminCreateLibrary.html">scrAdminCreateLibrary v1.12</a></strong> &mdash; Technical Name auto-prefixed with the selected Team's number, plus an optional "Extra URL prefix" field. Confirmed against Allan's own worked example, small and self-contained, no flow changes needed.</p>
-          <p style="margin:10px 0 0 0"><strong>Planned, not started &mdash; needs Allan's go-ahead on the plan first:</strong> scanning a second real site, the CCF sub-site (<code>/teams/1598/CCF</code>), so its libraries show up in this app too. Genuinely bigger than a normal fix &mdash; touches three scanning flows (they'd need to loop over two sites instead of one, without ever wiping the other site's rows mid-loop), a new <code>SiteUrl</code> column on <code>PermissionIndex</code> so the View Permissions button opens the right site, and optionally <strong>Create Library (App)</strong> itself (route creation to the CCF sub-site when Team = <code>09_Combined Cadet Force</code> is picked &mdash; Allan's own words: "not needed so much... but I want to keep that functionality"). Confirmed: Backfill's existing "only insert if not already tracked" logic already protects Allan's manual Team/SubTeam/PrettyName corrections from ever being overwritten by a re-run &mdash; extending it to a second site doesn't change that guarantee.</p>
+          <p style="margin:10px 0 0 0"><strong>Multi-site support for the CCF sub-site &mdash; approved, real flow surgery, not yet done by Allan.</strong> Full numbered steps in <a href="#flow-fix-7">section 2g</a>: Backfill/Rebuild Permission Index/Rebuild Library Stats each need restructuring to loop over the main site and <code>/teams/1598/CCF</code> together (Backfill also gets a real pre-existing bug fixed along the way &mdash; it was writing to <code>DisplayName</code>, not <code>PrettyName</code>, same silently-dropped-write bug as section 2). Also needs a new <code>SiteUrl</code> column on <code>PermissionIndex</code> (section 1) and matching app changes (<strong><a href="screens/scrGroupSearch.html">scrGroupSearch v3.13</a></strong> + <a href="#build-app">App.OnStart v3.17</a>, both ready to paste once the flow side is done) so View Permissions opens the right site. <strong>Create Library (App) routing to CCF automatically is included too</strong>, per Allan's explicit go-ahead 29 Sep 2026, even though he says it's rarely needed &mdash; flagged as the highest-risk part since it's the flow that locks down Limited-library permissions, test with a throwaway library first. Confirmed before any of this was written: Backfill's "only insert if not already tracked" logic already protects Allan's manual Team/Sub-Team/PrettyName corrections from ever being overwritten by a re-run, checked directly against its real definition &mdash; extending it to a second site doesn't change that guarantee.</p>
           <p style="margin:10px 0 0 0">Also outstanding, both optional, both at Allan's own pace: <code>FP-DeleteLibraries(App)</code>'s missing Response schema (deprioritised by Allan, fix in section 3), and flow surgery not yet done &mdash; <a href="#flow-fix-4">Register Existing Library (2d)</a>, <a href="#flow-fix-3">Backfill name fix (2c)</a>. Also floated but not built: grouping Limited libraries separately as a visual touch (needs a design decision first), and the fully-scoped-but-not-started sub-site migration idea in <a href="#future-migration">section 7</a> (a different, older idea &mdash; migrating a *Limited* sub-site's libraries permanently to the main site, not the same as the CCF scanning work above).</p>
         </div>
       </section>
@@ -222,6 +223,8 @@
             <tr><td>PrincipalType</td><td>Single line of text</td><td>"SharePoint Group", "Security Group", or "User"</td></tr>
             <tr><td>PermissionLevel</td><td>Single line of text</td><td>e.g. "Full Control", "Contribute", "Read"</td></tr>
             <tr><td>NestedUnderGroup</td><td>Single line of text</td><td>Blank for a group/user granted directly on the library. If this row is a DG_ AD group found nested inside an SG_ group, this holds that SG_ group's name</td></tr>
+            <tr><td>LibraryId</td><td>Single line of text</td><td>The library's SharePoint List ID (GUID). Powers the View Permissions button on scrGroupSearch.</td></tr>
+            <tr><td>SiteUrl</td><td>Single line of text</td><td>New, added 29 Sep 2026 for multi-site support (section 2g). Which real site the library actually lives on &mdash; needed so View Permissions opens the correct site's permissions page, not always the main one.</td></tr>
           </tbody>
         </table>
         <div class="callout warn">Mark every column <strong>Not Required</strong>, exact names, no spaces &mdash; same rule as <code>LibraryFilePlan</code>.</div>
@@ -412,6 +415,77 @@ ItemCount: item()?['ItemCount']</pre>
         <div class="callout ok">The button's <code>OnSelect</code> on scrManageLibraries uses <code>RebuildLibraryStats</code> as the data-source identifier &mdash; confirmed correct, working live, per Allan 26 Sep 2026.</div>
       </section>
 
+      <section id="flow-fix-7">
+        <h2>2g. Flow Surgery: Multi-Site Support (CCF Sub-Site)</h2>
+        <p><strong>Why:</strong> a real second site, <code>https://modgovuk.sharepoint.com/teams/1598/CCF</code>, holds a whole series of libraries that need scanning into this app too, auto-assigned Team <code>09_Combined Cadet Force</code>. Every flow in this app currently assumes one site. This section makes three of them loop over two sites instead, and optionally makes <strong>Create Library (App)</strong> route to CCF automatically.</p>
+        <div class="callout ok"><strong>Confirmed before writing any of this, not assumed:</strong> checked <strong>Backfill File Plan</strong>'s real definition directly. Its only write action, <code>Create_FilePlan_Row</code>, sits entirely inside the "0 existing rows found" branch of <code>If_Not_Already_Tracked</code> &mdash; the "already tracked" branch is a genuinely empty <code>{"actions": {}}</code>. There is no code path anywhere in this flow that can touch an existing row's Team, Sub-Team, or PrettyName. Every change below preserves this exactly &mdash; the site loop only widens what gets <em>discovered</em>, never what gets <em>overwritten</em>.</div>
+
+        <h3>2g-i. Backfill File Plan</h3>
+        <ol>
+          <li><strong>Fix a real pre-existing bug while here:</strong> <code>Create_FilePlan_Row</code>'s body writes to a column called <code>"DisplayName"</code>, which SharePoint silently drops (same reserved-name collision as <a href="#flow-fix">section 2</a>) &mdash; every library this flow has ever backfilled has a blank <code>PrettyName</code> as a result. Change <code>"DisplayName"</code> to <code>"PrettyName"</code> in that action's Body.</li>
+          <li><strong>Wrap the existing site-scanning logic in a new outer loop.</strong> Select <code>Get_All_Libraries</code>, <code>Select_Libraries</code>, and <code>Apply_to_each_Library</code> together (shift-click, or the "..." menu &rarr; Select actions) &rarr; Cut. Add a new <strong>Apply to each</strong> action named <code>Apply_to_each_Site</code>, set its "Select an output from previous steps" field to this expression:
+            <div class="code-card">
+              <div class="code-toolbar"><span>Apply_to_each_Site foreach</span><button onclick="copyCode(this)">Copy</button></div>
+              <pre>@createArray(coalesce(triggerBody()?['SiteUrl'], 'https://modgovuk.sharepoint.com/teams/1598'), 'https://modgovuk.sharepoint.com/teams/1598/CCF')</pre>
+            </div>
+            Then click inside it and Paste &mdash; this drops the three cut actions back in, now nested one level deeper, running once per site.
+          </li>
+          <li><strong>Update every Site Address field</strong> inside <code>Apply_to_each_Site</code> (on <code>Get_All_Libraries</code>, <code>Get_Existing_Row</code>, and <code>Create_FilePlan_Row</code>) from <code>coalesce(triggerBody()?['SiteUrl'], 'https://modgovuk.sharepoint.com/teams/1598')</code> to simply:
+            <div class="code-card">
+              <div class="code-toolbar"><span>New Site Address, all three actions</span><button onclick="copyCode(this)">Copy</button></div>
+              <pre>@items('Apply_to_each_Site')</pre>
+            </div>
+            The array built in step 2 already handles the "use the override, or default to the main site" logic, so nothing downstream needs the old <code>coalesce(...)</code> any more.
+          </li>
+          <li><strong>Auto-assign Team for CCF.</strong> In <code>Create_FilePlan_Row</code>'s Body, change <code>"Team": ""</code> to:
+            <div class="code-card">
+              <div class="code-toolbar"><span>Create_FilePlan_Row Body, Team field</span><button onclick="copyCode(this)">Copy</button></div>
+              <pre>"Team": "@{if(equals(items('Apply_to_each_Site'), 'https://modgovuk.sharepoint.com/teams/1598/CCF'), '09_Combined Cadet Force', '')}"</pre>
+            </div>
+          </li>
+          <li>Also in that same Body, change <code>"SiteUrl": "@{coalesce(triggerBody()?['SiteUrl'], 'https://modgovuk.sharepoint.com/teams/1598')}"</code> to <code>"SiteUrl": "@{items('Apply_to_each_Site')}"</code> &mdash; same reasoning as step 3.</li>
+          <li>Save. Refresh this flow's connection in Power Apps if it's ever added as a data source (it isn't currently &mdash; Backfill is run manually from Power Automate only).</li>
+        </ol>
+        <div class="callout warn">After this, the flow always scans both sites on every run &mdash; the old <code>SiteUrl</code> trigger input still works as an override for the <em>main</em> site slot, but there's no way to skip CCF any more. Fine given the goal here, just worth knowing.</div>
+
+        <h3>2g-ii. FP - Rebuild Permission Index</h3>
+        <p>Same site-loop idea, but the wipe step (<code>Get_Existing_Index_Items</code> &rarr; <code>Select_Existing_Index_Ids</code> &rarr; <code>Apply_to_each_Delete_Existing_Row</code>) must stay <strong>outside and before</strong> the new site loop &mdash; it needs to run once, covering both sites, not once per site (which would let the second site's run delete the first site's rows).</p>
+        <ol>
+          <li>Select <code>Get_Unique_Perm_Libraries</code> through the end of <code>Apply_to_each_Library</code> (everything <em>after</em> the existing delete step) &rarr; Cut.</li>
+          <li>Add a new <strong>Apply to each</strong>, <code>Apply_to_each_Site</code>, placed to run after <code>Apply_to_each_Delete_Existing_Row</code> succeeds, same foreach expression as 2g-i step 2 above. Paste the cut actions inside it.</li>
+          <li>Update the Site Address on <code>Get_Unique_Perm_Libraries</code> and <code>Get_Role_Assignments</code> and <code>Get_Group_Members</code> (every action still referencing the old <code>coalesce(...)</code> expression) to <code>@items('Apply_to_each_Site')</code>, same as before.</li>
+          <li>Add a new field to both <code>Create_Index_Row</code>'s and <code>Create_Nested_Index_Row</code>'s Body:
+            <div class="code-card">
+              <div class="code-toolbar"><span>New line, both Create Index Row actions</span><button onclick="copyCode(this)">Copy</button></div>
+              <pre>  "SiteUrl": "@{items('Apply_to_each_Site')}"</pre>
+            </div>
+          </li>
+          <li>Save. Refresh the connection in Power Apps (Data panel &rarr; find this flow &rarr; Refresh) &mdash; same as any flow edit.</li>
+        </ol>
+
+        <h3>2g-iii. FP - Rebuild Library Stats</h3>
+        <ol>
+          <li>Select <code>Get_Libraries</code>, <code>Select_LibraryStats</code>, and <code>Apply_to_each_Library</code> &rarr; Cut.</li>
+          <li>Add <code>Apply_to_each_Site</code>, same foreach expression as above, paste the three actions inside.</li>
+          <li>Update the Site Address on <code>Get_Libraries</code> and <code>Get_Existing_Row</code> to <code>@items('Apply_to_each_Site')</code>.</li>
+          <li>Save. Refresh the connection in Power Apps.</li>
+        </ol>
+
+        <h3>2g-iv. Create Library (App) &mdash; optional, lower priority</h3>
+        <p>Allan's own words: "not needed so much... but I want to keep that functionality." Routes a new library to the CCF sub-site automatically when Team <code>09_Combined Cadet Force</code> is selected, instead of always creating on the main site.</p>
+        <div class="callout danger">This is the single most safety-critical flow in the app &mdash; it's the one that locks down permissions on Limited libraries. Test carefully with a throwaway library on both paths (normal Team, and CCF Team) before trusting it for anything real, same as the very first time this flow was ever tested.</div>
+        <ol>
+          <li>Every action in this flow that creates/renames/registers something has its own Site Address field, currently <code>coalesce(triggerBody()?['SiteUrl'], 'https://modgovuk.sharepoint.com/teams/1598')</code>. Replace it, in <strong>every</strong> action that has it (<code>Make_Document_Library</code>, <code>Create_CAT_Column</code>, <code>Create_Status_Column</code>, <code>Create_WiP_View</code>, <code>Create_Records_View</code>, <code>Rename_Library_to_Display_Name</code>, <code>Get_New_Library_Url</code>, <code>Create_FilePlan_Row</code>, and the Register-Existing-Library branch's actions if that's been built &mdash; section 2d), with:
+            <div class="code-card">
+              <div class="code-toolbar"><span>New Site Address, every action in this flow</span><button onclick="copyCode(this)">Copy</button></div>
+              <pre>@if(equals(triggerBody()?['Team'], '09_Combined Cadet Force'), 'https://modgovuk.sharepoint.com/teams/1598/CCF', coalesce(triggerBody()?['SiteUrl'], 'https://modgovuk.sharepoint.com/teams/1598'))</pre>
+            </div>
+            Team <code>09_Combined Cadet Force</code> always wins, regardless of whatever <code>SiteUrl</code> the app happens to send &mdash; the app-side <code>.Run()</code> call doesn't need to change at all.
+          </li>
+          <li>Save. Test both paths with a throwaway library before trusting it live: a normal Team (should still land on the main site, unaffected), and Team <code>09_Combined Cadet Force</code> (should land on the CCF sub-site instead). Delete both test libraries and their <code>LibraryFilePlan</code> rows once confirmed.</li>
+        </ol>
+      </section>
+
       <section id="flows">
         <h2>3. Download &amp; Import Flows</h2>
         <p><a href="https://github.com/PhadeDev/library-file-plan-manager/raw/main/flows/CreateLibraryApp_flow_import.zip">CreateLibraryApp_flow_import.zip</a> &mdash; creates a library, registers it into <code>LibraryFilePlan</code>. The core flow everything else builds on.</p>
@@ -495,8 +569,9 @@ ItemCount: item()?['ItemCount']</pre>
         <h3>App.OnStart</h3>
         <p>Select the <strong>App</strong> object (top of the tree, not any screen) &rarr; <strong>OnStart</strong> property &rarr; paste this in full:</p>
         <div class="callout ok"><strong>v3.16 confirmed live &mdash; pasted and working, per Allan, 26 Sep 2026.</strong> Builds every screen's Team/Sub-Team grouping and library sorting: <code>FlagSaysLimited</code> feeds scrGroupSearch's dual-signal LTD indicator, <code>LibraryId</code> feeds its View Permissions button, and a library's Sub-Team-less rows now sort last within their team (not first) with every library sorted alphabetically by its real pretty display name, not an invisible raw field.</div>
+        <div class="callout warn"><strong>v3.17 draft, not yet pasted.</strong> Adds <code>SiteUrl</code> to the same <code>colLibraryGroups</code> line, for scrGroupSearch's View Permissions button to open the right site once a library can genuinely live somewhere other than the main site (section 2g, CCF sub-site support). Falls back to the main site's URL if a row's <code>SiteUrl</code> is blank (older rows, or rows from before the <code>PermissionIndex</code> schema change).</div>
         <div class="code-card">
-          <div class="code-toolbar"><span>v3.16 &mdash; Updated 26 Sep 2026 04:15 BST</span><button onclick="copyCode(this)">Copy</button></div>
+          <div class="code-toolbar"><span>v3.17 &mdash; Updated 29 Sep 2026 11:00 BST</span><button onclick="copyCode(this)">Copy</button></div>
           <pre>Set(varTenantHost, "https://modgovuk.sharepoint.com");
 ClearCollect(colFilePlan, 'LibraryFilePlan');
 ClearCollect(
@@ -540,7 +615,7 @@ Set(varIndexRunError, false);
 Set(varIndexRefreshing, false);
 ClearCollect(colPermissionIndex, Filter('PermissionIndex', PermissionLevel <> "Limited Access" && PrincipalType <> "User"));
 ClearCollect(colPermissionFiltered, colPermissionIndex);
-ClearCollect(colLibraryGroups, Sort(AddColumns(GroupBy(colPermissionFiltered, LibraryUrl, LibraryTitle, GroupedItems), ItemCount, CountRows(GroupedItems), FlagSaysLimited, With({_lu: LibraryUrl}, Coalesce(LookUp(colFilePlan, LibraryUrl = _lu, IsLimited), false)), LibraryId, With({_lu: LibraryUrl}, LookUp(colPermissionFiltered, LibraryUrl = _lu, LibraryId))), LibraryTitle, SortOrder.Ascending));
+ClearCollect(colLibraryGroups, Sort(AddColumns(GroupBy(colPermissionFiltered, LibraryUrl, LibraryTitle, GroupedItems), ItemCount, CountRows(GroupedItems), FlagSaysLimited, With({_lu: LibraryUrl}, Coalesce(LookUp(colFilePlan, LibraryUrl = _lu, IsLimited), false)), LibraryId, With({_lu: LibraryUrl}, LookUp(colPermissionFiltered, LibraryUrl = _lu, LibraryId)), SiteUrl, With({_lu: LibraryUrl}, Coalesce(LookUp(colPermissionFiltered, LibraryUrl = _lu, SiteUrl), "https://modgovuk.sharepoint.com/teams/1598"))), LibraryTitle, SortOrder.Ascending));
 Clear(colPermFlatSource);
 Collect(colPermFlatSource, AddColumns(colLibraryGroups, RowType, "Library", SortKey, LibraryUrl, RankInGroup, 0, GroupSortKey, "", DirectGroupCount, With({_lu: LibraryUrl}, CountRows(Filter(colPermissionFiltered, LibraryUrl = _lu && (IsBlank(NestedUnderGroup) || NestedUnderGroup = ""))))));
 Collect(colPermFlatSource, AddColumns(Filter(colPermissionFiltered, IsBlank(NestedUnderGroup) || NestedUnderGroup = ""), RowType, "Group", SortKey, LibraryUrl, RankInGroup, 1, GroupSortKey, GroupName, MemberCount, With({_gn: GroupName, _lu: LibraryUrl}, CountRows(Filter(colPermissionFiltered, NestedUnderGroup = _gn && LibraryUrl = _lu)))));
@@ -578,10 +653,10 @@ Set(varEditSaveStatus, "")</pre>
               <span class="ver">v1.12 &mdash; 29 Sep 2026 &mdash; draft, not yet pasted</span></div>
             <div class="open">Copy YAML &rarr;</div>
           </a>
-          <a class="link-card" href="screens/scrGroupSearch.html?v=3.12">
+          <a class="link-card" href="screens/scrGroupSearch.html?v=3.13">
             <div><span class="pill">Screen 3</span><strong style="margin-top:8px;display:block">scrGroupSearch</strong>
-              <p>Search by SG_/DG_ group name or library name. Results grouped by library in a collapsible accordion, same pattern as scrFilePlan. Reads the precomputed PermissionIndex list &mdash; instant, no live SharePoint crawl. Red padlock/purple warning dual-signal LTD indicator per library, a Refresh Index button, and a "View Permissions" button (Allan's own addition) &mdash; all confirmed live and working.</p>
-              <span class="ver">v3.12 &mdash; 26 Sep 2026 &mdash; confirmed live</span></div>
+              <p>Search by SG_/DG_ group name or library name. Results grouped by library in a collapsible accordion, same pattern as scrFilePlan. Reads the precomputed PermissionIndex list &mdash; instant, no live SharePoint crawl. Red padlock/purple warning dual-signal LTD indicator per library, a Refresh Index button, and a "View Permissions" button (Allan's own addition). v3.13: View Permissions now opens the library's real site (<code>ThisItem.SiteUrl</code>), not always the main site &mdash; needed once a library can genuinely live on the CCF sub-site too (section 2g). Also fixes a real gap: the canonical copy of this button had drifted from the corrected formula Allan pasted directly in Studio, never synced back.</p>
+              <span class="ver">v3.13 &mdash; 29 Sep 2026 &mdash; draft, not yet pasted (needs App.OnStart v3.17 first)</span></div>
             <div class="open">Copy YAML &rarr;</div>
           </a>
           <a class="link-card" href="screens/scrManageLibraries.html?v=2.6">
