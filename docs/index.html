@@ -129,7 +129,7 @@
   <div class="shell">
     <aside>
       <h2>Library &amp; File Plan Manager</h2>
-      <p>v5.1 build guide. Follow this end-to-end to set up the SharePoint lists, flows, and screens.</p>
+      <p>v5.2 build guide. Follow this end-to-end to set up the SharePoint lists, flows, and screens.</p>
       <nav>
         <a href="https://powerapps.pages.dev/">&larr; Guide library</a>
         <a href="yaml.html" style="font-weight:800;">📋 Screen YAML Vault</a>
@@ -153,7 +153,7 @@
 
     <main>
       <div class="topline">
-        <span class="pill">v5.1</span>
+        <span class="pill">v5.2</span>
         <span class="pill">Built 30 Sep 2026</span>
         <span class="pill">5 screens live</span>
         <span class="pill warn">1 designed, never built</span>
@@ -226,10 +226,10 @@
           <li>Then in Power Apps: Data panel &rarr; find this flow &rarr; Refresh.</li>
         </ol>
 
-        <h3>7. Paste App.OnStart v3.17</h3>
-        <p>Do this only once items 1&ndash;6 above are all done &mdash; this version's <code>SiteUrl</code> line depends on the <code>PermissionIndex</code> column from item 1 and the flow edits from items 3&ndash;6 actually populating it. Select the <strong>App</strong> object (top of the tree, not any screen) &rarr; <strong>OnStart</strong> property &rarr; select all &rarr; paste this in full, replacing everything:</p>
+        <h3>7. Paste App.OnStart v3.18</h3>
+        <p>Select the <strong>App</strong> object (top of the tree, not any screen) &rarr; <strong>OnStart</strong> property &rarr; select all &rarr; paste this in full, replacing everything. <strong>v3.18</strong> adds Team/Sub-Team grouping to Group Search's own data (new <code>colGSTeamGroups</code>/<code>colGSSubTeamGroups</code>/<code>colGSExpandedTeams</code>/<code>colGSExpandedSubTeams</code>), needed by item 8 below &mdash; paste this one first.</p>
         <div class="code-card">
-          <div class="code-toolbar"><span>App.OnStart v3.17 &mdash; Updated 29 Sep 2026 11:00 BST</span><button onclick="copyCode(this)">Copy</button></div>
+          <div class="code-toolbar"><span>App.OnStart v3.18 &mdash; Updated 30 Sep 2026 16:30 BST</span><button onclick="copyCode(this)">Copy</button></div>
           <pre>Set(varTenantHost, "https://modgovuk.sharepoint.com");
 ClearCollect(colFilePlan, 'LibraryFilePlan');
 ClearCollect(
@@ -273,13 +273,19 @@ Set(varIndexRunError, false);
 Set(varIndexRefreshing, false);
 ClearCollect(colPermissionIndex, Filter('PermissionIndex', PermissionLevel &lt;&gt; "Limited Access" &amp;&amp; PrincipalType &lt;&gt; "User"));
 ClearCollect(colPermissionFiltered, colPermissionIndex);
-ClearCollect(colLibraryGroups, Sort(AddColumns(GroupBy(colPermissionFiltered, LibraryUrl, LibraryTitle, GroupedItems), ItemCount, CountRows(GroupedItems), FlagSaysLimited, With({_lu: LibraryUrl}, Coalesce(LookUp(colFilePlan, LibraryUrl = _lu, IsLimited), false)), LibraryId, With({_lu: LibraryUrl}, LookUp(colPermissionFiltered, LibraryUrl = _lu, LibraryId)), SiteUrl, With({_lu: LibraryUrl}, Coalesce(LookUp(colPermissionFiltered, LibraryUrl = _lu, SiteUrl), "https://modgovuk.sharepoint.com/teams/1598"))), LibraryTitle, SortOrder.Ascending));
+ClearCollect(colLibraryGroups, Sort(AddColumns(GroupBy(colPermissionFiltered, LibraryUrl, LibraryTitle, GroupedItems), ItemCount, CountRows(GroupedItems), FlagSaysLimited, With({_lu: LibraryUrl}, Coalesce(LookUp(colFilePlan, LibraryUrl = _lu, IsLimited), false)), LibraryId, With({_lu: LibraryUrl}, LookUp(colPermissionFiltered, LibraryUrl = _lu, LibraryId)), SiteUrl, With({_lu: LibraryUrl}, Coalesce(LookUp(colPermissionFiltered, LibraryUrl = _lu, SiteUrl), "https://modgovuk.sharepoint.com/teams/1598")), TeamName, With({_lu: LibraryUrl}, With({_t: LookUp(colFilePlan, LibraryUrl = _lu, Team.Value)}, If(IsBlank(_t) || _t = "", "Uncategorised", _t))), SubTeamName, With({_lu: LibraryUrl}, Coalesce(LookUp(colFilePlan, LibraryUrl = _lu, SubTeam.Value), ""))), LibraryTitle, SortOrder.Ascending));
+ClearCollect(colGSTeamGroups, Sort(AddColumns(GroupBy(colLibraryGroups, TeamName, GroupedItems), ItemCount, CountRows(GroupedItems), TeamSortKey, If(TeamName = "Uncategorised", "zzz_" &amp; TeamName, TeamName)), TeamSortKey, SortOrder.Ascending));
+ClearCollect(colGSSubTeamGroups, AddColumns(GroupBy(Filter(colLibraryGroups, !IsBlank(SubTeamName) &amp;&amp; SubTeamName &lt;&gt; ""), TeamName, SubTeamName, GroupedItems), ItemCount, CountRows(GroupedItems)));
 Clear(colPermFlatSource);
-Collect(colPermFlatSource, AddColumns(colLibraryGroups, RowType, "Library", SortKey, LibraryUrl, RankInGroup, 0, GroupSortKey, "", DirectGroupCount, With({_lu: LibraryUrl}, CountRows(Filter(colPermissionFiltered, LibraryUrl = _lu &amp;&amp; (IsBlank(NestedUnderGroup) || NestedUnderGroup = ""))))));
-Collect(colPermFlatSource, AddColumns(Filter(colPermissionFiltered, IsBlank(NestedUnderGroup) || NestedUnderGroup = ""), RowType, "Group", SortKey, LibraryUrl, RankInGroup, 1, GroupSortKey, GroupName, MemberCount, With({_gn: GroupName, _lu: LibraryUrl}, CountRows(Filter(colPermissionFiltered, NestedUnderGroup = _gn &amp;&amp; LibraryUrl = _lu)))));
-Collect(colPermFlatSource, AddColumns(Filter(colPermissionFiltered, !IsBlank(NestedUnderGroup) &amp;&amp; NestedUnderGroup &lt;&gt; ""), RowType, "Member", SortKey, LibraryUrl, RankInGroup, 2, GroupSortKey, NestedUnderGroup));
+Collect(colPermFlatSource, AddColumns(colGSTeamGroups, RowType, "Team", GSTeamSort, TeamSortKey, SubSortKey, "", TeamRank, 0, LibSortKey, "", RankInGroup, 0, GroupSortKey, "", SubTeamName, ""));
+Collect(colPermFlatSource, AddColumns(colGSSubTeamGroups, RowType, "SubTeam", GSTeamSort, If(TeamName = "Uncategorised", "zzz_" &amp; TeamName, TeamName), SubSortKey, SubTeamName, TeamRank, 1, LibSortKey, "", RankInGroup, 0, GroupSortKey, ""));
+Collect(colPermFlatSource, AddColumns(colLibraryGroups, RowType, "Library", GSTeamSort, If(TeamName = "Uncategorised", "zzz_" &amp; TeamName, TeamName), SubSortKey, If(IsBlank(SubTeamName) || SubTeamName = "", "", SubTeamName), TeamRank, If(IsBlank(SubTeamName) || SubTeamName = "", 1, 2), LibSortKey, LibraryUrl, RankInGroup, 0, GroupSortKey, "", DirectGroupCount, With({_lu: LibraryUrl}, CountRows(Filter(colPermissionFiltered, LibraryUrl = _lu &amp;&amp; (IsBlank(NestedUnderGroup) || NestedUnderGroup = ""))))));
+Collect(colPermFlatSource, AddColumns(Filter(colPermissionFiltered, IsBlank(NestedUnderGroup) || NestedUnderGroup = ""), RowType, "Group", GSTeamSort, With({_lu: LibraryUrl}, LookUp(colLibraryGroups, LibraryUrl = _lu, If(TeamName = "Uncategorised", "zzz_" &amp; TeamName, TeamName))), SubSortKey, With({_lu: LibraryUrl}, LookUp(colLibraryGroups, LibraryUrl = _lu, If(IsBlank(SubTeamName) || SubTeamName = "", "", SubTeamName))), TeamRank, With({_lu: LibraryUrl}, LookUp(colLibraryGroups, LibraryUrl = _lu, If(IsBlank(SubTeamName) || SubTeamName = "", 1, 2))), TeamName, With({_lu: LibraryUrl}, LookUp(colLibraryGroups, LibraryUrl = _lu, TeamName)), SubTeamName, With({_lu: LibraryUrl}, LookUp(colLibraryGroups, LibraryUrl = _lu, SubTeamName)), LibSortKey, LibraryUrl, RankInGroup, 1, GroupSortKey, GroupName, MemberCount, With({_gn: GroupName, _lu: LibraryUrl}, CountRows(Filter(colPermissionFiltered, NestedUnderGroup = _gn &amp;&amp; LibraryUrl = _lu)))));
+Collect(colPermFlatSource, AddColumns(Filter(colPermissionFiltered, !IsBlank(NestedUnderGroup) &amp;&amp; NestedUnderGroup &lt;&gt; ""), RowType, "Member", GSTeamSort, With({_lu: LibraryUrl}, LookUp(colLibraryGroups, LibraryUrl = _lu, If(TeamName = "Uncategorised", "zzz_" &amp; TeamName, TeamName))), SubSortKey, With({_lu: LibraryUrl}, LookUp(colLibraryGroups, LibraryUrl = _lu, If(IsBlank(SubTeamName) || SubTeamName = "", "", SubTeamName))), TeamRank, With({_lu: LibraryUrl}, LookUp(colLibraryGroups, LibraryUrl = _lu, If(IsBlank(SubTeamName) || SubTeamName = "", 1, 2))), TeamName, With({_lu: LibraryUrl}, LookUp(colLibraryGroups, LibraryUrl = _lu, TeamName)), SubTeamName, With({_lu: LibraryUrl}, LookUp(colLibraryGroups, LibraryUrl = _lu, SubTeamName)), LibSortKey, LibraryUrl, RankInGroup, 2, GroupSortKey, NestedUnderGroup));
 ClearCollect(colExpandedLibs, Filter(Table({LibraryUrl: "seed"}), false));
 ClearCollect(colExpandedGroups, Filter(Table({GroupKey: "seed"}), false));
+ClearCollect(colGSExpandedTeams, Filter(Table({TeamName: "seed"}), false));
+ClearCollect(colGSExpandedSubTeams, Filter(Table({SubTeamKey: "seed"}), false));
 ClearCollect(colSelectedLibraries, Filter(Table({LibraryUrl: "seed"}), false));
 ClearCollect(colManageFiltered, colFilePlanFiltered);
 ClearCollect(colEditQueue, Filter(colFilePlanFiltered, false));
@@ -291,15 +297,16 @@ Set(varDeletedCount, 0);
 Set(varEditSaving, false);
 Set(varEditSaveStatus, "")</pre>
         </div>
-        <div class="callout ok"><code>EffectiveName</code> is <code>PrettyName</code> when filled in, otherwise falls back to <code>Title</code>. <code>varIsAdmin</code> gates the Admin screen &mdash; edit the email list directly in this line if who's authorized ever changes. The new <code>SiteUrl</code> line on <code>colLibraryGroups</code> is what item 8 below (scrGroupSearch's View Permissions button) actually needs to open the right site.</div>
+        <div class="callout ok"><code>EffectiveName</code> is <code>PrettyName</code> when filled in, otherwise falls back to <code>Title</code>. <code>varIsAdmin</code> gates the Admin screen &mdash; edit the email list directly in this line if who's authorized ever changes.</div>
 
-        <h3>8. Paste <a href="screens/scrGroupSearch.html?v=3.13">scrGroupSearch v3.13</a></h3>
-        <p>Do this straight after item 7 &mdash; this screen's View Permissions button reads the <code>SiteUrl</code> that App.OnStart v3.17 just started producing.</p>
+        <h3>8. Paste <a href="screens/scrGroupSearch.html?v=3.14">scrGroupSearch v3.14</a></h3>
+        <p>Do this straight after item 7. <strong>v3.14 adds Team &rarr; Sub-Team grouping</strong> above the existing Library &rarr; Group &rarr; Member accordion, matching File Plan &mdash; requested after the flat list of 35 Limited libraries got hard to scan. Teams start collapsed; typing in the search box auto-expands whichever teams/libraries actually match, same as File Plan's own search.</p>
         <ol>
           <li>Power Apps Studio &rarr; open <strong>scrGroupSearch</strong> &rarr; delete it.</li>
           <li>New screen (blank) &rarr; open the link above &rarr; <strong>Copy YAML to Clipboard</strong> &rarr; paste into the tree view.</li>
           <li>Rename the new screen back to <code>scrGroupSearch</code>.</li>
         </ol>
+        <div class="callout ok">The "35 libraries" count you'll see here is correct, not a bug &mdash; Group Search only ever indexes libraries with genuinely unique/broken permissions (mostly Limited ones). Every normal library inherits identical site-wide permissions, so there's nothing library-specific to search there; indexing all 500+ would just be noise.</div>
 
         <h3>9. FP-DeleteLibraries(App) <span style="font-weight:400;color:var(--muted);font-size:.85rem">&mdash; optional, low priority</span></h3>
         <p>Not urgent &mdash; deprioritised by Allan ("deleting libraries matters far less than creating them"), included here so it's not lost, do it whenever. This flow's <code>Response</code> action has no declared schema, so Power Apps can't infer the shape of anything inside <code>Results</code> until the flow has actually produced one real sample to learn from &mdash; every field shows as type "Error" until then, which is exactly the error scrManageLibraries hit the first time this flow was ever called. <a href="https://github.com/PhadeDev/library-file-plan-manager/raw/main/flows/DeleteLibraries_SchemaFix_flow_import.zip">DeleteLibraries_SchemaFix_flow_import.zip</a> adds the schema directly &mdash; no manual clicking required.</p>
@@ -607,10 +614,10 @@ ItemCount: item()?['ItemCount']</pre>
               <span class="ver">v1.13 &mdash; 30 Sep 2026 &mdash; draft, not yet pasted</span></div>
             <div class="open">Copy YAML &rarr;</div>
           </a>
-          <a class="link-card" href="screens/scrGroupSearch.html?v=3.13">
+          <a class="link-card" href="screens/scrGroupSearch.html?v=3.14">
             <div><span class="pill">Screen 3</span><strong style="margin-top:8px;display:block">scrGroupSearch</strong>
-              <p>Search by SG_/DG_ group name or library name. Results grouped by library in a collapsible accordion, same pattern as scrFilePlan. Reads the precomputed PermissionIndex list &mdash; instant, no live SharePoint crawl. Red padlock/purple warning dual-signal LTD indicator per library, a Refresh Index button, and a "View Permissions" button (Allan's own addition). v3.13: View Permissions now opens the library's real site (<code>ThisItem.SiteUrl</code>), not always the main site &mdash; needed once a library can genuinely live on the CCF sub-site too (section 2g). Also fixes a real gap: the canonical copy of this button had drifted from the corrected formula Allan pasted directly in Studio, never synced back.</p>
-              <span class="ver">v3.13 &mdash; 29 Sep 2026 &mdash; draft, not yet pasted (needs App.OnStart v3.17 first)</span></div>
+              <p>Search by SG_/DG_ group name or library name. Team &rarr; Sub-Team &rarr; Library &rarr; Group &rarr; Member accordion (Team/Sub-Team grouping added in v3.14, matching scrFilePlan). Reads the precomputed PermissionIndex list &mdash; instant, no live SharePoint crawl. Red padlock/purple warning dual-signal LTD indicator per library, a Refresh Index button, and a "View Permissions" button that opens the library's real site (<code>ThisItem.SiteUrl</code>), CCF included.</p>
+              <span class="ver">v3.14 &mdash; 30 Sep 2026 &mdash; draft, not yet pasted (needs App.OnStart v3.18 first)</span></div>
             <div class="open">Copy YAML &rarr;</div>
           </a>
           <a class="link-card" href="screens/scrManageLibraries.html?v=2.7">
