@@ -129,7 +129,7 @@
   <div class="shell">
     <aside>
       <h2>Library &amp; File Plan Manager</h2>
-      <p>v4.9 build guide. Follow this end-to-end to set up the SharePoint lists, flows, and screens.</p>
+      <p>v5.0 build guide. Follow this end-to-end to set up the SharePoint lists, flows, and screens.</p>
       <nav>
         <a href="https://powerapps.pages.dev/">&larr; Guide library</a>
         <a href="yaml.html" style="font-weight:800;">📋 Screen YAML Vault</a>
@@ -153,7 +153,7 @@
 
     <main>
       <div class="topline">
-        <span class="pill">v4.9</span>
+        <span class="pill">v5.0</span>
         <span class="pill">Built 30 Sep 2026</span>
         <span class="pill">5 screens live</span>
         <span class="pill warn">1 designed, never built</span>
@@ -182,113 +182,47 @@
           <li>Rename the new screen back to <code>scrAdminCreateLibrary</code>.</li>
         </ol>
 
-        <h3>3. Backfill File Plan</h3>
-        <p>Adds CCF sub-site scanning, and fixes a real bug found along the way: this flow's insert has been silently failing to save a Pretty Name for every library it's ever backfilled.</p>
+        <h3>3. Backfill File Plan &mdash; <a href="https://github.com/PhadeDev/library-file-plan-manager/raw/main/flows/BackfillFilePlan_MultiSite_flow_import.zip">BackfillFilePlan_MultiSite_flow_import.zip</a></h3>
+        <p>Built from a real export of your current flow (Aug 2026), with the CCF site loop added and the long-standing Pretty Name bug fixed (the flow's insert was silently writing to <code>DisplayName</code>, a field that doesn't exist on this list, instead of <code>PrettyName</code>).</p>
         <ol>
-          <li><strong>Fix the Pretty Name bug.</strong> Open <strong>Backfill File Plan</strong> &rarr; Edit &rarr; find <code>Create_FilePlan_Row</code> (inside <code>If_Not_Already_Tracked</code>, inside <code>Apply_to_each_Library</code>) &rarr; click into its <strong>Body</strong> box &rarr; find <code>"DisplayName"</code> &rarr; change it to <code>"PrettyName"</code>. Just that one word &mdash; the value next to it stays the same.</li>
-          <li><strong>Wrap the site-scanning logic in a new outer loop.</strong> Select <code>Get_All_Libraries</code>, <code>Select_Libraries</code>, and <code>Apply_to_each_Library</code> together (shift-click, or the "..." menu &rarr; Select actions) &rarr; Cut. Add a new <strong>Apply to each</strong> action, name it <code>Apply_to_each_Site</code>, and set its "Select an output from previous steps" field to:
-            <div class="code-card">
-              <div class="code-toolbar"><span>Apply_to_each_Site &mdash; foreach expression</span><button onclick="copyCode(this)">Copy</button></div>
-              <pre>@createArray(coalesce(triggerBody()?['SiteUrl'], 'https://modgovuk.sharepoint.com/teams/1598'), 'https://modgovuk.sharepoint.com/teams/1598/CCF')</pre>
-            </div>
-            Click inside the new loop and Paste &mdash; the three cut actions drop back in, now running once per site.
-          </li>
-          <li><strong>Point every Site Address at the current loop site.</strong> On <code>Get_All_Libraries</code>, <code>Get_Existing_Row</code>, and <code>Create_FilePlan_Row</code>, find the Site Address field (currently <code>coalesce(triggerBody()?['SiteUrl'], 'https://modgovuk.sharepoint.com/teams/1598')</code>) and replace it with:
-            <div class="code-card">
-              <div class="code-toolbar"><span>New Site Address &mdash; all three actions</span><button onclick="copyCode(this)">Copy</button></div>
-              <pre>@items('Apply_to_each_Site')</pre>
-            </div>
-          </li>
-          <li><strong>Auto-assign the CCF team.</strong> In <code>Create_FilePlan_Row</code>'s Body, find <code>"Team": ""</code> and replace the empty quotes with:
-            <div class="code-card">
-              <div class="code-toolbar"><span>Create_FilePlan_Row Body &mdash; Team field</span><button onclick="copyCode(this)">Copy</button></div>
-              <pre>"Team": "@{if(equals(items('Apply_to_each_Site'), 'https://modgovuk.sharepoint.com/teams/1598/CCF'), '09_Combined Cadet Force', '')}"</pre>
-            </div>
-          </li>
-          <li>In that same Body, find <code>"SiteUrl": "@{coalesce(triggerBody()?['SiteUrl'], 'https://modgovuk.sharepoint.com/teams/1598')}"</code> and change it to <code>"SiteUrl": "@{items('Apply_to_each_Site')}"</code>.</li>
-          <li><strong>Save.</strong> Nothing to refresh in Power Apps &mdash; this flow is only ever run manually from Power Automate, it's not a data source in the app.</li>
+          <li>Power Automate &rarr; <strong>My flows</strong> &rarr; the <strong>"..."</strong> next to <strong>Backfill File Plan</strong> &rarr; <strong>Import</strong> &rarr; <strong>Import Package (Legacy)</strong>.</li>
+          <li>Upload the zip above. On the resource mapping screen, the flow row should show <strong>Update</strong> as an option (or let you pick the existing <strong>Backfill File Plan</strong> flow) &mdash; pick that, not "Create as new." The SharePoint connection row should already show your existing connection.</li>
+          <li>Import. Nothing to refresh in Power Apps afterward &mdash; this flow is only ever run manually from Power Automate, it's not a data source in the app.</li>
         </ol>
-        <div class="callout warn">After this, every run always scans both sites &mdash; the old <code>SiteUrl</code> input still lets you override the <em>main</em> site slot, but CCF can no longer be skipped. That's the intended behaviour here.</div>
+        <div class="callout warn">If the import screen only offers "Create as new" for the flow (no existing flow to match against), stop and tell me rather than importing &mdash; that would create a second, disconnected copy instead of updating the one you already have.</div>
 
-        <h3>4. FP - Rebuild Permission Index</h3>
-        <p>The tricky part here: the "wipe everything and start fresh" step must stay <strong>before</strong> the new site loop, running once for both sites &mdash; not once per site, which would let the second site's run delete the first site's rows.</p>
+        <h3>4. FP - Rebuild Permission Index &mdash; <a href="https://github.com/PhadeDev/library-file-plan-manager/raw/main/flows/RebuildPermissionIndex_MultiSite_flow_import.zip">RebuildPermissionIndex_MultiSite_flow_import.zip</a></h3>
+        <p>Built from a real export of your current flow (25 Sep 2026, already has the <code>$top=5000</code> pagination fix). Adds the CCF site loop (the "wipe everything" step still runs once, before the loop, so a CCF run can never delete the main site's rows) and folds in the <code>LibraryId</code> field you added by hand in Designer for the View Permissions button &mdash; that fix is already baked into this zip, you don't need to re-add it.</p>
         <ol>
-          <li>Open <strong>FP - Rebuild Permission Index</strong> &rarr; Edit. Select everything from <code>Get_Unique_Perm_Libraries</code> to the end of <code>Apply_to_each_Library</code> &mdash; i.e. everything <em>after</em> the existing delete step (<code>Apply_to_each_Delete_Existing_Row</code>) &rarr; Cut.</li>
-          <li>Add a new <strong>Apply to each</strong>, name it <code>Apply_to_each_Site</code>, placed to run after <code>Apply_to_each_Delete_Existing_Row</code> succeeds. Same foreach expression as item 3 above (<code>@createArray(coalesce(triggerBody()?['SiteUrl'], 'https://modgovuk.sharepoint.com/teams/1598'), 'https://modgovuk.sharepoint.com/teams/1598/CCF')</code>). Paste the cut actions inside it.</li>
-          <li>On <code>Get_Unique_Perm_Libraries</code>, <code>Get_Role_Assignments</code>, and <code>Get_Group_Members</code>, replace the Site Address field with <code>@items('Apply_to_each_Site')</code>, same as Backfill above.</li>
-          <li>Add one new line to <strong>both</strong> <code>Create_Index_Row</code>'s and <code>Create_Nested_Index_Row</code>'s Body:
-            <div class="code-card">
-              <div class="code-toolbar"><span>New line &mdash; both Create Index Row actions</span><button onclick="copyCode(this)">Copy</button></div>
-              <pre>  "SiteUrl": "@{items('Apply_to_each_Site')}"</pre>
-            </div>
-          </li>
-          <li><strong>Save.</strong> Then in Power Apps: Data panel &rarr; find this flow &rarr; Refresh.</li>
+          <li>Power Automate &rarr; <strong>My flows</strong> &rarr; <strong>"..."</strong> next to <strong>FP - Rebuild Permission Index</strong> &rarr; <strong>Import</strong> &rarr; <strong>Import Package (Legacy)</strong>.</li>
+          <li>Upload the zip above. Pick <strong>Update</strong>/the existing flow on the mapping screen, same as item 3.</li>
+          <li>Import. Then in Power Apps: Data panel &rarr; find this flow &rarr; Refresh.</li>
         </ol>
 
-        <h3>5. FP - Rebuild Library Stats</h3>
+        <h3>5. FP - Rebuild Library Stats &mdash; <a href="https://github.com/PhadeDev/library-file-plan-manager/raw/main/flows/RebuildLibraryStats_MultiSite_flow_import.zip">RebuildLibraryStats_MultiSite_flow_import.zip</a></h3>
+        <p>Adds the CCF site loop to the flow you already imported on 26 Sep. Same import steps as above.</p>
+        <div class="callout warn">This one's less certain than items 3-4 above: this flow was hand-built by me from scratch originally (never round-tripped through a real export of your tenant), so on import Power Automate might not recognise it as the same flow and could offer only "Create as new" rather than "Update." If that happens: <strong>cancel the import</strong>, don't create a duplicate, and tell me &mdash; I'll turn this one into a small manual Designer edit instead (it's a genuinely tiny change: two field swaps and one new loop).</div>
         <ol>
-          <li>Open <strong>FP - Rebuild Library Stats</strong> &rarr; Edit. Select <code>Get_Libraries</code>, <code>Select_LibraryStats</code>, and <code>Apply_to_each_Library</code> &rarr; Cut.</li>
-          <li>Add <code>Apply_to_each_Site</code> (same foreach expression as items 3 and 4 above), paste the three actions inside it.</li>
-          <li>On <code>Get_Libraries</code> and <code>Get_Existing_Row</code>, replace the Site Address field with <code>@items('Apply_to_each_Site')</code>.</li>
-          <li><strong>Save.</strong> Then in Power Apps: Data panel &rarr; find this flow &rarr; Refresh.</li>
+          <li>Power Automate &rarr; <strong>My flows</strong> &rarr; <strong>"..."</strong> next to <strong>FP - Rebuild Library Stats</strong> &rarr; <strong>Import</strong> &rarr; <strong>Import Package (Legacy)</strong>.</li>
+          <li>Upload the zip above. Check the mapping screen carefully (see warning above) &mdash; pick the existing flow if offered.</li>
+          <li>Import. Then in Power Apps: Data panel &rarr; find this flow &rarr; Refresh.</li>
         </ol>
 
-        <h3>6. Create Library (App)</h3>
-        <p>Two separate pieces of surgery on the same flow &mdash; do them in one sitting since both touch the same actions. Part A adds the "Register an existing library" path (needed for scrAdminCreateLibrary's toggle). Part B makes CCF libraries route to the CCF sub-site automatically.</p>
-        <div class="callout danger">This is the single most safety-critical flow in the app &mdash; the one that locks down permissions on Limited libraries. Go slowly, and test both parts with a throwaway library before trusting either for anything real.</div>
-        <p><strong>Part A &mdash; Register Existing Library:</strong></p>
+        <h3>6. Create Library (App) &mdash; <a href="https://github.com/PhadeDev/library-file-plan-manager/raw/main/flows/CreateLibrary_MultiSite_flow_import.zip">CreateLibrary_MultiSite_flow_import.zip</a></h3>
+        <p>Built from a real export of your current flow (Aug 2026). Adds both the "Register an existing library" path (needed for scrAdminCreateLibrary's toggle) and CCF routing (every site-address field now sends Team <code>09_Combined Cadet Force</code> to the CCF sub-site, everything else to the main site or whatever <code>SiteUrl</code> is passed in). Built without Set/Initialize Variable actions &mdash; instead of converging the two paths into one shared Response at the end, each path (create new / register existing / already registered) now ends with its own Response action, so nothing changes about what Power Apps receives back, just how the flow gets there internally.</p>
+        <div class="callout danger">This is the single most safety-critical flow in the app &mdash; the one that locks down permissions on Limited libraries. Don't skip the test plan below.</div>
         <ol>
-          <li>Open <strong>Create Library (App)</strong> &rarr; Edit &rarr; click the trigger (<em>Power Apps</em>) &rarr; add two new inputs: <code>RegisterOnly</code> (Yes/No, not required) and <code>ExistingLibraryTitle</code> (Text, not required).</li>
-          <li>Add two <strong>Initialize variable</strong> actions right after the trigger, before <code>Select_Categories</code>: <code>varOutDisplayName</code> (String, blank) and <code>varOutLibraryUrl</code> (String, blank).</li>
-          <li>Add a <strong>Condition</strong> right after those two, still before <code>Select_Categories</code>: <code>RegisterOnly is equal to true</code>.</li>
-          <li><strong>Move the existing chain into the "No" branch.</strong> Select <code>Select_Categories</code> through <code>Create_FilePlan_Row</code> (everything except the final <strong>Response</strong> action) &rarr; Cut &rarr; click inside the Condition's <strong>No</strong> branch &rarr; Paste.</li>
-          <li>At the end of the "No" branch (after <code>Create_FilePlan_Row</code>), add two <strong>Set variable</strong> actions: <code>Set varOutDisplayName</code> to <code>triggerBody()?['DisplayName']</code>, and <code>Set varOutLibraryUrl</code> to <code>body('Get_New_Library_Url')?['d']?['RootFolder']?['ServerRelativeUrl']</code>.</li>
-          <li>In the <strong>"Yes"</strong> branch, add these in order:
+          <li>Power Automate &rarr; <strong>My flows</strong> &rarr; <strong>"..."</strong> next to <strong>Create Library (App)</strong> &rarr; <strong>Import</strong> &rarr; <strong>Import Package (Legacy)</strong>.</li>
+          <li>Upload the zip above. Pick <strong>Update</strong>/the existing flow on the mapping screen, same as item 3.</li>
+          <li>Import. <strong>Before</strong> refreshing it in Power Apps, test all three paths in the flow's own Test panel:
             <ol style="margin-top:8px">
-              <li>HTTP GET, <code>Get_Existing_Library_Url</code>: <code>_api/web/lists/getbytitle('@{triggerBody()?['ExistingLibraryTitle']}')/RootFolder/ServerRelativeUrl</code></li>
-              <li>HTTP GET, <code>Get_Existing_Row</code>: <code>_api/web/lists/getbytitle('LibraryFilePlan')/items?$filter=LibraryUrl eq '@{body('Get_Existing_Library_Url')?['d']?['ServerRelativeUrl']}'&amp;$select=Id&amp;$top=1</code></li>
-              <li>Condition, <code>If_Not_Already_Tracked</code>: <code>length(body('Get_Existing_Row')?['d']?['results'])</code> is equal to <code>0</code>.</li>
-              <li>Inside its "Yes": HTTP POST, <code>Create_FilePlan_Row_Register</code>, same URI as <code>Create_FilePlan_Row</code> (<code>_api/web/lists/getbytitle('LibraryFilePlan')/items</code>), Body:
-                <div class="code-card">
-                  <div class="code-toolbar"><span>Create_FilePlan_Row_Register Body</span><button onclick="copyCode(this)">Copy</button></div>
-                  <pre>{
-  "__metadata": { "type": "SP.Data.LibraryFilePlanListItem" },
-  "Title": "@{triggerBody()?['ExistingLibraryTitle']}",
-  "LibraryUrl": "@{body('Get_Existing_Library_Url')?['d']?['ServerRelativeUrl']}",
-  "PrettyName": "@{coalesce(triggerBody()?['DisplayName'], triggerBody()?['ExistingLibraryTitle'])}",
-  "Team": "@{triggerBody()?['Team']}",
-  "SubTeam": "@{triggerBody()?['SubTeam']}",
-  "SiteUrl": "@{coalesce(triggerBody()?['SiteUrl'], 'https://modgovuk.sharepoint.com/teams/1598')}",
-  "IsLimited": @{if(equals(triggerBody()?['IsLimited'], true), 'true', 'false')}
-}</pre>
-                </div>
-              </li>
-              <li>Still in that "Yes" branch, after the action above: <code>Set varOutDisplayName</code> to <code>triggerBody()?['ExistingLibraryTitle']</code>, and <code>Set varOutLibraryUrl</code> to <code>body('Get_Existing_Library_Url')?['d']?['ServerRelativeUrl']</code>.</li>
-              <li>In the "No" branch of <code>If_Not_Already_Tracked</code> (already registered): the same two Set variable actions, so the flow still responds cleanly.</li>
+              <li>Normal create, <code>RegisterOnly</code> off, Team a normal one (e.g. <code>Test</code>) &mdash; confirm the library lands on the main site as before.</li>
+              <li>Normal create, Team <code>09_Combined Cadet Force</code> &mdash; confirm it lands on the CCF sub-site instead.</li>
+              <li><code>RegisterOnly</code> on, a real existing (untracked) library's title &mdash; confirm it gets a <code>LibraryFilePlan</code> row without creating a new document library.</li>
             </ol>
+            Delete any throwaway libraries and their <code>LibraryFilePlan</code> rows once confirmed, then re-check Library Settings &rarr; Permissions on the Limited test library exactly as before (only <code>SG_Cadets-Admin-Ltd_MEM</code> and <code>SG_IHUB</code>, no extras).
           </li>
-          <li><strong>Move the existing <code>Response</code> action</strong> to sit after the whole Condition block (both branches), and update its Body:
-            <div class="code-card">
-              <div class="code-toolbar"><span>Updated Response Body</span><button onclick="copyCode(this)">Copy</button></div>
-              <pre>{
-  "Success": true,
-  "DisplayName": "@{variables('varOutDisplayName')}",
-  "LibraryUrl": "@{variables('varOutLibraryUrl')}"
-}</pre>
-            </div>
-          </li>
-          <li>Save. Test both paths in the flow's own Test panel: once with <code>RegisterOnly</code> off, once on with a real existing library's title.</li>
-        </ol>
-        <p><strong>Part B &mdash; route CCF libraries to the CCF sub-site:</strong></p>
-        <ol>
-          <li>Every action in this flow that creates/renames/registers something has its own Site Address field, currently <code>coalesce(triggerBody()?['SiteUrl'], 'https://modgovuk.sharepoint.com/teams/1598')</code>. Replace it, in <strong>every</strong> action that has it &mdash; <code>Make_Document_Library</code>, <code>Create_CAT_Column</code>, <code>Create_Status_Column</code>, <code>Create_WiP_View</code>, <code>Create_Records_View</code>, <code>Rename_Library_to_Display_Name</code>, <code>Get_New_Library_Url</code>, <code>Create_FilePlan_Row</code>, and the three new actions from Part A (<code>Get_Existing_Library_Url</code>, <code>Get_Existing_Row</code>, <code>Create_FilePlan_Row_Register</code>) &mdash; with:
-            <div class="code-card">
-              <div class="code-toolbar"><span>New Site Address &mdash; every action in this flow</span><button onclick="copyCode(this)">Copy</button></div>
-              <pre>@if(equals(triggerBody()?['Team'], '09_Combined Cadet Force'), 'https://modgovuk.sharepoint.com/teams/1598/CCF', coalesce(triggerBody()?['SiteUrl'], 'https://modgovuk.sharepoint.com/teams/1598'))</pre>
-            </div>
-            Team <code>09_Combined Cadet Force</code> always wins, regardless of whatever <code>SiteUrl</code> the app sends &mdash; the app-side <code>.Run()</code> call doesn't need to change.
-          </li>
-          <li><strong>Save.</strong> Test with a throwaway library on both paths: a normal Team (should still land on the main site), and Team <code>09_Combined Cadet Force</code> (should land on CCF). Delete both test libraries and their <code>LibraryFilePlan</code> rows once confirmed. Then, back in Power Apps: Data panel &rarr; find this flow &rarr; Refresh.</li>
+          <li>Then in Power Apps: Data panel &rarr; find this flow &rarr; Refresh.</li>
         </ol>
 
         <h3>7. Paste App.OnStart v3.17</h3>
