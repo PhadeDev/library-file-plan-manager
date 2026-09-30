@@ -200,11 +200,10 @@
         </ol>
 
         <h3>5. FP - Rebuild Library Stats &mdash; <a href="https://github.com/PhadeDev/library-file-plan-manager/raw/main/flows/RebuildLibraryStats_MultiSite_flow_import.zip">RebuildLibraryStats_MultiSite_flow_import.zip</a></h3>
-        <p>Adds the CCF site loop to the flow you already imported on 26 Sep. Same import steps as above.</p>
-        <div class="callout warn">This one's less certain than items 3-4 above: this flow was hand-built by me from scratch originally (never round-tripped through a real export of your tenant), so on import Power Automate might not recognise it as the same flow and could offer only "Create as new" rather than "Update." If that happens: <strong>cancel the import</strong>, don't create a duplicate, and tell me &mdash; I'll turn this one into a small manual Designer edit instead (it's a genuinely tiny change: two field swaps and one new loop).</div>
+        <p>Adds the CCF site loop. Rebuilt 30 Sep 2026 from a real export of your current live flow (thanks for sending it over) &mdash; the first version of this zip was hand-built from scratch and Power Automate couldn't match it to the existing flow, only offering "Create as new." This version carries the flow's real ID, so it should now offer <strong>Update</strong> like the others.</p>
         <ol>
           <li>Power Automate &rarr; <strong>My flows</strong> &rarr; <strong>"..."</strong> next to <strong>FP - Rebuild Library Stats</strong> &rarr; <strong>Import</strong> &rarr; <strong>Import Package (Legacy)</strong>.</li>
-          <li>Upload the zip above. Check the mapping screen carefully (see warning above) &mdash; pick the existing flow if offered.</li>
+          <li>Upload the zip above. Pick <strong>Update</strong>/the existing flow on the mapping screen.</li>
           <li>Import. Then in Power Apps: Data panel &rarr; find this flow &rarr; Refresh.</li>
         </ol>
 
