@@ -611,10 +611,10 @@ ItemCount: item()?['ItemCount']</pre>
               <span class="ver">v3.13 &mdash; 29 Sep 2026 &mdash; draft, not yet pasted (needs App.OnStart v3.17 first)</span></div>
             <div class="open">Copy YAML &rarr;</div>
           </a>
-          <a class="link-card" href="screens/scrManageLibraries.html?v=2.6">
+          <a class="link-card" href="screens/scrManageLibraries.html?v=2.7">
             <div><span class="pill">Screen 4</span><strong style="margin-top:8px;display:block">scrManageLibraries</strong>
-              <p>Restricted to admins. Tick libraries, bulk-delete them (empty ones go straight away, non-empty ones get an override prompt) or send the selection to the edit cart. Team &rarr; Sub-Team &rarr; Library accordion, Team filter dropdown, "Sub-Team: None" shown explicitly. v2.6, built on Allan's own cosmetic pass (rows now 100px, moved buttons onto the nav bar, an Open button, a Modern Checkbox swap &mdash; see the callout below): every library row now shows its creation date and current file count, empty libraries flagged in red, plus a Refresh Library Stats button. Needs a brand new flow, <strong>FP - Rebuild Library Stats</strong> (see section 2f), and two new columns on <code>LibraryFilePlan</code> (section 1) &mdash; genuinely new infrastructure this time, not just a Power Fx change.</p>
-              <span class="ver">v2.6 &mdash; 26 Sep 2026 &mdash; confirmed live</span></div>
+              <p>Restricted to admins. Tick libraries, bulk-delete them (empty ones go straight away, non-empty ones get an override prompt) or send the selection to the edit cart. Team &rarr; Sub-Team &rarr; Library accordion, Team filter dropdown, "Sub-Team: None" shown explicitly. Every library row shows its creation date and current file count, empty libraries flagged in red, plus a Refresh Library Stats button. v2.7: the delete buttons (Delete Selected, Leave Them, Delete Anyway) already refreshed every collection on success &mdash; that part was working &mdash; but only ever wrote a quiet status message to a small grey label, never an actual banner, so it was easy to miss and looked like nothing happened. Added a proper <code>Notify()</code> success/warning banner alongside the existing message on all three.</p>
+              <span class="ver">v2.7 &mdash; 30 Sep 2026 &mdash; draft, not yet pasted</span></div>
             <div class="open">Copy YAML &rarr;</div>
           </a>
           <a class="link-card" href="screens/scrEditLibraries.html?v=2.4">
