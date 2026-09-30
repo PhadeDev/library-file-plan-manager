@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <title>PowerApps – scrFilePlan — Refresh button add-on – add-on  —  Built 30 Sep 2026  13:15 BST</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #0f0f1a;
+      color: #e8e8f0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      gap: 20px;
+    }
+    h1 { font-size: 1.4rem; font-weight: 400; color: #a0a0c0; }
+    .name { font-size: 1.1rem; font-weight: 600; color: #c8b8ff; }
+    .version-badge {
+      display: inline-block;
+      background: #1a2a1a;
+      border: 1px solid #2a7d4e;
+      color: #4caf7d;
+      font-family: 'Cascadia Code', 'Consolas', monospace;
+      font-size: 0.95rem;
+      font-weight: 700;
+      padding: 6px 18px;
+      border-radius: 20px;
+      letter-spacing: 0.5px;
+    }
+    button {
+      padding: 14px 36px;
+      font-size: 1.1rem;
+      background: #7c4dff;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    button:hover { background: #6a3de8; }
+    button:active { background: #5830cc; }
+    #status {
+      font-size: 0.9rem;
+      color: #888;
+      min-height: 1.2em;
+      transition: color 0.2s;
+    }
+    #status.ok { color: #4caf7d; }
+    #status.err { color: #e85555; }
+    .info {
+      font-size: 0.8rem;
+      color: #555;
+      margin-top: 8px;
+      text-align: center;
+      line-height: 1.6;
+    }
+    .preview {
+      width: min(720px, calc(100vw - 48px));
+      background: #1a1a2e;
+      border: 1px solid #2a2a3a;
+      border-radius: 8px;
+      padding: 12px 14px;
+      color: #bfc7e8;
+      font-family: 'Cascadia Code', 'Consolas', monospace;
+      font-size: 0.78rem;
+      line-height: 1.45;
+      white-space: pre-wrap;
+      text-align: left;
+    }
+  </style>
+</head>
+<body>
+  <h1>PowerApps Screen</h1>
+  <div class="name">scrFilePlan — Refresh button add-on</div>
+  <div class="version-badge">add-on  —  Built 30 Sep 2026  13:15 BST</div>
+  <button onclick="copyYAML()">Copy YAML to Clipboard</button>
+  <div id="status">Click to copy — PowerApps-ready (CRLF, UTF-8)</div>
+  <div class="info">
+    After copying, open PowerApps Studio &rarr; select a screen &rarr; Ctrl+V<br>
+    or use the paste button in the tree view.
+  </div>
+  <pre id="preview" class="preview"></pre>
+  <script>
+    const yaml = "Screens:\r\n  scrFilePlan:\r\n    Children:\r\n      - btnRefreshFilePlan:\r\n          Control: ModernButton@1.0.0\r\n          Properties:\r\n            Height: =44\r\n            OnSelect: |-\r\n              =ClearCollect(colFilePlan, 'LibraryFilePlan');\r\n              ClearCollect(\r\n                  colFilePlanFiltered,\r\n                  AddColumns(\r\n                      If(\r\n                          IsBlank(Trim(txtSearch.Text)),\r\n                          colFilePlan,\r\n                          Filter(\r\n                              colFilePlan,\r\n                              txtSearch.Text in PrettyName ||\r\n                              txtSearch.Text in Title ||\r\n                              txtSearch.Text in Team.Value ||\r\n                              txtSearch.Text in Coalesce(SubTeam.Value, \"\")\r\n                          )\r\n                      ),\r\n                      TeamName, If(IsBlank(Team.Value) || Team.Value = \"\", \"Uncategorised\", Team.Value),\r\n                      SubTeamName, Coalesce(SubTeam.Value, \"\"),\r\n                      EffectiveName, If(IsBlank(PrettyName) || PrettyName = \"\", Title, PrettyName)\r\n                  )\r\n              );\r\n              ClearCollect(\r\n                  colTeamGroups,\r\n                  Sort(\r\n                      AddColumns(\r\n                          GroupBy(colFilePlanFiltered, TeamName, GroupedItems),\r\n                          ItemCount, CountRows(GroupedItems),\r\n                          TeamSortKey, If(TeamName = \"Uncategorised\", \"zzz_\" & TeamName, TeamName)\r\n                      ),\r\n                      TeamSortKey,\r\n                      SortOrder.Ascending\r\n                  )\r\n              );\r\n              ClearCollect(\r\n                  colSubTeamGroups,\r\n                  AddColumns(\r\n                      GroupBy(\r\n                          Filter(colFilePlanFiltered, !IsBlank(SubTeamName) && SubTeamName <> \"\"),\r\n                          TeamName, SubTeamName, GroupedItems\r\n                      ),\r\n                      ItemCount, CountRows(GroupedItems)\r\n                  )\r\n              );\r\n              Clear(colFlatSource);\r\n              Collect(colFlatSource, AddColumns(colTeamGroups, RowType, \"Team\", SortKey, TeamSortKey, SubSortKey, \"\", RankInGroup, 0));\r\n              Collect(colFlatSource, AddColumns(colSubTeamGroups, RowType, \"SubTeam\", SortKey, If(TeamName = \"Uncategorised\", \"zzz_\" & TeamName, TeamName), SubSortKey, SubTeamName, RankInGroup, 1));\r\n              Collect(colFlatSource, AddColumns(colFilePlanFiltered, RowType, \"Library\", SortKey, If(TeamName = \"Uncategorised\", \"zzz_\" & TeamName, TeamName), SubSortKey, If(IsBlank(SubTeamName) || SubTeamName = \"\", \"\", SubTeamName), RankInGroup, If(IsBlank(SubTeamName) || SubTeamName = \"\", 1, 2)));\r\n              Notify(\"File plan refreshed.\", NotificationType.Success)\r\n            Text: =\"Refresh\"\r\n            Visible: =varIsAdmin\r\n            Width: =140\r\n            X: =1210\r\n            Y: =90\r\n";
+    const stamp = "add-on  \u2014  Built 30 Sep 2026  13:15 BST";
+
+    function firstLines() {
+      return yaml.split(/\r?\n/).slice(0, 8).join('\n');
+    }
+
+    async function copyYAML() {
+      const status = document.getElementById('status');
+      if (!yaml.startsWith('Screens:\r\n  ') && !yaml.startsWith('Screens:\n  ')) {
+        status.textContent = 'Refusing to copy: YAML does not start with Screens:';
+        status.className = 'err';
+        return;
+      }
+      if (yaml.includes('\r\n    Control: Screen\r\n') || yaml.includes('\n    Control: Screen\n')) {
+        status.textContent = 'Refusing to copy: stale YAML still contains screen-level Control: Screen.';
+        status.className = 'err';
+        return;
+      }
+      try {
+        await navigator.clipboard.writeText(yaml);
+        status.textContent = '\u2713 Copied ' + stamp + '. First YAML line: ' + yaml.split(/\r?\n/)[0];
+        status.className = 'ok';
+        setTimeout(() => {
+          status.textContent = 'Click to copy again';
+          status.className = '';
+        }, 4000);
+      } catch (e) {
+        status.textContent = 'Clipboard blocked \u2014 select the text below and copy manually.';
+        status.className = 'err';
+        const pre = document.createElement('pre');
+        pre.style = 'font-size:9px;max-height:200px;overflow:auto;background:#1a1a2e;padding:8px;border-radius:6px;text-align:left;';
+        pre.textContent = yaml;
+        document.body.appendChild(pre);
+      }
+    }
+
+    document.getElementById('preview').textContent = 'Clipboard payload preview (' + stamp + ')\n' + firstLines();
+  </script>
+</body>
+</html>
