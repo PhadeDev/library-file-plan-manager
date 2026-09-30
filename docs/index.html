@@ -129,7 +129,7 @@
   <div class="shell">
     <aside>
       <h2>Library &amp; File Plan Manager</h2>
-      <p>v5.0 build guide. Follow this end-to-end to set up the SharePoint lists, flows, and screens.</p>
+      <p>v5.1 build guide. Follow this end-to-end to set up the SharePoint lists, flows, and screens.</p>
       <nav>
         <a href="https://powerapps.pages.dev/">&larr; Guide library</a>
         <a href="yaml.html" style="font-weight:800;">📋 Screen YAML Vault</a>
@@ -153,7 +153,7 @@
 
     <main>
       <div class="topline">
-        <span class="pill">v5.0</span>
+        <span class="pill">v5.1</span>
         <span class="pill">Built 30 Sep 2026</span>
         <span class="pill">5 screens live</span>
         <span class="pill warn">1 designed, never built</span>
@@ -174,8 +174,8 @@
           <li>Save. Nothing further needed here &mdash; the flow edit in item 4 below is what actually starts writing values into it.</li>
         </ol>
 
-        <h3>2. Paste <a href="screens/scrAdminCreateLibrary.html?v=1.12">scrAdminCreateLibrary v1.12</a></h3>
-        <p>Self-contained, no flow changes needed &mdash; safe to do any time, independent of everything else in this list. Auto-prefixes the Technical Name with the selected Team's own number (Team 4 &rarr; <code>04_</code>), plus a new optional "Extra URL prefix" field (Team 4 + <code>SOP</code> + extra field <code>04_03</code> &rarr; final name <code>04_04_03_SOP</code>).</p>
+        <h3>2. Paste <a href="screens/scrAdminCreateLibrary.html?v=1.13">scrAdminCreateLibrary v1.13</a></h3>
+        <p>Self-contained, no flow changes needed &mdash; safe to do any time, independent of everything else in this list. Auto-prefixes the Technical Name with the selected Team's own number (Team 4 &rarr; <code>04_</code>), plus an optional "Extra prefix" field (Team 4 + <code>SOP</code> + extra field <code>04_03</code> &rarr; final name <code>04_04_03_SOP</code>). <strong>v1.13 fixes real bugs found testing v1.12:</strong> the prefix now applies to the Display Name too, not just the Technical Name (so the library's visible title matches its URL, not just "Test" while the URL says <code>14_Test</code>); the Team dropdown and every text field now have a visible white fill and border, instead of blending into the grey page background; the Sub-Team label no longer wraps and overlaps the field below it; and the queue list now shows the actual computed result under each entry (e.g. <code>14_04_03_SOP</code>, or "registers &lt;existing title&gt;" for a Register-Only row), not just the team name.</p>
         <ol>
           <li>Power Apps Studio &rarr; open <strong>scrAdminCreateLibrary</strong> &rarr; delete it.</li>
           <li>New screen (blank) &rarr; open the link above &rarr; <strong>Copy YAML to Clipboard</strong> &rarr; paste into the tree view.</li>
@@ -599,10 +599,10 @@ ItemCount: item()?['ItemCount']</pre>
               <span class="ver">v2.11 &mdash; 26 Sep 2026 &mdash; confirmed live</span></div>
             <div class="open">Copy YAML &rarr;</div>
           </a>
-          <a class="link-card" href="screens/scrAdminCreateLibrary.html?v=1.12">
+          <a class="link-card" href="screens/scrAdminCreateLibrary.html?v=1.13">
             <div><span class="pill">Screen 2</span><strong style="margin-top:8px;display:block">scrAdminCreateLibrary</strong>
-              <p>Restricted to the admin email list. Fill in a library's details, Add to Queue as many times as needed, then Run Queue creates them all sequentially, with a progress overlay. New toggle lets you register an existing library instead of creating one. Also has a Rebuild Permission Index button with a staleness indicator. v1.12: the Technical Name is now auto-prefixed with the selected Team's own number (e.g. Team 04 &rarr; <code>04_SOP</code>), plus a new optional "Extra URL prefix" field inserted between the two (e.g. <code>04_03</code> typed there gives <code>04_04_03_SOP</code>) &mdash; Allan's own naming convention, matches his worked example exactly.</p>
-              <span class="ver">v1.12 &mdash; 29 Sep 2026 &mdash; draft, not yet pasted</span></div>
+              <p>Restricted to the admin email list. Fill in a library's details, Add to Queue as many times as needed, then Run Queue creates them all sequentially, with a progress overlay. New toggle lets you register an existing library instead of creating one. Also has a Rebuild Permission Index button with a staleness indicator. Technical Name and Display Name are both auto-prefixed with the selected Team's own number (e.g. Team 04 &rarr; <code>04_SOP</code>), plus a new optional "Extra prefix" field inserted between the two (e.g. <code>04_03</code> typed there gives <code>04_04_03_SOP</code>) &mdash; Allan's own naming convention. v1.13 fixes real bugs found testing v1.12: Display Name wasn't getting prefixed (only the URL was), the Team dropdown and text fields were nearly invisible against the page background, the Sub-Team label wrapped and overlapped the field below it, and the queue list didn't show the actual computed result.</p>
+              <span class="ver">v1.13 &mdash; 30 Sep 2026 &mdash; draft, not yet pasted</span></div>
             <div class="open">Copy YAML &rarr;</div>
           </a>
           <a class="link-card" href="screens/scrGroupSearch.html?v=3.13">
