@@ -129,12 +129,11 @@
   <div class="shell">
     <aside>
       <h2>Library &amp; File Plan Manager</h2>
-      <p>v4.8 build guide. Follow this end-to-end to set up the SharePoint lists, flows, and screens.</p>
+      <p>v4.9 build guide. Follow this end-to-end to set up the SharePoint lists, flows, and screens.</p>
       <nav>
         <a href="https://powerapps.pages.dev/">&larr; Guide library</a>
         <a href="yaml.html" style="font-weight:800;">📋 Screen YAML Vault</a>
-        <a href="#action-items" style="font-weight:800;color:var(--green);">▶ Outstanding Flow Work</a>
-        <a href="#right-now" style="font-weight:800;color:var(--green);">▶ Start Here (What's Left)</a>
+        <a href="#action-items" style="font-weight:800;color:var(--green);">▶ Everything Left To Do</a>
         <a href="#lists">1. SharePoint Lists</a>
         <a href="#flow-fix">2. Flow Field Fix</a>
         <a href="#flow-fix-2">2b. Missing Libraries Fix</a>
@@ -154,8 +153,8 @@
 
     <main>
       <div class="topline">
-        <span class="pill">v4.8</span>
-        <span class="pill">Built 26 Sep 2026</span>
+        <span class="pill">v4.9</span>
+        <span class="pill">Built 30 Sep 2026</span>
         <span class="pill">5 screens live</span>
         <span class="pill warn">1 designed, never built</span>
         <a class="pill" href="yaml.html" style="text-decoration:none;">📋 Screen YAML Vault →</a>
@@ -164,10 +163,26 @@
       <p class="lead">SharePoint permissions map (file-plan style, grouped by team) + an admin screen that creates document libraries correctly and registers them automatically, so nothing gets forgotten again.</p>
 
       <section id="action-items">
-        <h2>Outstanding Flow Work &mdash; Work Through These In Order</h2>
-        <p>Everything below is a real, still-pending flow edit gathered into one place, so you can work top to bottom instead of hunting across the guide. Each one names the exact flow, the exact action, and what to click.</p>
+        <h2>Everything Left To Do &mdash; Work Through This Whole Section, Top To Bottom</h2>
+        <p>Every single outstanding item &mdash; SharePoint changes, flow edits, and screen pastes &mdash; gathered into one place in the order to do them, so nothing needs hunting for elsewhere in the guide. Every zip file, code block, and link needed sits right next to the step that needs it. Once you've worked through everything below, this whole section shrinks back down to nothing.</p>
 
-        <h3>1. Backfill File Plan</h3>
+        <h3>1. Add the new <code>SiteUrl</code> column to <code>PermissionIndex</code></h3>
+        <p>Two-minute prerequisite for items 4 and 8 below &mdash; without it, the multi-site flow edits have nowhere to write the site each library actually lives on.</p>
+        <ol>
+          <li>SharePoint &rarr; your main site &rarr; <strong>PermissionIndex</strong> list &rarr; list settings (gear icon &rarr; List settings) &rarr; <strong>Create column</strong>.</li>
+          <li>Name: <code>SiteUrl</code>. Type: <strong>Single line of text</strong>. Leave <strong>Not Required</strong>.</li>
+          <li>Save. Nothing further needed here &mdash; the flow edit in item 4 below is what actually starts writing values into it.</li>
+        </ol>
+
+        <h3>2. Paste <a href="screens/scrAdminCreateLibrary.html?v=1.12">scrAdminCreateLibrary v1.12</a></h3>
+        <p>Self-contained, no flow changes needed &mdash; safe to do any time, independent of everything else in this list. Auto-prefixes the Technical Name with the selected Team's own number (Team 4 &rarr; <code>04_</code>), plus a new optional "Extra URL prefix" field (Team 4 + <code>SOP</code> + extra field <code>04_03</code> &rarr; final name <code>04_04_03_SOP</code>).</p>
+        <ol>
+          <li>Power Apps Studio &rarr; open <strong>scrAdminCreateLibrary</strong> &rarr; delete it.</li>
+          <li>New screen (blank) &rarr; open the link above &rarr; <strong>Copy YAML to Clipboard</strong> &rarr; paste into the tree view.</li>
+          <li>Rename the new screen back to <code>scrAdminCreateLibrary</code>.</li>
+        </ol>
+
+        <h3>3. Backfill File Plan</h3>
         <p>Adds CCF sub-site scanning, and fixes a real bug found along the way: this flow's insert has been silently failing to save a Pretty Name for every library it's ever backfilled.</p>
         <ol>
           <li><strong>Fix the Pretty Name bug.</strong> Open <strong>Backfill File Plan</strong> &rarr; Edit &rarr; find <code>Create_FilePlan_Row</code> (inside <code>If_Not_Already_Tracked</code>, inside <code>Apply_to_each_Library</code>) &rarr; click into its <strong>Body</strong> box &rarr; find <code>"DisplayName"</code> &rarr; change it to <code>"PrettyName"</code>. Just that one word &mdash; the value next to it stays the same.</li>
@@ -195,11 +210,11 @@
         </ol>
         <div class="callout warn">After this, every run always scans both sites &mdash; the old <code>SiteUrl</code> input still lets you override the <em>main</em> site slot, but CCF can no longer be skipped. That's the intended behaviour here.</div>
 
-        <h3>2. FP - Rebuild Permission Index</h3>
+        <h3>4. FP - Rebuild Permission Index</h3>
         <p>The tricky part here: the "wipe everything and start fresh" step must stay <strong>before</strong> the new site loop, running once for both sites &mdash; not once per site, which would let the second site's run delete the first site's rows.</p>
         <ol>
           <li>Open <strong>FP - Rebuild Permission Index</strong> &rarr; Edit. Select everything from <code>Get_Unique_Perm_Libraries</code> to the end of <code>Apply_to_each_Library</code> &mdash; i.e. everything <em>after</em> the existing delete step (<code>Apply_to_each_Delete_Existing_Row</code>) &rarr; Cut.</li>
-          <li>Add a new <strong>Apply to each</strong>, name it <code>Apply_to_each_Site</code>, placed to run after <code>Apply_to_each_Delete_Existing_Row</code> succeeds. Same foreach expression as step 2 above (<code>@createArray(coalesce(triggerBody()?['SiteUrl'], 'https://modgovuk.sharepoint.com/teams/1598'), 'https://modgovuk.sharepoint.com/teams/1598/CCF')</code>). Paste the cut actions inside it.</li>
+          <li>Add a new <strong>Apply to each</strong>, name it <code>Apply_to_each_Site</code>, placed to run after <code>Apply_to_each_Delete_Existing_Row</code> succeeds. Same foreach expression as item 3 above (<code>@createArray(coalesce(triggerBody()?['SiteUrl'], 'https://modgovuk.sharepoint.com/teams/1598'), 'https://modgovuk.sharepoint.com/teams/1598/CCF')</code>). Paste the cut actions inside it.</li>
           <li>On <code>Get_Unique_Perm_Libraries</code>, <code>Get_Role_Assignments</code>, and <code>Get_Group_Members</code>, replace the Site Address field with <code>@items('Apply_to_each_Site')</code>, same as Backfill above.</li>
           <li>Add one new line to <strong>both</strong> <code>Create_Index_Row</code>'s and <code>Create_Nested_Index_Row</code>'s Body:
             <div class="code-card">
@@ -210,15 +225,15 @@
           <li><strong>Save.</strong> Then in Power Apps: Data panel &rarr; find this flow &rarr; Refresh.</li>
         </ol>
 
-        <h3>3. FP - Rebuild Library Stats</h3>
+        <h3>5. FP - Rebuild Library Stats</h3>
         <ol>
           <li>Open <strong>FP - Rebuild Library Stats</strong> &rarr; Edit. Select <code>Get_Libraries</code>, <code>Select_LibraryStats</code>, and <code>Apply_to_each_Library</code> &rarr; Cut.</li>
-          <li>Add <code>Apply_to_each_Site</code> (same foreach expression as items 1 and 2 above), paste the three actions inside it.</li>
+          <li>Add <code>Apply_to_each_Site</code> (same foreach expression as items 3 and 4 above), paste the three actions inside it.</li>
           <li>On <code>Get_Libraries</code> and <code>Get_Existing_Row</code>, replace the Site Address field with <code>@items('Apply_to_each_Site')</code>.</li>
           <li><strong>Save.</strong> Then in Power Apps: Data panel &rarr; find this flow &rarr; Refresh.</li>
         </ol>
 
-        <h3>4. Create Library (App)</h3>
+        <h3>6. Create Library (App)</h3>
         <p>Two separate pieces of surgery on the same flow &mdash; do them in one sitting since both touch the same actions. Part A adds the "Register an existing library" path (needed for scrAdminCreateLibrary's toggle). Part B makes CCF libraries route to the CCF sub-site automatically.</p>
         <div class="callout danger">This is the single most safety-critical flow in the app &mdash; the one that locks down permissions on Limited libraries. Go slowly, and test both parts with a throwaway library before trusting either for anything real.</div>
         <p><strong>Part A &mdash; Register Existing Library:</strong></p>
@@ -276,7 +291,82 @@
           <li><strong>Save.</strong> Test with a throwaway library on both paths: a normal Team (should still land on the main site), and Team <code>09_Combined Cadet Force</code> (should land on CCF). Delete both test libraries and their <code>LibraryFilePlan</code> rows once confirmed. Then, back in Power Apps: Data panel &rarr; find this flow &rarr; Refresh.</li>
         </ol>
 
-        <h3>5. FP-DeleteLibraries(App)</h3>
+        <h3>7. Paste App.OnStart v3.17</h3>
+        <p>Do this only once items 1&ndash;6 above are all done &mdash; this version's <code>SiteUrl</code> line depends on the <code>PermissionIndex</code> column from item 1 and the flow edits from items 3&ndash;6 actually populating it. Select the <strong>App</strong> object (top of the tree, not any screen) &rarr; <strong>OnStart</strong> property &rarr; select all &rarr; paste this in full, replacing everything:</p>
+        <div class="code-card">
+          <div class="code-toolbar"><span>App.OnStart v3.17 &mdash; Updated 29 Sep 2026 11:00 BST</span><button onclick="copyCode(this)">Copy</button></div>
+          <pre>Set(varTenantHost, "https://modgovuk.sharepoint.com");
+ClearCollect(colFilePlan, 'LibraryFilePlan');
+ClearCollect(
+    colFilePlanFiltered,
+    AddColumns(colFilePlan, TeamName, If(IsBlank(Team.Value) || Team.Value = "", "Uncategorised", Team.Value), SubTeamName, Coalesce(SubTeam.Value, ""), EffectiveName, If(IsBlank(PrettyName) || PrettyName = "", Title, PrettyName))
+);
+ClearCollect(
+    colTeamGroups,
+    Sort(
+        AddColumns(
+            GroupBy(colFilePlanFiltered, TeamName, GroupedItems),
+            ItemCount, CountRows(GroupedItems),
+            TeamSortKey, If(TeamName = "Uncategorised", "zzz_" &amp; TeamName, TeamName)
+        ),
+        TeamSortKey,
+        SortOrder.Ascending
+    )
+);
+ClearCollect(
+    colSubTeamGroups,
+    AddColumns(
+        GroupBy(
+            Filter(colFilePlanFiltered, !IsBlank(SubTeamName) &amp;&amp; SubTeamName &lt;&gt; ""),
+            TeamName, SubTeamName, GroupedItems
+        ),
+        ItemCount, CountRows(GroupedItems)
+    )
+);
+Clear(colFlatSource);
+Collect(colFlatSource, AddColumns(colTeamGroups, RowType, "Team", SortKey, TeamSortKey, SubSortKey, "", RankInGroup, 0));
+Collect(colFlatSource, AddColumns(colSubTeamGroups, RowType, "SubTeam", SortKey, If(TeamName = "Uncategorised", "zzz_" &amp; TeamName, TeamName), SubSortKey, SubTeamName, RankInGroup, 1));
+Collect(colFlatSource, AddColumns(colFilePlanFiltered, RowType, "Library", SortKey, If(TeamName = "Uncategorised", "zzz_" &amp; TeamName, TeamName), SubSortKey, If(IsBlank(SubTeamName) || SubTeamName = "", "zzz_none", SubTeamName), RankInGroup, If(IsBlank(SubTeamName) || SubTeamName = "", 1, 2)));
+ClearCollect(colExpandedKeys, Filter(Table({TeamName: "seed"}), false));
+ClearCollect(colExpandedSubTeams, Filter(Table({SubTeamKey: "seed"}), false));
+Set(varIsAdmin, Lower(User().Email) in ["allan.hamilton775@mod.gov.uk", "dan.smith391@mod.gov.uk"]);
+ClearCollect(colQueue, Filter(Table({TechnicalName: "seed", DisplayName: "", Team: "", SubTeam: "", IsLimited: false, Categories: "", RegisterOnly: false, ExistingLibraryTitle: ""}), false));
+Set(varQueueRunning, false);
+Set(varQueueTotal, 0);
+Set(varQueueDone, 0);
+Set(varIndexRunError, false);
+Set(varIndexRefreshing, false);
+ClearCollect(colPermissionIndex, Filter('PermissionIndex', PermissionLevel &lt;&gt; "Limited Access" &amp;&amp; PrincipalType &lt;&gt; "User"));
+ClearCollect(colPermissionFiltered, colPermissionIndex);
+ClearCollect(colLibraryGroups, Sort(AddColumns(GroupBy(colPermissionFiltered, LibraryUrl, LibraryTitle, GroupedItems), ItemCount, CountRows(GroupedItems), FlagSaysLimited, With({_lu: LibraryUrl}, Coalesce(LookUp(colFilePlan, LibraryUrl = _lu, IsLimited), false)), LibraryId, With({_lu: LibraryUrl}, LookUp(colPermissionFiltered, LibraryUrl = _lu, LibraryId)), SiteUrl, With({_lu: LibraryUrl}, Coalesce(LookUp(colPermissionFiltered, LibraryUrl = _lu, SiteUrl), "https://modgovuk.sharepoint.com/teams/1598"))), LibraryTitle, SortOrder.Ascending));
+Clear(colPermFlatSource);
+Collect(colPermFlatSource, AddColumns(colLibraryGroups, RowType, "Library", SortKey, LibraryUrl, RankInGroup, 0, GroupSortKey, "", DirectGroupCount, With({_lu: LibraryUrl}, CountRows(Filter(colPermissionFiltered, LibraryUrl = _lu &amp;&amp; (IsBlank(NestedUnderGroup) || NestedUnderGroup = ""))))));
+Collect(colPermFlatSource, AddColumns(Filter(colPermissionFiltered, IsBlank(NestedUnderGroup) || NestedUnderGroup = ""), RowType, "Group", SortKey, LibraryUrl, RankInGroup, 1, GroupSortKey, GroupName, MemberCount, With({_gn: GroupName, _lu: LibraryUrl}, CountRows(Filter(colPermissionFiltered, NestedUnderGroup = _gn &amp;&amp; LibraryUrl = _lu)))));
+Collect(colPermFlatSource, AddColumns(Filter(colPermissionFiltered, !IsBlank(NestedUnderGroup) &amp;&amp; NestedUnderGroup &lt;&gt; ""), RowType, "Member", SortKey, LibraryUrl, RankInGroup, 2, GroupSortKey, NestedUnderGroup));
+ClearCollect(colExpandedLibs, Filter(Table({LibraryUrl: "seed"}), false));
+ClearCollect(colExpandedGroups, Filter(Table({GroupKey: "seed"}), false));
+ClearCollect(colSelectedLibraries, Filter(Table({LibraryUrl: "seed"}), false));
+ClearCollect(colManageFiltered, colFilePlanFiltered);
+ClearCollect(colEditQueue, Filter(colFilePlanFiltered, false));
+ClearCollect(colDeleteSkipped, Filter(Table({LibraryUrl: "seed", Title: "seed", ItemCount: 0, Deleted: false}), false));
+Set(varDeleteBusy, false);
+Set(varDeleteStatus, "");
+Set(varConfirmOverrideVisible, false);
+Set(varDeletedCount, 0);
+Set(varEditSaving, false);
+Set(varEditSaveStatus, "")</pre>
+        </div>
+        <div class="callout ok"><code>EffectiveName</code> is <code>PrettyName</code> when filled in, otherwise falls back to <code>Title</code>. <code>varIsAdmin</code> gates the Admin screen &mdash; edit the email list directly in this line if who's authorized ever changes. The new <code>SiteUrl</code> line on <code>colLibraryGroups</code> is what item 8 below (scrGroupSearch's View Permissions button) actually needs to open the right site.</div>
+
+        <h3>8. Paste <a href="screens/scrGroupSearch.html?v=3.13">scrGroupSearch v3.13</a></h3>
+        <p>Do this straight after item 7 &mdash; this screen's View Permissions button reads the <code>SiteUrl</code> that App.OnStart v3.17 just started producing.</p>
+        <ol>
+          <li>Power Apps Studio &rarr; open <strong>scrGroupSearch</strong> &rarr; delete it.</li>
+          <li>New screen (blank) &rarr; open the link above &rarr; <strong>Copy YAML to Clipboard</strong> &rarr; paste into the tree view.</li>
+          <li>Rename the new screen back to <code>scrGroupSearch</code>.</li>
+        </ol>
+
+        <h3>9. FP-DeleteLibraries(App) <span style="font-weight:400;color:var(--muted);font-size:.85rem">&mdash; optional, low priority</span></h3>
         <p>Not urgent &mdash; deprioritised by Allan ("deleting libraries matters far less than creating them"), included here so it's not lost, do it whenever. This flow's <code>Response</code> action has no declared schema, so Power Apps can't infer the shape of anything inside <code>Results</code> until the flow has actually produced one real sample to learn from &mdash; every field shows as type "Error" until then, which is exactly the error scrManageLibraries hit the first time this flow was ever called.</p>
         <ol>
           <li>Open <strong>FP-DeleteLibraries(App)</strong> &rarr; Edit &rarr; click the final <strong>Response</strong> action.</li>
@@ -293,15 +383,6 @@
           <li>Save. Back in Power Apps: Data panel &rarr; find <strong>FP-DeleteLibraries(App)</strong> &rarr; Refresh.</li>
           <li>Test on scrManageLibraries with a real throwaway empty library before trusting it for anything real.</li>
         </ol>
-      </section>
-
-      <section id="right-now" style="border:0;margin:0;padding:0;">
-        <div class="callout ok">
-          <strong>Start here &mdash; what's actually left right now (26 Sep 2026).</strong> Everything below this box is the full from-scratch build guide, kept for reference &mdash; you don't need any of it day-to-day. This box is the only thing that changes as work progresses; ask for it to be updated whenever something's done or something new lands, rather than re-reading the whole guide.
-          <p style="margin:10px 0 0 0">All 5 screens plus App.OnStart confirmed live and working, per Allan (29 Sep 2026, after a couple of days' real use). Full build history is in the Screens section and flow-fix sections below, not repeated here.</p>
-          <p style="margin:10px 0 0 0"><strong>New, ready to paste: <a href="screens/scrAdminCreateLibrary.html">scrAdminCreateLibrary v1.12</a></strong> &mdash; Technical Name auto-prefixed with the selected Team's number, plus an optional "Extra URL prefix" field. Confirmed against Allan's own worked example, small and self-contained, no flow changes needed.</p>
-          <p style="margin:10px 0 0 0"><strong>Every other outstanding item &mdash; CCF multi-site support (approved, including Create Library routing), and the Delete Libraries Response-schema fix &mdash; is gathered into one place now: <a href="#action-items">Outstanding Flow Work</a>, right above this box.</strong> Work through it top to bottom; once App.OnStart v3.17 and scrGroupSearch v3.13 are pasted to match, tell me and this box shrinks down again.</p>
-        </div>
       </section>
 
       <div class="callout">
@@ -570,73 +651,7 @@ ItemCount: item()?['ItemCount']</pre>
         </div>
 
         <h3>App.OnStart</h3>
-        <p>Select the <strong>App</strong> object (top of the tree, not any screen) &rarr; <strong>OnStart</strong> property &rarr; paste this in full:</p>
-        <div class="callout ok"><strong>v3.16 confirmed live &mdash; pasted and working, per Allan, 26 Sep 2026.</strong> Builds every screen's Team/Sub-Team grouping and library sorting: <code>FlagSaysLimited</code> feeds scrGroupSearch's dual-signal LTD indicator, <code>LibraryId</code> feeds its View Permissions button, and a library's Sub-Team-less rows now sort last within their team (not first) with every library sorted alphabetically by its real pretty display name, not an invisible raw field.</div>
-        <div class="callout warn"><strong>v3.17 draft, not yet pasted.</strong> Adds <code>SiteUrl</code> to the same <code>colLibraryGroups</code> line, for scrGroupSearch's View Permissions button to open the right site once a library can genuinely live somewhere other than the main site (section 2g, CCF sub-site support). Falls back to the main site's URL if a row's <code>SiteUrl</code> is blank (older rows, or rows from before the <code>PermissionIndex</code> schema change).</div>
-        <div class="code-card">
-          <div class="code-toolbar"><span>v3.17 &mdash; Updated 29 Sep 2026 11:00 BST</span><button onclick="copyCode(this)">Copy</button></div>
-          <pre>Set(varTenantHost, "https://modgovuk.sharepoint.com");
-ClearCollect(colFilePlan, 'LibraryFilePlan');
-ClearCollect(
-    colFilePlanFiltered,
-    AddColumns(colFilePlan, TeamName, If(IsBlank(Team.Value) || Team.Value = "", "Uncategorised", Team.Value), SubTeamName, Coalesce(SubTeam.Value, ""), EffectiveName, If(IsBlank(PrettyName) || PrettyName = "", Title, PrettyName))
-);
-ClearCollect(
-    colTeamGroups,
-    Sort(
-        AddColumns(
-            GroupBy(colFilePlanFiltered, TeamName, GroupedItems),
-            ItemCount, CountRows(GroupedItems),
-            TeamSortKey, If(TeamName = "Uncategorised", "zzz_" & TeamName, TeamName)
-        ),
-        TeamSortKey,
-        SortOrder.Ascending
-    )
-);
-ClearCollect(
-    colSubTeamGroups,
-    AddColumns(
-        GroupBy(
-            Filter(colFilePlanFiltered, !IsBlank(SubTeamName) && SubTeamName <> ""),
-            TeamName, SubTeamName, GroupedItems
-        ),
-        ItemCount, CountRows(GroupedItems)
-    )
-);
-Clear(colFlatSource);
-Collect(colFlatSource, AddColumns(colTeamGroups, RowType, "Team", SortKey, TeamSortKey, SubSortKey, "", RankInGroup, 0));
-Collect(colFlatSource, AddColumns(colSubTeamGroups, RowType, "SubTeam", SortKey, If(TeamName = "Uncategorised", "zzz_" & TeamName, TeamName), SubSortKey, SubTeamName, RankInGroup, 1));
-Collect(colFlatSource, AddColumns(colFilePlanFiltered, RowType, "Library", SortKey, If(TeamName = "Uncategorised", "zzz_" & TeamName, TeamName), SubSortKey, If(IsBlank(SubTeamName) || SubTeamName = "", "zzz_none", SubTeamName), RankInGroup, If(IsBlank(SubTeamName) || SubTeamName = "", 1, 2)));
-ClearCollect(colExpandedKeys, Filter(Table({TeamName: "seed"}), false));
-ClearCollect(colExpandedSubTeams, Filter(Table({SubTeamKey: "seed"}), false));
-Set(varIsAdmin, Lower(User().Email) in ["allan.hamilton775@mod.gov.uk", "dan.smith391@mod.gov.uk"]);
-ClearCollect(colQueue, Filter(Table({TechnicalName: "seed", DisplayName: "", Team: "", SubTeam: "", IsLimited: false, Categories: "", RegisterOnly: false, ExistingLibraryTitle: ""}), false));
-Set(varQueueRunning, false);
-Set(varQueueTotal, 0);
-Set(varQueueDone, 0);
-Set(varIndexRunError, false);
-Set(varIndexRefreshing, false);
-ClearCollect(colPermissionIndex, Filter('PermissionIndex', PermissionLevel <> "Limited Access" && PrincipalType <> "User"));
-ClearCollect(colPermissionFiltered, colPermissionIndex);
-ClearCollect(colLibraryGroups, Sort(AddColumns(GroupBy(colPermissionFiltered, LibraryUrl, LibraryTitle, GroupedItems), ItemCount, CountRows(GroupedItems), FlagSaysLimited, With({_lu: LibraryUrl}, Coalesce(LookUp(colFilePlan, LibraryUrl = _lu, IsLimited), false)), LibraryId, With({_lu: LibraryUrl}, LookUp(colPermissionFiltered, LibraryUrl = _lu, LibraryId)), SiteUrl, With({_lu: LibraryUrl}, Coalesce(LookUp(colPermissionFiltered, LibraryUrl = _lu, SiteUrl), "https://modgovuk.sharepoint.com/teams/1598"))), LibraryTitle, SortOrder.Ascending));
-Clear(colPermFlatSource);
-Collect(colPermFlatSource, AddColumns(colLibraryGroups, RowType, "Library", SortKey, LibraryUrl, RankInGroup, 0, GroupSortKey, "", DirectGroupCount, With({_lu: LibraryUrl}, CountRows(Filter(colPermissionFiltered, LibraryUrl = _lu && (IsBlank(NestedUnderGroup) || NestedUnderGroup = ""))))));
-Collect(colPermFlatSource, AddColumns(Filter(colPermissionFiltered, IsBlank(NestedUnderGroup) || NestedUnderGroup = ""), RowType, "Group", SortKey, LibraryUrl, RankInGroup, 1, GroupSortKey, GroupName, MemberCount, With({_gn: GroupName, _lu: LibraryUrl}, CountRows(Filter(colPermissionFiltered, NestedUnderGroup = _gn && LibraryUrl = _lu)))));
-Collect(colPermFlatSource, AddColumns(Filter(colPermissionFiltered, !IsBlank(NestedUnderGroup) && NestedUnderGroup <> ""), RowType, "Member", SortKey, LibraryUrl, RankInGroup, 2, GroupSortKey, NestedUnderGroup));
-ClearCollect(colExpandedLibs, Filter(Table({LibraryUrl: "seed"}), false));
-ClearCollect(colExpandedGroups, Filter(Table({GroupKey: "seed"}), false));
-ClearCollect(colSelectedLibraries, Filter(Table({LibraryUrl: "seed"}), false));
-ClearCollect(colManageFiltered, colFilePlanFiltered);
-ClearCollect(colEditQueue, Filter(colFilePlanFiltered, false));
-ClearCollect(colDeleteSkipped, Filter(Table({LibraryUrl: "seed", Title: "seed", ItemCount: 0, Deleted: false}), false));
-Set(varDeleteBusy, false);
-Set(varDeleteStatus, "");
-Set(varConfirmOverrideVisible, false);
-Set(varDeletedCount, 0);
-Set(varEditSaving, false);
-Set(varEditSaveStatus, "")</pre>
-        </div>
-        <div class="callout ok"><code>EffectiveName</code> is <code>PrettyName</code> when filled in, otherwise falls back to <code>Title</code> &mdash; self-heals every library missing a pretty name, no data migration needed. <code>varIsAdmin</code> gates the Admin screen &mdash; edit the email list directly in this line if who's authorized ever changes. <code>colPermissionIndex</code>/<code>colPermissionFiltered</code> feed the Group Search screen &mdash; make sure you've run <strong>Rebuild Permission Index</strong> at least once first, or this loads empty.</div>
+        <div class="callout ok">Current draft (v3.17) is now <a href="#action-items">item 7 in the Everything Left To Do checklist</a> near the top of this guide, with the full code inline there &mdash; paste it from there, not here, so there's one authoritative copy. v3.16 (no <code>SiteUrl</code> line) is confirmed live and working, per Allan, 26 Sep 2026, if you haven't started the CCF multi-site work yet.</div>
       </section>
 
       <section id="screens">
