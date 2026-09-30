@@ -301,22 +301,23 @@ Set(varEditSaveStatus, "")</pre>
         </ol>
 
         <h3>9. FP-DeleteLibraries(App) <span style="font-weight:400;color:var(--muted);font-size:.85rem">&mdash; optional, low priority</span></h3>
-        <p>Not urgent &mdash; deprioritised by Allan ("deleting libraries matters far less than creating them"), included here so it's not lost, do it whenever. This flow's <code>Response</code> action has no declared schema, so Power Apps can't infer the shape of anything inside <code>Results</code> until the flow has actually produced one real sample to learn from &mdash; every field shows as type "Error" until then, which is exactly the error scrManageLibraries hit the first time this flow was ever called.</p>
+        <p>Not urgent &mdash; deprioritised by Allan ("deleting libraries matters far less than creating them"), included here so it's not lost, do it whenever. This flow's <code>Response</code> action has no declared schema, so Power Apps can't infer the shape of anything inside <code>Results</code> until the flow has actually produced one real sample to learn from &mdash; every field shows as type "Error" until then, which is exactly the error scrManageLibraries hit the first time this flow was ever called. <a href="https://github.com/PhadeDev/library-file-plan-manager/raw/main/flows/DeleteLibraries_SchemaFix_flow_import.zip">DeleteLibraries_SchemaFix_flow_import.zip</a> adds the schema directly &mdash; no manual clicking required.</p>
         <ol>
-          <li>Open <strong>FP-DeleteLibraries(App)</strong> &rarr; Edit &rarr; click the final <strong>Response</strong> action.</li>
-          <li>Under its Body field, click <strong>"Use sample payload to generate schema"</strong> (a small link under the box) and paste this in:
-            <div class="code-card">
-              <div class="code-toolbar"><span>Sample Response payload</span><button onclick="copyCode(this)">Copy</button></div>
-              <pre>{
+          <li>Power Automate &rarr; <strong>My flows</strong> &rarr; <strong>"..."</strong> next to <strong>FP-DeleteLibraries(App)</strong> &rarr; <strong>Import</strong> &rarr; <strong>Import Package (Legacy)</strong>.</li>
+          <li>Upload the zip above. Pick <strong>Update</strong>/the existing flow on the mapping screen if offered.</li>
+          <li>Import. Then in Power Apps: Data panel &rarr; find <strong>FP-DeleteLibraries(App)</strong> &rarr; Refresh.</li>
+          <li>Test on scrManageLibraries with a real throwaway empty library before trusting it for anything real.</li>
+        </ol>
+        <div class="callout warn">Same caveat as item 5 above: this flow was originally hand-built by me rather than round-tripped from a real export of your tenant, so the import screen might only offer "Create as new" instead of "Update." If so, cancel and tell me &mdash; the fallback is the one-click Designer edit: open the flow &rarr; click the final <strong>Response</strong> action &rarr; under its Body field, click <strong>"Use sample payload to generate schema"</strong> &rarr; paste in:
+          <div class="code-card" style="margin-top:8px">
+            <div class="code-toolbar"><span>Sample Response payload</span><button onclick="copyCode(this)">Copy</button></div>
+            <pre>{
   "Results": [
     { "LibraryUrl": "/teams/1598/04_Training_ZZTest", "Title": "ZZTest", "ItemCount": 0, "Deleted": true }
   ]
 }</pre>
-            </div>
-          </li>
-          <li>Save. Back in Power Apps: Data panel &rarr; find <strong>FP-DeleteLibraries(App)</strong> &rarr; Refresh.</li>
-          <li>Test on scrManageLibraries with a real throwaway empty library before trusting it for anything real.</li>
-        </ol>
+          </div>
+        </div>
       </section>
 
       <div class="callout">
