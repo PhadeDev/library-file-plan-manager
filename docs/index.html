@@ -129,7 +129,7 @@
   <div class="shell">
     <aside>
       <h2>Library &amp; File Plan Manager</h2>
-      <p>v5.3 build guide. Follow this end-to-end to set up the SharePoint lists, flows, and screens.</p>
+      <p>v5.4 build guide. Follow this end-to-end to set up the SharePoint lists, flows, and screens.</p>
       <nav>
         <a href="https://powerapps.pages.dev/">&larr; Guide library</a>
         <a href="yaml.html" style="font-weight:800;">📋 Screen YAML Vault</a>
@@ -153,7 +153,7 @@
 
     <main>
       <div class="topline">
-        <span class="pill">v5.3</span>
+        <span class="pill">v5.4</span>
         <span class="pill">Built 30 Sep 2026</span>
         <span class="pill">5 screens live</span>
         <span class="pill warn">1 designed, never built</span>
@@ -299,8 +299,8 @@ Set(varEditSaveStatus, "")</pre>
         </div>
         <div class="callout ok"><code>EffectiveName</code> is <code>PrettyName</code> when filled in, otherwise falls back to <code>Title</code>. <code>varIsAdmin</code> gates the Admin screen &mdash; edit the email list directly in this line if who's authorized ever changes.</div>
 
-        <h3>8. Paste <a href="screens/scrGroupSearch.html?v=3.15">scrGroupSearch v3.15</a></h3>
-        <p>Do this straight after item 7. Adds Team &rarr; Sub-Team grouping above the existing Library &rarr; Group &rarr; Member accordion, matching File Plan &mdash; requested after the flat list of 35 Limited libraries got hard to scan. Teams start collapsed; typing in the search box auto-expands whichever teams/libraries actually match, same as File Plan's own search. <strong>v3.15</strong> also adds a <strong>View Permissions</strong> button directly on each Group row (not just the library header), so you can jump straight to a library's real permissions while scrolling through its groups, and reworks the Limited badge into three honest states instead of one: red padlock (genuinely Limited &mdash; flagged or named <code>_LTD</code>/<code>(LTD)</code>, permissions actually broken) vs amber pencil (permissions customised, but nothing marks it Limited). A library shown here always has broken permissions by definition, so there's no third "claims Limited but isn't locked down" case possible on this screen &mdash; that one only makes sense on Manage Libraries, which sees every library, not just the broken-permissions subset.</p>
+        <h3>8. Paste <a href="screens/scrGroupSearch.html?v=3.16">scrGroupSearch v3.16</a></h3>
+        <p>v3.15 (Team/Sub-Team grouping, the Group-row View Permissions button, three-state badge) is confirmed pasted and live, per Allan, 01 Oct 2026. <strong>v3.16 is a follow-up fix</strong> on top of that, needed because the Team/Sub-Team/Library row sizes and indents didn't read as a hierarchy &mdash; Library text was bigger than Sub-Team text, and the Library row's own icon/count badge didn't shift inward when nested under a Sub-Team (only its title text did), so nested libraries looked misaligned rather than indented. Fixed: Sub-Team text now an explicit 13pt, Library text dropped from 14pt to 12pt (so size now steps down Team 15 &rarr; Sub-Team 13 &rarr; Library 12, matching depth), and the Library row's count badge + chevron icon now shift inward together with the title whenever a Sub-Team is present, instead of only the title moving.</p>
         <ol>
           <li>Power Apps Studio &rarr; open <strong>scrGroupSearch</strong> &rarr; delete it.</li>
           <li>New screen (blank) &rarr; open the link above &rarr; <strong>Copy YAML to Clipboard</strong> &rarr; paste into the tree view.</li>
@@ -308,13 +308,8 @@ Set(varEditSaveStatus, "")</pre>
         </ol>
         <div class="callout ok">The "35 libraries" count you'll see here is correct, not a bug &mdash; Group Search only ever indexes libraries with genuinely unique/broken permissions (mostly Limited ones). Every normal library inherits identical site-wide permissions, so there's nothing library-specific to search there; indexing all 500+ would just be noise.</div>
 
-        <h3>9. Paste <a href="screens/scrManageLibraries.html?v=2.8">scrManageLibraries v2.8</a></h3>
-        <p>Independent of items 7&ndash;8 above &mdash; do this whenever, no dependency either way. Adds the third badge state that Group Search structurally can't show: a library <strong>flagged or named Limited whose permissions are still fully inherited</strong> &mdash; a real inconsistency worth catching, shown as a red triangle, distinct from the red padlock (genuinely Limited) and the amber pencil (permissions customised, nothing marks it Limited). A new legend line under the screen title explains all three.</p>
-        <ol>
-          <li>Power Apps Studio &rarr; open <strong>scrManageLibraries</strong> &rarr; delete it.</li>
-          <li>New screen (blank) &rarr; open the link above &rarr; <strong>Copy YAML to Clipboard</strong> &rarr; paste into the tree view.</li>
-          <li>Rename the new screen back to <code>scrManageLibraries</code>.</li>
-        </ol>
+        <h3>9. scrManageLibraries v2.8 <span style="font-weight:400;color:var(--muted);font-size:.85rem">&mdash; confirmed pasted, per Allan 01 Oct 2026</span></h3>
+        <p>Adds the third badge state that Group Search structurally can't show: a library <strong>flagged or named Limited whose permissions are still fully inherited</strong> &mdash; a real inconsistency worth catching, shown as a red triangle, distinct from the red padlock (genuinely Limited) and the amber pencil (permissions customised, nothing marks it Limited). A new legend line under the screen title explains all three. Nothing outstanding here &mdash; <a href="screens/scrManageLibraries.html?v=2.8">the paste page</a> stays up for reference, or for re-pasting from scratch if the screen ever needs rebuilding.</p>
 
         <h3>10. FP-DeleteLibraries(App) <span style="font-weight:400;color:var(--muted);font-size:.85rem">&mdash; optional, low priority</span></h3>
         <p>Not urgent &mdash; deprioritised by Allan ("deleting libraries matters far less than creating them"), included here so it's not lost, do it whenever. This flow's <code>Response</code> action has no declared schema, so Power Apps can't infer the shape of anything inside <code>Results</code> until the flow has actually produced one real sample to learn from &mdash; every field shows as type "Error" until then, which is exactly the error scrManageLibraries hit the first time this flow was ever called. <a href="https://github.com/PhadeDev/library-file-plan-manager/raw/main/flows/DeleteLibraries_SchemaFix_flow_import.zip">DeleteLibraries_SchemaFix_flow_import.zip</a> adds the schema directly &mdash; no manual clicking required.</p>
@@ -602,7 +597,7 @@ ItemCount: item()?['ItemCount']</pre>
         </div>
 
         <h3>App.OnStart</h3>
-        <div class="callout ok">Current draft (v3.17) is now <a href="#action-items">item 7 in the Everything Left To Do checklist</a> near the top of this guide, with the full code inline there &mdash; paste it from there, not here, so there's one authoritative copy. v3.16 (no <code>SiteUrl</code> line) is confirmed live and working, per Allan, 26 Sep 2026, if you haven't started the CCF multi-site work yet.</div>
+        <div class="callout ok">v3.18 is confirmed pasted and live, per Allan, 01 Oct 2026 &mdash; adds the Team/Sub-Team-aware Group Search collections (<code>colGSTeamGroups</code>, <code>colGSSubTeamGroups</code>, <code>colGSExpandedTeams</code>, <code>colGSExpandedSubTeams</code>) that scrGroupSearch v3.14+ depends on. Full code is <a href="#action-items">item 7 in the Everything Left To Do checklist</a> near the top of this guide if it ever needs re-pasting from scratch.</div>
       </section>
 
       <section id="screens">
@@ -622,16 +617,16 @@ ItemCount: item()?['ItemCount']</pre>
               <span class="ver">v1.13 &mdash; 30 Sep 2026 &mdash; draft, not yet pasted</span></div>
             <div class="open">Copy YAML &rarr;</div>
           </a>
-          <a class="link-card" href="screens/scrGroupSearch.html?v=3.15">
+          <a class="link-card" href="screens/scrGroupSearch.html?v=3.16">
             <div><span class="pill">Screen 3</span><strong style="margin-top:8px;display:block">scrGroupSearch</strong>
-              <p>Search by SG_/DG_ group name or library name. Team &rarr; Sub-Team &rarr; Library &rarr; Group &rarr; Member accordion (Team/Sub-Team grouping added in v3.14, matching scrFilePlan). Reads the precomputed PermissionIndex list &mdash; instant, no live SharePoint crawl. A "View Permissions" button on both the library header and each Group row (v3.15), opening the library's real site (<code>ThisItem.SiteUrl</code>), CCF included. Red padlock = genuinely Limited (flagged or named <code>_LTD</code>/<code>(LTD)</code>); amber pencil = permissions customised but not marked Limited (v3.15, replaces the old purple-warning icon).</p>
-              <span class="ver">v3.15 &mdash; 30 Sep 2026 &mdash; draft, not yet pasted (needs App.OnStart v3.18 first)</span></div>
+              <p>Search by SG_/DG_ group name or library name. Team &rarr; Sub-Team &rarr; Library &rarr; Group &rarr; Member accordion (Team/Sub-Team grouping added in v3.14, matching scrFilePlan). Reads the precomputed PermissionIndex list &mdash; instant, no live SharePoint crawl. A "View Permissions" button on both the library header and each Group row (v3.15), opening the library's real site (<code>ThisItem.SiteUrl</code>), CCF included. Red padlock = genuinely Limited (flagged or named <code>_LTD</code>/<code>(LTD)</code>); amber pencil = permissions customised but not marked Limited (v3.15, replaces the old purple-warning icon). v3.16: fixes the Team/Sub-Team/Library row hierarchy so size and indent actually step down with depth (15/13/12pt), and the Library row's count badge + chevron now indent together with its title when nested under a Sub-Team.</p>
+              <span class="ver">v3.16 &mdash; 01 Oct 2026 &mdash; draft, not yet pasted (v3.15 is already live; this is a follow-up fix)</span></div>
             <div class="open">Copy YAML &rarr;</div>
           </a>
           <a class="link-card" href="screens/scrManageLibraries.html?v=2.8">
             <div><span class="pill">Screen 4</span><strong style="margin-top:8px;display:block">scrManageLibraries</strong>
               <p>Restricted to admins. Tick libraries, bulk-delete them (empty ones go straight away, non-empty ones get an override prompt) or send the selection to the edit cart. Team &rarr; Sub-Team &rarr; Library accordion, Team filter dropdown, "Sub-Team: None" shown explicitly. Every library row shows its creation date and current file count, empty libraries flagged in red, plus a Refresh Library Stats button. Delete Selected/Leave Them/Delete Anyway show a proper <code>Notify()</code> banner on success (v2.7). v2.8: the Limited badge is now three honest states &mdash; red padlock (genuinely Limited), amber pencil (permissions customised, not marked Limited), red triangle (flagged/named Limited but permissions are still fully inherited &mdash; a real inconsistency worth checking).</p>
-              <span class="ver">v2.8 &mdash; 30 Sep 2026 &mdash; draft, not yet pasted</span></div>
+              <span class="ver">v2.8 &mdash; confirmed pasted and live, per Allan 01 Oct 2026</span></div>
             <div class="open">Copy YAML &rarr;</div>
           </a>
           <a class="link-card" href="screens/scrEditLibraries.html?v=2.4">
