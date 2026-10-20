@@ -129,7 +129,7 @@
   <div class="shell">
     <aside>
       <h2>Library &amp; File Plan Manager</h2>
-      <p>v5.4 build guide. Follow this end-to-end to set up the SharePoint lists, flows, and screens.</p>
+      <p>v5.5 build guide. Existing users: start with the housekeeping restoration below.</p>
       <nav>
         <a href="https://powerapps.pages.dev/">&larr; Guide library</a>
         <a href="yaml.html" style="font-weight:800;">📋 Screen YAML Vault</a>
@@ -153,14 +153,32 @@
 
     <main>
       <div class="topline">
-        <span class="pill">v5.4</span>
-        <span class="pill">Built 30 Sep 2026</span>
+        <span class="pill">v5.5</span>
+        <span class="pill">Updated 20 Oct 2026</span>
         <span class="pill">5 screens live</span>
         <span class="pill warn">1 designed, never built</span>
         <a class="pill" href="yaml.html" style="text-decoration:none;">📋 Screen YAML Vault →</a>
       </div>
       <h1>Library &amp; File Plan Manager</h1>
       <p class="lead">SharePoint permissions map (file-plan style, grouped by team) + an admin screen that creates document libraries correctly and registers them automatically, so nothing gets forgotten again.</p>
+
+      <section id="housekeeping-restore">
+        <h2>Restore library housekeeping: Manage Libraries v2.9</h2>
+        <p><strong>20 October 2026:</strong> the latest Vault upload has no stats controls. This full-screen update restores them on that exact uploaded screen. The original stats flow was confirmed working on 26 September; its SharePoint <code>ItemCount</code> includes folders. This update adds a separate, file-only count, including documents inside nested folders.</p>
+        <p><strong>Result:</strong> every expanded library row shows its actual creation date and file count. The entire row turns pale red only when there are <strong>zero files AND the library was created at least six calendar months ago</strong>. A populated library is never flagged merely for being old. The checkbox and selection border still show selection. Filters: all counts, zero, five or fewer, ten or fewer, or missing stats; combined with any age, six months or older, or one year or older. Search and Team filters continue to work alongside them.</p>
+        <h3>Apply these steps in order</h3>
+        <ol>
+          <li>On the <strong>main site</strong>, open the <strong>LibraryFilePlan</strong> list settings. Check that <code>LibraryCreated</code> already exists as <strong>Date and Time</strong>, and <code>LibraryItemCount</code> as <strong>Number</strong>. Reuse them if present; create them with those exact names if absent. <code>LibraryCreated</code> is the library's real creation date, not the list row's built-in <code>Created</code>.</li>
+          <li>Create <code>LibraryFileCount</code> as a <strong>Number</strong> column, zero decimal places, not required, <strong>no default value</strong>. Leave existing rows blank. Do not default it to zero: blank means not checked, while zero is a measured empty library.</li>
+          <li>Download <a href="downloads/RebuildLibraryStats_FileCounts_flow_import.zip"><strong>RebuildLibraryStats_FileCounts_flow_import.zip</strong></a>. Power Automate &rarr; My flows &rarr; Import &rarr; <strong>Import Package (Legacy)</strong>. Set the flow resource to <strong>Update</strong> the existing <strong>FP - Rebuild Library Stats</strong>, select your existing SharePoint connection, then import. The package retains the real exported resource ID. If Update is unavailable, stop rather than creating a duplicate.</li>
+          <li>Run <strong>FP - Rebuild Library Stats</strong> in Power Automate and wait for a successful completed run. Leave the optional SiteUrl input blank. This version always scans the <strong>main site and CCF</strong> and writes stats only to already tracked rows in the main site's LibraryFilePlan. Untracked libraries still need Backfill first. The exact count scans item IDs/types in pages and may take longer than the old metadata-only scan.</li>
+          <li>In Power Apps Studio, refresh the <strong>LibraryFilePlan</strong> data source so Studio sees <code>LibraryFileCount</code>. <a href="screens/scrManageLibraries.html?v=2.9"><strong>Open the v2.9 full-screen copy page</strong></a>, copy its YAML, delete <code>scrManageLibraries</code>, then paste the whole copied YAML. Studio recreates the screen with its name. No App.OnStart change or new app flow connection is needed.</li>
+          <li>Open Manage Libraries and click <strong>Reload saved stats</strong>. Expand a Team/Sub-Team, or choose <strong>0 files</strong> and <strong>6+ months old</strong> to expand matching groups automatically. Review the counts and dates before publishing the app.</li>
+        </ol>
+        <div class="callout warn"><strong>Verification:</strong> the full-screen YAML passes Microsoft's parser, the property check against the latest uploaded live screen, the layout check and the Power Fx structure check. The flow passes package-identity, routing and structural checks plus synthetic pagination/count cases. The added variables/pagination use documented workflow primitives; the legacy package checker's old blanket ban on those primitives is replaced by explicit checks in <code>tools/check_housekeeping.py</code>. <strong>This revised flow has not yet been imported or run in the tenant, and this screen has not yet been pasted or visually tested in Studio.</strong></div>
+        <p>These are <strong>saved snapshots</strong>, not continuously live counts. After documents change, rerun the flow to completion and click Reload saved stats. Missing values say <strong>not checked</strong>, never zero. A failed or incomplete paged count does not overwrite that library with a partial count; check flow run history before relying on the latest scan. Nothing is automatically deleted or persistently flagged in SharePoint.</p>
+        <p>The earlier multi-site checklist below is historical work with mixed confirmation status. For this housekeeping update, follow the six steps above.</p>
+      </section>
 
       <section id="action-items">
         <h2>Everything Left To Do &mdash; Work Through This Whole Section, Top To Bottom</h2>
@@ -623,7 +641,7 @@ ItemCount: item()?['ItemCount']</pre>
               <span class="ver">v3.16 &mdash; 01 Oct 2026 &mdash; draft, not yet pasted (v3.15 is already live; this is a follow-up fix)</span></div>
             <div class="open">Copy YAML &rarr;</div>
           </a>
-          <a class="link-card" href="screens/scrManageLibraries.html?v=2.8">
+          <a class="link-card" href="screens/scrManageLibraries.html?v=2.9">
             <div><span class="pill">Screen 4</span><strong style="margin-top:8px;display:block">scrManageLibraries</strong>
               <p>Restricted to admins. Tick libraries, bulk-delete them (empty ones go straight away, non-empty ones get an override prompt) or send the selection to the edit cart. Team &rarr; Sub-Team &rarr; Library accordion, Team filter dropdown, "Sub-Team: None" shown explicitly. Every library row shows its creation date and current file count, empty libraries flagged in red, plus a Refresh Library Stats button. Delete Selected/Leave Them/Delete Anyway show a proper <code>Notify()</code> banner on success (v2.7). v2.8: the Limited badge is now three honest states &mdash; red padlock (genuinely Limited), amber pencil (permissions customised, not marked Limited), red triangle (flagged/named Limited but permissions are still fully inherited &mdash; a real inconsistency worth checking).</p>
               <span class="ver">v2.8 &mdash; confirmed pasted and live, per Allan 01 Oct 2026</span></div>
