@@ -137,11 +137,11 @@
   <div class="shell">
     <aside>
       <h2>Library &amp; File Plan Manager</h2>
-      <p>v5.7 build guide. Start with the single-button CSV download test.</p>
+      <p>v5.8 build guide. Start with the one-button Email CSV setup.</p>
       <nav>
         <a href="https://powerapps.pages.dev/">&larr; Guide library</a>
         <a href="yaml.html" style="font-weight:800;">📋 Screen YAML Vault</a>
-        <a href="#report-controls" style="font-weight:800;color:var(--green);">Single-button CSV test</a>
+        <a href="#report-controls" style="font-weight:800;color:var(--green);">Email CSV button (v2.10)</a>
         <a href="#housekeeping-restore">Original housekeeping setup</a>
         <a href="#action-items" style="font-weight:800;color:var(--green);">▶ Everything Left To Do</a>
         <a href="#lists">1. SharePoint Lists</a>
@@ -163,7 +163,7 @@
 
     <main>
       <div class="topline">
-        <span class="pill">v5.7</span>
+        <span class="pill">v5.8</span>
         <span class="pill">Updated 21 Oct 2026</span>
         <span class="pill">5 screens live</span>
         <span class="pill warn">1 designed, never built</span>
@@ -173,22 +173,20 @@
       <p class="lead">SharePoint permissions map (file-plan style, grouped by team) + an admin screen that creates document libraries correctly and registers them automatically, so nothing gets forgotten again.</p>
 
       <section id="report-controls">
-        <h2>Test a direct CSV download with one button</h2>
-        <p><strong>Keep your working Manage Libraries v2.9 screen.</strong> The previous v3.0 status-list, report-library and export-flow setup has been withdrawn. Do not follow it or paste v3.0 for this test.</p>
+        <h2>Email a CSV of the library list: one button on Manage Libraries (v2.10)</h2>
+        <p>Adds one button, <strong>Email CSV (current view)</strong>, to your working Manage Libraries screen. Press it and a CSV file arrives in your inbox as an attachment, ready to forward. It contains exactly the libraries currently showing on screen, so with no filters set it is every tracked library, and with a filter such as &ldquo;0 files&rdquo; it is just those. <strong>Nothing is stored anywhere:</strong> no new list, no new library, no status system, and your stats flow and v2.9 screen are untouched.</p>
+        <p><strong>Why email and not a straight browser download:</strong> Power Apps can only download a file that already exists at a real web address, and your own test confirmed it cannot turn text it builds on screen into a download. Email is the smallest route that needs no storage.</p>
+        <p><strong>Columns:</strong> Library, Library URL, Team, Sub-Team, Limited (flagged or named <code>_LTD</code>/<code>(LTD)</code>), Created (dd/mm/yyyy), File count (blank if never counted, never shown as 0), Empty (Yes/No/Unknown), Review (Yes only when zero files <strong>and</strong> created at least six calendar months ago). Sorted by Team, Sub-Team, then name.</p>
+        <h3>Apply these steps in order</h3>
         <ol>
-          <li>Open <strong>scrManageLibraries</strong> in Power Apps Studio.</li>
-          <li>Insert a button and set its Text to <strong>Test CSV download</strong>.</li>
-          <li>Select its <strong>OnSelect</strong> property and paste the formula below.</li>
-          <li>Enter <strong>Play</strong> mode and click the button. Check whether your browser downloads a CSV containing the headings Library,Files and one row Export test,0.</li>
-          <li>Tell me whether it downloads, does nothing, opens a tab, or displays an error. Include the exact error text if there is one.</li>
+          <li>Download <a href="downloads/EmailLibraryCsv_flow_import.zip"><strong>EmailLibraryCsv_flow_import.zip</strong></a>. Power Automate &rarr; My flows &rarr; Import &rarr; <strong>Import Package (Legacy)</strong>. Leave the flow on <strong>Create as new</strong>, choose your <strong>Office 365 Outlook</strong> connection when asked, then import. It is a brand new flow called <strong>FP-EmailLibraryCsv(App)</strong>; it does not replace any existing flow.</li>
+          <li>Open the new flow in My flows and make sure it is <strong>turned on</strong>. Imported flows can arrive switched off, which is what caused the earlier <code>WorkflowTriggerIsNotEnabled</code> error.</li>
+          <li>In Power Apps Studio, open the <strong>Data</strong> pane &rarr; <strong>Add data</strong> &rarr; search for <strong>FP-EmailLibraryCsv(App)</strong> and add it. Do this <strong>before</strong> pasting the screen, otherwise the new button shows an error.</li>
+          <li><a href="screens/scrManageLibraries-v2.10.html?v=2.10"><strong>Open the v2.10 full-screen copy page</strong></a>, copy its YAML, delete <code>scrManageLibraries</code>, then paste the whole copied YAML as you normally do. No App.OnStart change is needed.</li>
+          <li>Press <strong>Play</strong> and click <strong>Email CSV (current view)</strong> (bottom right of the filter row, just above the list). A green banner appears, and the email should arrive within a minute or two. Open the attachment in Excel and check a library you know has zero files shows Empty = Yes.</li>
         </ol>
-        <div class="code-card">
-          <div class="code-toolbar"><span>Test button &middot; OnSelect</span><button onclick="copyCode(this)">Copy formula</button></div>
-          <span class="code-stamp" data-updated="2026-10-21T08:57:09Z">v1 &middot; 21 Oct 2026 09:57 BST</span>
-          <pre>Download(&quot;data:text/csv;charset=utf-8,&quot; &amp; EncodeUrl(&quot;Library,Files&quot; &amp; Char(13) &amp; Char(10) &amp; &quot;Export test,0&quot;))</pre>
-        </div>
-        <div class="callout warn"><strong>Unverified browser test.</strong> The real Microsoft YAML parser accepts the test control, but that does not verify downloading an inline CSV. Microsoft's Download documentation describes downloading a web resource; this data-URI behaviour still needs your browser test. This uses harmless sample data, not your real library records. No list, library, flow or data-source change is required.</div>
-        <p>If the test downloads successfully, the next change is to replace the sample with the library collection already loaded in Manage Libraries. This test is not yet the full library export.</p>
+        <div class="callout ok"><strong>Who gets it:</strong> the email goes from your own Outlook to your own address (whoever pressed the button), so each admin receives their own copy. It lists the names of Limited libraries, so only forward it to people who are allowed to see them. File counts come from the last saved stats scan, so run the stats flow and press Reload saved stats first if you need fresh numbers.</div>
+        <div class="callout warn"><strong>Not yet run in your tenant.</strong> Checked locally: the screen passes the real Microsoft YAML parser and the formula structure check, and the flow package matches the layout of your working packages. <strong>Not checked:</strong> that the import accepts the Outlook connection, that the email actually sends, and how the CSV looks in Excel. If the import step fails or the send errors, tell me the exact message. The fallback is a four-step manual flow (Power Apps trigger with three text inputs, then Send an email (V2) with the CSV as an attachment, then Respond to a Power App) which I can write out.</div>
       </section>
 
       <section id="housekeeping-restore">
@@ -670,10 +668,10 @@ ItemCount: item()?['ItemCount']</pre>
               <span class="ver">v3.16 &mdash; 01 Oct 2026 &mdash; draft, not yet pasted (v3.15 is already live; this is a follow-up fix)</span></div>
             <div class="open">Copy YAML &rarr;</div>
           </a>
-          <a class="link-card" href="screens/scrManageLibraries-v2.9.html?v=2.9">
+          <a class="link-card" href="screens/scrManageLibraries-v2.10.html?v=2.10">
             <div><span class="pill">Screen 4</span><strong style="margin-top:8px;display:block">scrManageLibraries</strong>
-              <p>Restricted to admins. Tick libraries, bulk-delete them (empty ones go straight away, non-empty ones get an override prompt) or send the selection to the edit cart. Team &rarr; Sub-Team &rarr; Library accordion, Team filter dropdown, "Sub-Team: None" shown explicitly. Every library row shows its creation date and current file count, empty libraries flagged in red, plus a Refresh Library Stats button. Delete Selected/Leave Them/Delete Anyway show a proper <code>Notify()</code> banner on success (v2.7). v2.8: the Limited badge is now three honest states &mdash; red padlock (genuinely Limited), amber pencil (permissions customised, not marked Limited), red triangle (flagged/named Limited but permissions are still fully inherited &mdash; a real inconsistency worth checking).</p>
-              <span class="ver">v2.8 &mdash; confirmed pasted and live, per Allan 01 Oct 2026</span></div>
+              <p>Restricted to admins. Tick libraries, bulk-delete them (empty ones go straight away, non-empty ones get an override prompt) or send the selection to the edit cart. Team &rarr; Sub-Team &rarr; Library accordion, Team filter dropdown, "Sub-Team: None" shown explicitly. Every library row shows its creation date and current file count, empty libraries flagged in red, plus a Refresh Library Stats button. Delete Selected/Leave Them/Delete Anyway show a proper <code>Notify()</code> banner on success (v2.7). v2.10: an <strong>Email CSV (current view)</strong> button attaches the libraries on screen as a CSV to an email to you. v2.9: file counts, age filters and Reload saved stats. v2.8: the Limited badge is now three honest states &mdash; red padlock (genuinely Limited), amber pencil (permissions customised, not marked Limited), red triangle (flagged/named Limited but permissions are still fully inherited &mdash; a real inconsistency worth checking).</p>
+              <span class="ver">v2.10 &mdash; 21 Oct 2026 &mdash; adds the Email CSV button to your live v2.9; draft, not yet pasted (needs the new flow first, see Email CSV section above)</span></div>
             <div class="open">Copy YAML &rarr;</div>
           </a>
           <a class="link-card" href="screens/scrEditLibraries.html?v=2.4">
