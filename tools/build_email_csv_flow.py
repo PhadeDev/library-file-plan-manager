@@ -51,7 +51,7 @@ actions = {
                 "emailMessage/Body": body_html,
                 "emailMessage/Attachments": [{
                     "Name": "LibraryReport_" + stamp + ".csv",
-                    "ContentBytes": "@{base64(concat(uriComponentToString('%EF%BB%BF'), triggerBody()?['CsvText']))}",
+                    "ContentBytes": "@base64ToBinary(base64(concat(uriComponentToString('%EF%BB%BF'), triggerBody()?['CsvText'])))",
                 }],
                 "emailMessage/Importance": "Normal",
             },
