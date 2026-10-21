@@ -56,7 +56,7 @@ block = f'''      - lblEmailCsvStatus:
                   Set(varCsvEmailStatus, "Sending to " & User().Email & "... this takes a few seconds.");
                   Set(varLibraryCsv, "{header}" & Char(13) & Char(10) & Concat(SortByColumns(colManageFiltered, "TeamName", SortOrder.Ascending, "SubTeamName", SortOrder.Ascending, "EffectiveName", SortOrder.Ascending), {row}));
                   IfError(
-                      'FP-EmailLibraryCsv(App)'.Run(varLibraryCsv, User().Email, {summary}),
+                      'FP-EmailLibraryCsv(App)'.Run(varLibraryCsv, User().Email, {{Summary: {summary}}}),
                       Set(varCsvEmailError, true)
                   );
                   Set(varCsvEmailBusy, false);
