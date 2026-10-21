@@ -305,6 +305,20 @@ Screens:
             Width: =210
             X: =1096
             Y: =166
+      - lblEmailCsvStatus:
+          Control: Label@2.5.1
+          Properties:
+            Align: =Align.Right
+            Color: =If(varCsvEmailError, RGBA(192, 57, 43, 1), If(varCsvEmailBusy, RGBA(60, 60, 80, 1), RGBA(21, 62, 53, 1)))
+            Font: =Font.'Open Sans'
+            FontWeight: =FontWeight.Semibold
+            Height: =40
+            Size: =12
+            Text: =varCsvEmailStatus
+            Visible: =varIsAdmin && !IsBlank(varCsvEmailStatus)
+            Width: =440
+            X: =640
+            Y: =216
       - btnEmailLibraryCsv:
           Control: ModernButton@1.0.0
           Properties:
@@ -316,6 +330,7 @@ Screens:
                   Notify("There are no libraries in the current view to export.", NotificationType.Warning),
                   Set(varCsvEmailBusy, true);
                   Set(varCsvEmailError, false);
+                  Set(varCsvEmailStatus, "Sending to " & User().Email & "... this takes a few seconds.");
                   Set(varLibraryCsv, "Library,Library URL,Team,Sub-Team,Limited,Created,File count,Empty,Review (empty and created 6+ months ago)" & Char(13) & Char(10) & Concat(SortByColumns(colManageFiltered, "TeamName", SortOrder.Ascending, "SubTeamName", SortOrder.Ascending, "EffectiveName", SortOrder.Ascending), Char(34) & Substitute(If(Left(EffectiveName, 1) in ["=", "+", "-", "@"], "'" & EffectiveName, EffectiveName), Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(varTenantHost & LibraryUrl, Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(If(Left(TeamName, 1) in ["=", "+", "-", "@"], "'" & TeamName, TeamName), Char(34), Char(34) & Char(34)) & Char(34) & "," & Char(34) & Substitute(If(Left(SubTeamName, 1) in ["=", "+", "-", "@"], "'" & SubTeamName, SubTeamName), Char(34), Char(34) & Char(34)) & Char(34) & "," & If(IsLimited || NameSaysLtd, "Yes", "No") & "," & If(IsBlank(LibraryCreated), "", Text(LibraryCreated, "dd/mm/yyyy")) & "," & If(IsBlank(LibraryFileCount), "", Text(LibraryFileCount, "0")) & "," & If(IsBlank(LibraryFileCount), "Unknown", If(LibraryFileCount = 0, "Yes", "No")) & "," & If(IsBlank(LibraryFileCount) || IsBlank(LibraryCreated), "Unknown", If(LibraryFileCount = 0 && LibraryCreated <= DateAdd(Today(), -6, TimeUnit.Months), "Yes", "No")) & Char(13) & Char(10)));
                   IfError(
                       'FP-EmailLibraryCsv(App)'.Run(varLibraryCsv, User().Email, "Libraries included: " & CountRows(colManageFiltered) & " of " & CountRows(colFilePlanFiltered) & ". Team: " & Coalesce(drpTeamFilter.Selected.TeamName, "All Teams") & ". File count: " & Coalesce(drpMgmtFileCount.Selected.Value, "All file counts") & ". Age: " & Coalesce(drpMgmtAge.Selected.Value, "Any library age") & If(IsBlank(Trim(txtSearch_2.Text)), "", ". Search: " & txtSearch_2.Text) & "."),
@@ -324,7 +339,9 @@ Screens:
                   Set(varCsvEmailBusy, false);
                   If(
                       varCsvEmailError,
+                      Set(varCsvEmailStatus, "The CSV could not be emailed. Check My flows > FP-EmailLibraryCsv(App) in Power Automate for the failed run.");
                       Notify("The CSV could not be emailed. Check My flows > FP-EmailLibraryCsv(App) in Power Automate for the failed run.", NotificationType.Error),
+                      Set(varCsvEmailStatus, "Sent to " & User().Email & " at " & Text(Now(), "hh:mm") & " (" & CountRows(colManageFiltered) & " libraries). It should arrive within a couple of minutes; check Junk if it does not.");
                       Notify("CSV emailed to " & User().Email & ". It should arrive within a minute or two (check Junk if it does not).", NotificationType.Success)
                   )
               )

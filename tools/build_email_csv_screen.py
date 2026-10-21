@@ -28,7 +28,21 @@ summary = ('"Libraries included: " & CountRows(colManageFiltered) & " of " & Cou
            '& ". File count: " & Coalesce(drpMgmtFileCount.Selected.Value, "All file counts") & ". Age: " & Coalesce(drpMgmtAge.Selected.Value, "Any library age") '
            '& If(IsBlank(Trim(txtSearch_2.Text)), "", ". Search: " & txtSearch_2.Text) & "."')
 
-block = f'''      - btnEmailLibraryCsv:
+block = f'''      - lblEmailCsvStatus:
+          Control: Label@2.5.1
+          Properties:
+            Align: =Align.Right
+            Color: =If(varCsvEmailError, RGBA(192, 57, 43, 1), If(varCsvEmailBusy, RGBA(60, 60, 80, 1), RGBA(21, 62, 53, 1)))
+            Font: =Font.'Open Sans'
+            FontWeight: =FontWeight.Semibold
+            Height: =40
+            Size: =12
+            Text: =varCsvEmailStatus
+            Visible: =varIsAdmin && !IsBlank(varCsvEmailStatus)
+            Width: =440
+            X: =640
+            Y: =216
+      - btnEmailLibraryCsv:
           Control: ModernButton@1.0.0
           Properties:
             DisplayMode: =If(varCsvEmailBusy, DisplayMode.Disabled, DisplayMode.Edit)
@@ -39,6 +53,7 @@ block = f'''      - btnEmailLibraryCsv:
                   Notify("There are no libraries in the current view to export.", NotificationType.Warning),
                   Set(varCsvEmailBusy, true);
                   Set(varCsvEmailError, false);
+                  Set(varCsvEmailStatus, "Sending to " & User().Email & "... this takes a few seconds.");
                   Set(varLibraryCsv, "{header}" & Char(13) & Char(10) & Concat(SortByColumns(colManageFiltered, "TeamName", SortOrder.Ascending, "SubTeamName", SortOrder.Ascending, "EffectiveName", SortOrder.Ascending), {row}));
                   IfError(
                       'FP-EmailLibraryCsv(App)'.Run(varLibraryCsv, User().Email, {summary}),
@@ -47,7 +62,9 @@ block = f'''      - btnEmailLibraryCsv:
                   Set(varCsvEmailBusy, false);
                   If(
                       varCsvEmailError,
+                      Set(varCsvEmailStatus, "The CSV could not be emailed. Check My flows > FP-EmailLibraryCsv(App) in Power Automate for the failed run.");
                       Notify("The CSV could not be emailed. Check My flows > FP-EmailLibraryCsv(App) in Power Automate for the failed run.", NotificationType.Error),
+                      Set(varCsvEmailStatus, "Sent to " & User().Email & " at " & Text(Now(), "hh:mm") & " (" & CountRows(colManageFiltered) & " libraries). It should arrive within a couple of minutes; check Junk if it does not.");
                       Notify("CSV emailed to " & User().Email & ". It should arrive within a minute or two (check Junk if it does not).", NotificationType.Success)
                   )
               )
