@@ -1,0 +1,1048 @@
+Screens:
+  scrManageLibraries:
+    Properties:
+      Fill: =RGBA(245, 246, 250, 1)
+      OnVisible: |-
+        =ClearCollect(colManageTeamFilterOptions, Table({TeamName: "All Teams"}));
+        Collect(colManageTeamFilterOptions, colTeamGroups);
+        ClearCollect(colManageFiltered, AddColumns(Filter(colFilePlanFiltered, (IsBlank(Trim(txtSearch_2.Text)) || txtSearch_2.Text in EffectiveName) && (Coalesce(drpTeamFilter.Selected.TeamName, "All Teams") = "All Teams" || TeamName = drpTeamFilter.Selected.TeamName) && (Switch(Coalesce(drpMgmtFileCount.Selected.Value, "All file counts"), "0 files", !IsBlank(LibraryFileCount) && LibraryFileCount = 0, "5 or fewer files", !IsBlank(LibraryFileCount) && LibraryFileCount <= 5, "10 or fewer files", !IsBlank(LibraryFileCount) && LibraryFileCount <= 10, "Stats missing", IsBlank(LibraryFileCount) || IsBlank(LibraryCreated), true)) && (Switch(Coalesce(drpMgmtAge.Selected.Value, "Any library age"), "6+ months old", !IsBlank(LibraryCreated) && LibraryCreated <= DateAdd(Today(), -6, TimeUnit.Months), "1+ year old", !IsBlank(LibraryCreated) && LibraryCreated <= DateAdd(Today(), -12, TimeUnit.Months), true))), NameSaysLtd, "_LTD" in Upper(LibraryUrl) || "(LTD)" in Upper(EffectiveName), PermsBroken, LibraryUrl in colPermissionIndex.LibraryUrl));
+        ClearCollect(colManageTeamGroups, Sort(AddColumns(GroupBy(colManageFiltered, TeamName, GroupedItems), ItemCount, CountRows(GroupedItems), TeamSortKey, If(TeamName = "Uncategorised", "zzz_" & TeamName, TeamName)), TeamSortKey, SortOrder.Ascending));
+        ClearCollect(colManageSubTeamGroups, AddColumns(GroupBy(Filter(colManageFiltered, !IsBlank(SubTeamName) && SubTeamName <> ""), TeamName, SubTeamName, GroupedItems), ItemCount, CountRows(GroupedItems)));
+        Clear(colManageFlatSource);
+        Collect(colManageFlatSource, AddColumns(colManageTeamGroups, RowType, "Team", SortKey, TeamSortKey, SubSortKey, "", RankInGroup, 0));
+        Collect(colManageFlatSource, AddColumns(colManageSubTeamGroups, RowType, "SubTeam", SortKey, If(TeamName = "Uncategorised", "zzz_" & TeamName, TeamName), SubSortKey, SubTeamName, RankInGroup, 1));
+        Collect(colManageFlatSource, AddColumns(colManageFiltered, RowType, "Library", SortKey, If(TeamName = "Uncategorised", "zzz_" & TeamName, TeamName), SubSortKey, If(IsBlank(SubTeamName) || SubTeamName = "", "zzz_none", SubTeamName), RankInGroup, If(IsBlank(SubTeamName) || SubTeamName = "", 1, 2)));
+        Clear(colMgmtExpandedTeams);
+        Clear(colMgmtExpandedSubTeams);
+        Clear(colSelectedLibraries);
+        Set(varConfirmOverrideVisible, false);
+        Set(varDeleteStatus, "");
+        Set(varShowStatsWarning, false);
+        Set(varRequestStatsBusy, false);
+        Set(varExportReportBusy, false);
+        Set(varStatsStatusError, false);
+        IfError(
+            Refresh(LibraryStatsControl);
+            Set(varStatsControl, LookUp(LibraryStatsControl, Title = "LibraryStats")),
+            Set(varStatsStatusError, true)
+        )
+    Children:
+      - recNavBarBg_3:
+          Control: Classic/Button@2.2.0
+          Properties:
+            BorderThickness: =0
+            DisplayMode: =DisplayMode.View
+            Fill: =RGBA(30, 30, 45, 1)
+            Height: =48
+            HoverFill: =RGBA(30, 30, 45, 1)
+            PressedFill: =RGBA(30, 30, 45, 1)
+            RadiusBottomLeft: =5
+            RadiusBottomRight: =5
+            RadiusTopLeft: =5
+            RadiusTopRight: =5
+            Text: =""
+            Width: =1318
+      - btnNavFilePlan_3:
+          Control: ModernButton@1.0.0
+          Properties:
+            Height: =36
+            OnSelect: =Navigate(scrFilePlan)
+            Text: ="File Plan"
+            Width: =140
+            X: =16
+            Y: =6
+      - btnNavGroupSearch_3:
+          Control: ModernButton@1.0.0
+          Properties:
+            Height: =36
+            OnSelect: =Navigate(scrGroupSearch)
+            Text: ="Group Search"
+            Width: =160
+            X: =164
+            Y: =6
+      - btnNavCreateLibrary_3:
+          Control: ModernButton@1.0.0
+          Properties:
+            Height: =36
+            OnSelect: =Navigate(scrAdminCreateLibrary)
+            Text: ="Create Library"
+            Visible: =varIsAdmin
+            Width: =160
+            X: =332
+            Y: =6
+      - btnNavManageLibraries_3:
+          Control: ModernButton@1.0.0
+          Properties:
+            Height: =36
+            OnSelect: =Navigate(scrManageLibraries)
+            Text: ="Manage Libraries"
+            Visible: =varIsAdmin
+            Width: =160
+            X: =500
+            Y: =6
+      - lblTitle_3:
+          Control: Label@2.5.1
+          Properties:
+            Color: =RGBA(30, 30, 45, 1)
+            Font: =Font.'Open Sans'
+            FontWeight: =FontWeight.Semibold
+            Size: =22
+            Text: ="Manage Libraries"
+            Width: =600
+            X: =32
+            Y: =48
+      - lblSubtitle_1:
+          Control: Label@2.5.1
+          Properties:
+            Color: =RGBA(120, 120, 135, 1)
+            Font: =Font.'Open Sans'
+            Size: =12
+            Text: ="Pale red row = zero files and created at least six months ago. Counts include files inside folders; folders themselves are excluded. Use the filters below to narrow the list."
+            Width: =1280
+            X: =32
+            Y: =84
+      - lblLtdLegend_1:
+          Control: Label@2.5.1
+          Properties:
+            Color: =RGBA(120, 120, 135, 1)
+            Font: =Font.'Open Sans'
+            Size: =11
+            Text: ="Red padlock = genuinely Limited (flagged or named _LTD/(LTD), and permissions actually broken). Amber pencil = permissions customised but nothing marks this as Limited. Red triangle = named/flagged Limited but permissions are still fully inherited - check this one."
+            Visible: =varIsAdmin
+            Width: =1300
+            X: =32
+            Y: =126
+      - recAccessDeniedBg_1:
+          Control: Classic/Button@2.2.0
+          Properties:
+            BorderColor: =RGBA(210, 150, 150, 1)
+            BorderThickness: =1
+            DisplayMode: =DisplayMode.View
+            Fill: =RGBA(250, 235, 235, 1)
+            Height: =60
+            HoverFill: =RGBA(250, 235, 235, 1)
+            PressedFill: =RGBA(250, 235, 235, 1)
+            Text: =""
+            Visible: =!varIsAdmin
+            Width: =600
+            X: =32
+            Y: =150
+      - lblAccessDenied_1:
+          Control: Label@2.5.1
+          Properties:
+            Color: =RGBA(140, 40, 40, 1)
+            Font: =Font.'Open Sans'
+            Height: =60
+            Text: ="This screen is restricted. Your account (" & User().Email & ") isn't on the admin list."
+            Visible: =!varIsAdmin
+            Width: =560
+            X: =52
+            Y: =150
+      - txtSearch_2:
+          Control: ModernTextInput@1.1.2
+          Properties:
+            Height: =44
+            OnChange: |-
+              =ClearCollect(
+                  colManageFiltered,
+                  AddColumns(
+                      Filter(
+                          colFilePlanFiltered,
+                          (IsBlank(Trim(txtSearch_2.Text)) || txtSearch_2.Text in EffectiveName) && (Coalesce(drpTeamFilter.Selected.TeamName, "All Teams") = "All Teams" || TeamName = drpTeamFilter.Selected.TeamName) && (Switch(Coalesce(drpMgmtFileCount.Selected.Value, "All file counts"), "0 files", !IsBlank(LibraryFileCount) && LibraryFileCount = 0, "5 or fewer files", !IsBlank(LibraryFileCount) && LibraryFileCount <= 5, "10 or fewer files", !IsBlank(LibraryFileCount) && LibraryFileCount <= 10, "Stats missing", IsBlank(LibraryFileCount) || IsBlank(LibraryCreated), true)) && (Switch(Coalesce(drpMgmtAge.Selected.Value, "Any library age"), "6+ months old", !IsBlank(LibraryCreated) && LibraryCreated <= DateAdd(Today(), -6, TimeUnit.Months), "1+ year old", !IsBlank(LibraryCreated) && LibraryCreated <= DateAdd(Today(), -12, TimeUnit.Months), true))
+                      ),
+                      NameSaysLtd, "_LTD" in Upper(LibraryUrl) || "(LTD)" in Upper(EffectiveName), PermsBroken, LibraryUrl in colPermissionIndex.LibraryUrl
+                  )
+              );
+              ClearCollect(colManageTeamGroups, Sort(AddColumns(GroupBy(colManageFiltered, TeamName, GroupedItems), ItemCount, CountRows(GroupedItems), TeamSortKey, If(TeamName = "Uncategorised", "zzz_" & TeamName, TeamName)), TeamSortKey, SortOrder.Ascending));
+              ClearCollect(colManageSubTeamGroups, AddColumns(GroupBy(Filter(colManageFiltered, !IsBlank(SubTeamName) && SubTeamName <> ""), TeamName, SubTeamName, GroupedItems), ItemCount, CountRows(GroupedItems)));
+              Clear(colManageFlatSource);
+              Collect(colManageFlatSource, AddColumns(colManageTeamGroups, RowType, "Team", SortKey, TeamSortKey, SubSortKey, "", RankInGroup, 0));
+              Collect(colManageFlatSource, AddColumns(colManageSubTeamGroups, RowType, "SubTeam", SortKey, If(TeamName = "Uncategorised", "zzz_" & TeamName, TeamName), SubSortKey, SubTeamName, RankInGroup, 1));
+              Collect(colManageFlatSource, AddColumns(colManageFiltered, RowType, "Library", SortKey, If(TeamName = "Uncategorised", "zzz_" & TeamName, TeamName), SubSortKey, If(IsBlank(SubTeamName) || SubTeamName = "", "zzz_none", SubTeamName), RankInGroup, If(IsBlank(SubTeamName) || SubTeamName = "", 1, 2)));
+              If(
+                  !IsBlank(Trim(txtSearch_2.Text)) || drpTeamFilter.Selected.TeamName <> "All Teams" || Coalesce(drpMgmtFileCount.Selected.Value, "All file counts") <> "All file counts" || Coalesce(drpMgmtAge.Selected.Value, "Any library age") <> "Any library age",
+                  ClearCollect(colMgmtExpandedTeams, ShowColumns(colManageTeamGroups, TeamName));
+                  ClearCollect(colMgmtExpandedSubTeams, AddColumns(colManageSubTeamGroups, SubTeamKey, TeamName & "|" & SubTeamName)),
+                  Clear(colMgmtExpandedTeams);
+                  Clear(colMgmtExpandedSubTeams)
+              )
+            Placeholder: ="Search by library name..."
+            Type: =TextInputType.Search
+            Visible: =varIsAdmin
+            Width: =400
+            X: =32
+            Y: =166
+      - drpTeamFilter:
+          Control: ModernDropdown@1.0.3
+          Properties:
+            Default: =LookUp(colManageTeamFilterOptions, TeamName = "All Teams")
+            Height: =44
+            ItemDisplayText: =Substitute(ThisItem.TeamName, "_", " ")
+            Items: =colManageTeamFilterOptions
+            OnChange: |-
+              =ClearCollect(
+                  colManageFiltered,
+                  AddColumns(
+                      Filter(
+                          colFilePlanFiltered,
+                          (IsBlank(Trim(txtSearch_2.Text)) || txtSearch_2.Text in EffectiveName) && (Coalesce(drpTeamFilter.Selected.TeamName, "All Teams") = "All Teams" || TeamName = drpTeamFilter.Selected.TeamName) && (Switch(Coalesce(drpMgmtFileCount.Selected.Value, "All file counts"), "0 files", !IsBlank(LibraryFileCount) && LibraryFileCount = 0, "5 or fewer files", !IsBlank(LibraryFileCount) && LibraryFileCount <= 5, "10 or fewer files", !IsBlank(LibraryFileCount) && LibraryFileCount <= 10, "Stats missing", IsBlank(LibraryFileCount) || IsBlank(LibraryCreated), true)) && (Switch(Coalesce(drpMgmtAge.Selected.Value, "Any library age"), "6+ months old", !IsBlank(LibraryCreated) && LibraryCreated <= DateAdd(Today(), -6, TimeUnit.Months), "1+ year old", !IsBlank(LibraryCreated) && LibraryCreated <= DateAdd(Today(), -12, TimeUnit.Months), true))
+                      ),
+                      NameSaysLtd, "_LTD" in Upper(LibraryUrl) || "(LTD)" in Upper(EffectiveName), PermsBroken, LibraryUrl in colPermissionIndex.LibraryUrl
+                  )
+              );
+              ClearCollect(colManageTeamGroups, Sort(AddColumns(GroupBy(colManageFiltered, TeamName, GroupedItems), ItemCount, CountRows(GroupedItems), TeamSortKey, If(TeamName = "Uncategorised", "zzz_" & TeamName, TeamName)), TeamSortKey, SortOrder.Ascending));
+              ClearCollect(colManageSubTeamGroups, AddColumns(GroupBy(Filter(colManageFiltered, !IsBlank(SubTeamName) && SubTeamName <> ""), TeamName, SubTeamName, GroupedItems), ItemCount, CountRows(GroupedItems)));
+              Clear(colManageFlatSource);
+              Collect(colManageFlatSource, AddColumns(colManageTeamGroups, RowType, "Team", SortKey, TeamSortKey, SubSortKey, "", RankInGroup, 0));
+              Collect(colManageFlatSource, AddColumns(colManageSubTeamGroups, RowType, "SubTeam", SortKey, If(TeamName = "Uncategorised", "zzz_" & TeamName, TeamName), SubSortKey, SubTeamName, RankInGroup, 1));
+              Collect(colManageFlatSource, AddColumns(colManageFiltered, RowType, "Library", SortKey, If(TeamName = "Uncategorised", "zzz_" & TeamName, TeamName), SubSortKey, If(IsBlank(SubTeamName) || SubTeamName = "", "zzz_none", SubTeamName), RankInGroup, If(IsBlank(SubTeamName) || SubTeamName = "", 1, 2)));
+              If(
+                  !IsBlank(Trim(txtSearch_2.Text)) || drpTeamFilter.Selected.TeamName <> "All Teams" || Coalesce(drpMgmtFileCount.Selected.Value, "All file counts") <> "All file counts" || Coalesce(drpMgmtAge.Selected.Value, "Any library age") <> "Any library age",
+                  ClearCollect(colMgmtExpandedTeams, ShowColumns(colManageTeamGroups, TeamName));
+                  ClearCollect(colMgmtExpandedSubTeams, AddColumns(colManageSubTeamGroups, SubTeamKey, TeamName & "|" & SubTeamName)),
+                  Clear(colMgmtExpandedTeams);
+                  Clear(colMgmtExpandedSubTeams)
+              )
+            Visible: =varIsAdmin
+            Width: =220
+            X: =448
+            Y: =166
+      - drpMgmtFileCount:
+          Control: ModernDropdown@1.0.3
+          Properties:
+            Default: '={Value: "All file counts"}'
+            Height: =44
+            ItemDisplayText: =ThisItem.Value
+            Items: =["All file counts", "0 files", "5 or fewer files", "10 or fewer files", "Stats missing"]
+            OnChange: |-
+              =ClearCollect(
+                  colManageFiltered,
+                  AddColumns(
+                      Filter(
+                          colFilePlanFiltered,
+                          (IsBlank(Trim(txtSearch_2.Text)) || txtSearch_2.Text in EffectiveName) && (Coalesce(drpTeamFilter.Selected.TeamName, "All Teams") = "All Teams" || TeamName = drpTeamFilter.Selected.TeamName) && (Switch(Coalesce(drpMgmtFileCount.Selected.Value, "All file counts"), "0 files", !IsBlank(LibraryFileCount) && LibraryFileCount = 0, "5 or fewer files", !IsBlank(LibraryFileCount) && LibraryFileCount <= 5, "10 or fewer files", !IsBlank(LibraryFileCount) && LibraryFileCount <= 10, "Stats missing", IsBlank(LibraryFileCount) || IsBlank(LibraryCreated), true)) && (Switch(Coalesce(drpMgmtAge.Selected.Value, "Any library age"), "6+ months old", !IsBlank(LibraryCreated) && LibraryCreated <= DateAdd(Today(), -6, TimeUnit.Months), "1+ year old", !IsBlank(LibraryCreated) && LibraryCreated <= DateAdd(Today(), -12, TimeUnit.Months), true))
+                      ),
+                      NameSaysLtd, "_LTD" in Upper(LibraryUrl) || "(LTD)" in Upper(EffectiveName), PermsBroken, LibraryUrl in colPermissionIndex.LibraryUrl
+                  )
+              );
+              ClearCollect(colManageTeamGroups, Sort(AddColumns(GroupBy(colManageFiltered, TeamName, GroupedItems), ItemCount, CountRows(GroupedItems), TeamSortKey, If(TeamName = "Uncategorised", "zzz_" & TeamName, TeamName)), TeamSortKey, SortOrder.Ascending));
+              ClearCollect(colManageSubTeamGroups, AddColumns(GroupBy(Filter(colManageFiltered, !IsBlank(SubTeamName) && SubTeamName <> ""), TeamName, SubTeamName, GroupedItems), ItemCount, CountRows(GroupedItems)));
+              Clear(colManageFlatSource);
+              Collect(colManageFlatSource, AddColumns(colManageTeamGroups, RowType, "Team", SortKey, TeamSortKey, SubSortKey, "", RankInGroup, 0));
+              Collect(colManageFlatSource, AddColumns(colManageSubTeamGroups, RowType, "SubTeam", SortKey, If(TeamName = "Uncategorised", "zzz_" & TeamName, TeamName), SubSortKey, SubTeamName, RankInGroup, 1));
+              Collect(colManageFlatSource, AddColumns(colManageFiltered, RowType, "Library", SortKey, If(TeamName = "Uncategorised", "zzz_" & TeamName, TeamName), SubSortKey, If(IsBlank(SubTeamName) || SubTeamName = "", "zzz_none", SubTeamName), RankInGroup, If(IsBlank(SubTeamName) || SubTeamName = "", 1, 2)));
+              If(
+                  !IsBlank(Trim(txtSearch_2.Text)) || drpTeamFilter.Selected.TeamName <> "All Teams" || Coalesce(drpMgmtFileCount.Selected.Value, "All file counts") <> "All file counts" || Coalesce(drpMgmtAge.Selected.Value, "Any library age") <> "Any library age",
+                  ClearCollect(colMgmtExpandedTeams, ShowColumns(colManageTeamGroups, TeamName));
+                  ClearCollect(colMgmtExpandedSubTeams, AddColumns(colManageSubTeamGroups, SubTeamKey, TeamName & "|" & SubTeamName)),
+                  Clear(colMgmtExpandedTeams);
+                  Clear(colMgmtExpandedSubTeams)
+              )
+            Visible: =varIsAdmin
+            Width: =190
+            X: =684
+            Y: =166
+      - drpMgmtAge:
+          Control: ModernDropdown@1.0.3
+          Properties:
+            Default: '={Value: "Any library age"}'
+            Height: =44
+            ItemDisplayText: =ThisItem.Value
+            Items: =["Any library age", "6+ months old", "1+ year old"]
+            OnChange: |-
+              =ClearCollect(
+                  colManageFiltered,
+                  AddColumns(
+                      Filter(
+                          colFilePlanFiltered,
+                          (IsBlank(Trim(txtSearch_2.Text)) || txtSearch_2.Text in EffectiveName) && (Coalesce(drpTeamFilter.Selected.TeamName, "All Teams") = "All Teams" || TeamName = drpTeamFilter.Selected.TeamName) && (Switch(Coalesce(drpMgmtFileCount.Selected.Value, "All file counts"), "0 files", !IsBlank(LibraryFileCount) && LibraryFileCount = 0, "5 or fewer files", !IsBlank(LibraryFileCount) && LibraryFileCount <= 5, "10 or fewer files", !IsBlank(LibraryFileCount) && LibraryFileCount <= 10, "Stats missing", IsBlank(LibraryFileCount) || IsBlank(LibraryCreated), true)) && (Switch(Coalesce(drpMgmtAge.Selected.Value, "Any library age"), "6+ months old", !IsBlank(LibraryCreated) && LibraryCreated <= DateAdd(Today(), -6, TimeUnit.Months), "1+ year old", !IsBlank(LibraryCreated) && LibraryCreated <= DateAdd(Today(), -12, TimeUnit.Months), true))
+                      ),
+                      NameSaysLtd, "_LTD" in Upper(LibraryUrl) || "(LTD)" in Upper(EffectiveName), PermsBroken, LibraryUrl in colPermissionIndex.LibraryUrl
+                  )
+              );
+              ClearCollect(colManageTeamGroups, Sort(AddColumns(GroupBy(colManageFiltered, TeamName, GroupedItems), ItemCount, CountRows(GroupedItems), TeamSortKey, If(TeamName = "Uncategorised", "zzz_" & TeamName, TeamName)), TeamSortKey, SortOrder.Ascending));
+              ClearCollect(colManageSubTeamGroups, AddColumns(GroupBy(Filter(colManageFiltered, !IsBlank(SubTeamName) && SubTeamName <> ""), TeamName, SubTeamName, GroupedItems), ItemCount, CountRows(GroupedItems)));
+              Clear(colManageFlatSource);
+              Collect(colManageFlatSource, AddColumns(colManageTeamGroups, RowType, "Team", SortKey, TeamSortKey, SubSortKey, "", RankInGroup, 0));
+              Collect(colManageFlatSource, AddColumns(colManageSubTeamGroups, RowType, "SubTeam", SortKey, If(TeamName = "Uncategorised", "zzz_" & TeamName, TeamName), SubSortKey, SubTeamName, RankInGroup, 1));
+              Collect(colManageFlatSource, AddColumns(colManageFiltered, RowType, "Library", SortKey, If(TeamName = "Uncategorised", "zzz_" & TeamName, TeamName), SubSortKey, If(IsBlank(SubTeamName) || SubTeamName = "", "zzz_none", SubTeamName), RankInGroup, If(IsBlank(SubTeamName) || SubTeamName = "", 1, 2)));
+              If(
+                  !IsBlank(Trim(txtSearch_2.Text)) || drpTeamFilter.Selected.TeamName <> "All Teams" || Coalesce(drpMgmtFileCount.Selected.Value, "All file counts") <> "All file counts" || Coalesce(drpMgmtAge.Selected.Value, "Any library age") <> "Any library age",
+                  ClearCollect(colMgmtExpandedTeams, ShowColumns(colManageTeamGroups, TeamName));
+                  ClearCollect(colMgmtExpandedSubTeams, AddColumns(colManageSubTeamGroups, SubTeamKey, TeamName & "|" & SubTeamName)),
+                  Clear(colMgmtExpandedTeams);
+                  Clear(colMgmtExpandedSubTeams)
+              )
+            Visible: =varIsAdmin
+            Width: =190
+            X: =890
+            Y: =166
+      - btnReloadLibraryStats:
+          Control: ModernButton@1.0.0
+          Properties:
+            Height: =44
+            OnSelect: |-
+              =Refresh(LibraryFilePlan);
+              ClearCollect(colFilePlan, LibraryFilePlan);
+              ClearCollect(colFilePlanFiltered, AddColumns(colFilePlan, TeamName, If(IsBlank(Team.Value) || Team.Value = "", "Uncategorised", Team.Value), SubTeamName, Coalesce(SubTeam.Value, ""), EffectiveName, If(IsBlank(PrettyName) || PrettyName = "", Title, PrettyName)));
+              ClearCollect(
+                  colManageFiltered,
+                  AddColumns(
+                      Filter(
+                          colFilePlanFiltered,
+                          (IsBlank(Trim(txtSearch_2.Text)) || txtSearch_2.Text in EffectiveName) && (Coalesce(drpTeamFilter.Selected.TeamName, "All Teams") = "All Teams" || TeamName = drpTeamFilter.Selected.TeamName) && (Switch(Coalesce(drpMgmtFileCount.Selected.Value, "All file counts"), "0 files", !IsBlank(LibraryFileCount) && LibraryFileCount = 0, "5 or fewer files", !IsBlank(LibraryFileCount) && LibraryFileCount <= 5, "10 or fewer files", !IsBlank(LibraryFileCount) && LibraryFileCount <= 10, "Stats missing", IsBlank(LibraryFileCount) || IsBlank(LibraryCreated), true)) && (Switch(Coalesce(drpMgmtAge.Selected.Value, "Any library age"), "6+ months old", !IsBlank(LibraryCreated) && LibraryCreated <= DateAdd(Today(), -6, TimeUnit.Months), "1+ year old", !IsBlank(LibraryCreated) && LibraryCreated <= DateAdd(Today(), -12, TimeUnit.Months), true))
+                      ),
+                      NameSaysLtd, "_LTD" in Upper(LibraryUrl) || "(LTD)" in Upper(EffectiveName), PermsBroken, LibraryUrl in colPermissionIndex.LibraryUrl
+                  )
+              );
+              ClearCollect(colManageTeamGroups, Sort(AddColumns(GroupBy(colManageFiltered, TeamName, GroupedItems), ItemCount, CountRows(GroupedItems), TeamSortKey, If(TeamName = "Uncategorised", "zzz_" & TeamName, TeamName)), TeamSortKey, SortOrder.Ascending));
+              ClearCollect(colManageSubTeamGroups, AddColumns(GroupBy(Filter(colManageFiltered, !IsBlank(SubTeamName) && SubTeamName <> ""), TeamName, SubTeamName, GroupedItems), ItemCount, CountRows(GroupedItems)));
+              Clear(colManageFlatSource);
+              Collect(colManageFlatSource, AddColumns(colManageTeamGroups, RowType, "Team", SortKey, TeamSortKey, SubSortKey, "", RankInGroup, 0));
+              Collect(colManageFlatSource, AddColumns(colManageSubTeamGroups, RowType, "SubTeam", SortKey, If(TeamName = "Uncategorised", "zzz_" & TeamName, TeamName), SubSortKey, SubTeamName, RankInGroup, 1));
+              Collect(colManageFlatSource, AddColumns(colManageFiltered, RowType, "Library", SortKey, If(TeamName = "Uncategorised", "zzz_" & TeamName, TeamName), SubSortKey, If(IsBlank(SubTeamName) || SubTeamName = "", "zzz_none", SubTeamName), RankInGroup, If(IsBlank(SubTeamName) || SubTeamName = "", 1, 2)));
+              If(
+                  !IsBlank(Trim(txtSearch_2.Text)) || drpTeamFilter.Selected.TeamName <> "All Teams" || Coalesce(drpMgmtFileCount.Selected.Value, "All file counts") <> "All file counts" || Coalesce(drpMgmtAge.Selected.Value, "Any library age") <> "Any library age",
+                  ClearCollect(colMgmtExpandedTeams, ShowColumns(colManageTeamGroups, TeamName));
+                  ClearCollect(colMgmtExpandedSubTeams, AddColumns(colManageSubTeamGroups, SubTeamKey, TeamName & "|" & SubTeamName)),
+                  Clear(colMgmtExpandedTeams);
+                  Clear(colMgmtExpandedSubTeams)
+              );
+              Set(varStatsStatusError, false);
+              IfError(
+                  Refresh(LibraryStatsControl);
+                  Set(varStatsControl, LookUp(LibraryStatsControl, Title = "LibraryStats")),
+                  Set(varStatsStatusError, true)
+              );
+              Notify("Latest saved stats loaded. To update the counts, run FP - Rebuild Library Stats in Power Automate, wait for it to finish, then reload here.", NotificationType.Information)
+            Text: ="Reload saved stats"
+            Visible: =varIsAdmin
+            Width: =210
+            X: =1096
+            Y: =166
+      - lblSelectedCount:
+          Control: Label@2.5.1
+          Properties:
+            Color: =RGBA(124, 77, 255, 1)
+            Font: =Font.'Open Sans'
+            FontWeight: =FontWeight.Semibold
+            Height: =28
+            Text: =CountRows(colSelectedLibraries) & " selected"
+            Visible: =varIsAdmin
+            Width: =200
+            X: =32
+            Y: =218
+      - lblDeleteStatus:
+          Control: Label@2.5.1
+          Properties:
+            Color: =RGBA(120, 120, 135, 1)
+            Font: =Font.'Open Sans'
+            Height: =24
+            Size: =12
+            Text: =If(varDeleteBusy, "Checking and deleting...", varDeleteStatus)
+            Visible: =varIsAdmin && (varDeleteBusy || !IsBlank(varDeleteStatus))
+            Width: =900
+            X: =32
+            Y: =258
+      - galManage:
+          Control: Gallery@2.15.0
+          Variant: Vertical
+          Properties:
+            Height: =486
+            Items: |-
+              =SortByColumns(
+                  Filter(
+                      colManageFlatSource,
+                      (RowType = "Team") ||
+                      (RowType = "SubTeam" && TeamName in colMgmtExpandedTeams.TeamName) ||
+                      (RowType = "Library" && TeamName in colMgmtExpandedTeams.TeamName && (IsBlank(SubTeamName) || SubTeamName = "" || (TeamName & "|" & SubTeamName) in colMgmtExpandedSubTeams.SubTeamKey))
+                  ),
+                  "SortKey", SortOrder.Ascending,
+                  "SubSortKey", SortOrder.Ascending,
+                  "RankInGroup", SortOrder.Ascending,
+                  "EffectiveName", SortOrder.Ascending
+              )
+            LoadingSpinner: =LoadingSpinner.None
+            TemplatePadding: =4
+            TemplateSize: =100
+            Visible: =varIsAdmin
+            Width: =1318
+            X: =32
+            Y: =282
+          Children:
+            - recMgmtTeamHeaderBg:
+                Control: Classic/Button@2.2.0
+                Properties:
+                  BorderColor: =If(ThisItem.TeamName = "Uncategorised", RGBA(205, 205, 205, 1), RGBA(210, 213, 228, 1))
+                  BorderThickness: =1
+                  DisplayMode: =DisplayMode.View
+                  Fill: =If(ThisItem.TeamName = "Uncategorised", RGBA(224, 224, 224, 1), RGBA(230, 233, 245, 1))
+                  Height: =100
+                  HoverFill: =Self.Fill
+                  PressedFill: =Self.Fill
+                  Text: =""
+                  Visible: =ThisItem.RowType = "Team"
+                  Width: =1310
+            - imgMgmtTeamChevron:
+                Control: Image@2.2.3
+                Properties:
+                  Height: =72
+                  Image: =If(ThisItem.TeamName in colMgmtExpandedTeams.TeamName, "data:image/svg+xml," & EncodeUrl("<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='16' height='16'><path d='M6 9l6 6 6-6' stroke='#3C3C50' stroke-width='2.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>"), "data:image/svg+xml," & EncodeUrl("<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='16' height='16'><path d='M9 6l6 6-6 6' stroke='#3C3C50' stroke-width='2.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>"))
+                  ImagePosition: =ImagePosition.Center
+                  Visible: =ThisItem.RowType = "Team"
+                  Width: =24
+                  X: =16
+            - lblMgmtTeamName:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(30, 30, 45, 1)
+                  Font: =Font.'Open Sans'
+                  FontWeight: =FontWeight.Semibold
+                  Height: =48
+                  Size: =15
+                  Text: =Substitute(ThisItem.TeamName, "_", " ")
+                  Visible: =ThisItem.RowType = "Team"
+                  Width: =600
+                  X: =48
+            - lblMgmtTeamCount:
+                Control: Label@2.5.1
+                Properties:
+                  Align: =Align.Right
+                  Color: =RGBA(120, 120, 135, 1)
+                  Font: =Font.'Open Sans'
+                  Height: =48
+                  Size: =12
+                  Text: =ThisItem.ItemCount & " librar" & If(ThisItem.ItemCount = 1, "y", "ies")
+                  Visible: =ThisItem.RowType = "Team"
+                  Width: =140
+                  X: =1127
+            - btnMgmtTeamHeaderTap:
+                Control: Classic/Button@2.2.0
+                Properties:
+                  BorderThickness: =0
+                  Fill: =RGBA(0, 0, 0, 0)
+                  Height: =48
+                  HoverFill: =RGBA(210, 213, 228, 0.35)
+                  OnSelect: |-
+                    =If(
+                        ThisItem.TeamName in colMgmtExpandedTeams.TeamName,
+                        RemoveIf(colMgmtExpandedTeams, TeamName = ThisItem.TeamName),
+                        Collect(colMgmtExpandedTeams, {TeamName: ThisItem.TeamName})
+                    )
+                  PressedFill: =RGBA(210, 213, 228, 0.35)
+                  Text: =""
+                  Visible: =ThisItem.RowType = "Team"
+                  Width: =1310
+            - recMgmtSubTeamHeaderBg:
+                Control: Classic/Button@2.2.0
+                Properties:
+                  BorderColor: =RGBA(225, 227, 236, 1)
+                  BorderThickness: =1
+                  DisplayMode: =DisplayMode.View
+                  Fill: =RGBA(240, 241, 248, 1)
+                  Height: =100
+                  HoverFill: =Self.Fill
+                  PressedFill: =Self.Fill
+                  Text: =""
+                  Visible: =ThisItem.RowType = "SubTeam"
+                  Width: =1310
+            - imgMgmtSubTeamChevron:
+                Control: Image@2.2.3
+                Properties:
+                  Height: =72
+                  Image: =If((ThisItem.TeamName & "|" & ThisItem.SubTeamName) in colMgmtExpandedSubTeams.SubTeamKey, "data:image/svg+xml," & EncodeUrl("<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='16' height='16'><path d='M6 9l6 6 6-6' stroke='#5A5A69' stroke-width='2.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>"), "data:image/svg+xml," & EncodeUrl("<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='16' height='16'><path d='M9 6l6 6-6 6' stroke='#5A5A69' stroke-width='2.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>"))
+                  ImagePosition: =ImagePosition.Center
+                  Visible: =ThisItem.RowType = "SubTeam"
+                  Width: =20
+                  X: =48
+            - lblMgmtSubTeamName:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(60, 60, 80, 1)
+                  Font: =Font.'Open Sans'
+                  FontWeight: =FontWeight.Semibold
+                  Height: =72
+                  Text: =Substitute(ThisItem.SubTeamName, "_", " ")
+                  Visible: =ThisItem.RowType = "SubTeam"
+                  Width: =560
+                  X: =80
+            - lblMgmtSubTeamCount:
+                Control: Label@2.5.1
+                Properties:
+                  Align: =Align.Right
+                  Color: =RGBA(120, 120, 135, 1)
+                  Font: =Font.'Open Sans'
+                  Height: =72
+                  Size: =12
+                  Text: =ThisItem.ItemCount & " librar" & If(ThisItem.ItemCount = 1, "y", "ies")
+                  Visible: =ThisItem.RowType = "SubTeam"
+                  Width: =140
+                  X: =1127
+            - btnMgmtSubTeamHeaderTap:
+                Control: Classic/Button@2.2.0
+                Properties:
+                  BorderThickness: =0
+                  Fill: =RGBA(0, 0, 0, 0)
+                  Height: =72
+                  HoverFill: =RGBA(210, 213, 228, 0.35)
+                  OnSelect: |-
+                    =With(
+                        {_key: ThisItem.TeamName & "|" & ThisItem.SubTeamName},
+                        If(
+                            _key in colMgmtExpandedSubTeams.SubTeamKey,
+                            RemoveIf(colMgmtExpandedSubTeams, SubTeamKey = _key),
+                            Collect(colMgmtExpandedSubTeams, {SubTeamKey: _key})
+                        )
+                    )
+                  PressedFill: =RGBA(210, 213, 228, 0.35)
+                  Text: =""
+                  Visible: =ThisItem.RowType = "SubTeam"
+                  Width: =1310
+            - recRowBg_1:
+                Control: Classic/Button@2.2.0
+                Properties:
+                  BorderColor: =If(!IsBlank(ThisItem.LibraryFileCount) && ThisItem.LibraryFileCount = 0 && !IsBlank(ThisItem.LibraryCreated) && ThisItem.LibraryCreated <= DateAdd(Today(), -6, TimeUnit.Months), RGBA(190, 50, 50, 1), If(ThisItem.LibraryUrl in colSelectedLibraries.LibraryUrl, RGBA(124, 77, 255, 1), RGBA(230, 233, 245, 1)))
+                  BorderThickness: =If(ThisItem.LibraryUrl in colSelectedLibraries.LibraryUrl, 2, 1)
+                  DisplayMode: =DisplayMode.View
+                  Fill: =If(!IsBlank(ThisItem.LibraryFileCount) && ThisItem.LibraryFileCount = 0 && !IsBlank(ThisItem.LibraryCreated) && ThisItem.LibraryCreated <= DateAdd(Today(), -6, TimeUnit.Months), RGBA(255, 229, 229, 1), If(ThisItem.LibraryUrl in colSelectedLibraries.LibraryUrl, RGBA(238, 233, 255, 1), If(ThisItem.IsLimited, RGBA(253, 240, 236, 1), RGBA(255, 255, 255, 1))))
+                  Height: =100
+                  HoverFill: =Self.Fill
+                  PressedFill: =Self.Fill
+                  Text: =""
+                  Visible: =ThisItem.RowType = "Library"
+                  Width: =1310
+            - chkSelect:
+                Control: ModernCheckbox@1.0.2
+                Properties:
+                  BasePaletteColor: =RGBA(124, 77, 255, 1)
+                  CheckboxSize: =22
+                  Default: =ThisItem.LibraryUrl in colSelectedLibraries.LibraryUrl
+                  FontWeight: =""
+                  Height: =38
+                  Label: =""
+                  OnCheck: |-
+                    =Collect(colSelectedLibraries, {LibraryUrl: ThisItem.LibraryUrl})
+                  OnUncheck: =RemoveIf(colSelectedLibraries, LibraryUrl = ThisItem.LibraryUrl)
+                  Visible: =ThisItem.RowType = "Library"
+                  Width: =38
+                  X: =16
+                  Y: =14
+            - lblRowHousekeeping:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =If(!IsBlank(ThisItem.LibraryFileCount) && ThisItem.LibraryFileCount = 0 && !IsBlank(ThisItem.LibraryCreated) && ThisItem.LibraryCreated <= DateAdd(Today(), -6, TimeUnit.Months), RGBA(150, 30, 30, 1), RGBA(80, 80, 100, 1))
+                  Font: =Font.'Open Sans'
+                  FontWeight: =FontWeight.Semibold
+                  Height: =24
+                  Size: =12
+                  Text: '="Created: " & If(IsBlank(ThisItem.LibraryCreated), "not checked", Text(ThisItem.LibraryCreated, "dd mmm yyyy")) & "   |   Files: " & If(IsBlank(ThisItem.LibraryFileCount), "not checked", Text(ThisItem.LibraryFileCount, "#,##0")) & If(!IsBlank(ThisItem.LibraryFileCount) && ThisItem.LibraryFileCount = 0 && !IsBlank(ThisItem.LibraryCreated) && ThisItem.LibraryCreated <= DateAdd(Today(), -6, TimeUnit.Months), "   |   REVIEW: empty and 6+ months old", "")'
+                  Visible: =ThisItem.RowType = "Library"
+                  Width: =1050
+                  X: =80
+                  Y: =74
+            - lblRowLibURL:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(120, 120, 135, 1)
+                  Font: =Font.'Open Sans'
+                  Height: =24
+                  Size: =12
+                  Text: |-
+                    ="Library URL: "&ThisItem.LibraryUrl
+                  Visible: =ThisItem.RowType = "Library"
+                  Width: =700
+                  X: =80
+                  Y: =48
+            - lblRowLibName:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(120, 120, 135, 1)
+                  Font: =Font.'Open Sans'
+                  Height: =24
+                  Size: =12
+                  Text: |-
+                    ="Library Name: "&ThisItem.Name
+                  Visible: =ThisItem.RowType = "Library"
+                  Width: =700
+                  X: =80
+                  Y: =28
+            - lblRowName:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(30, 30, 45, 1)
+                  Font: =Font.'Open Sans'
+                  FontWeight: =FontWeight.Semibold
+                  Height: =26
+                  Size: =14
+                  Text: =Substitute(ThisItem.EffectiveName, "_", " ")
+                  Visible: =ThisItem.RowType = "Library"
+                  Width: =700
+                  X: =80
+                  Y: =2
+            - lblRowSubTeam:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(120, 120, 135, 1)
+                  Font: =Font.'Open Sans'
+                  Height: =48
+                  Size: =12
+                  Text: |-
+                    ="Sub-Team: " & If(IsBlank(ThisItem.SubTeamName) || ThisItem.SubTeamName = "", "None", Substitute(ThisItem.SubTeamName, "_", " "))
+                  Visible: =ThisItem.RowType = "Library"
+                  Width: =260
+                  X: =897
+            - imgRowLimitedBadge:
+                Control: Image@2.2.3
+                Properties:
+                  Height: =24
+                  Image: |-
+                    =If(
+                        (ThisItem.IsLimited || ThisItem.NameSaysLtd) && ThisItem.PermsBroken,
+                        "data:image/svg+xml," & EncodeUrl("<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='20' height='20'><rect x='5' y='11' width='14' height='10' rx='2' fill='none' stroke='#9B2D19' stroke-width='2'/><path d='M8 11V7a4 4 0 0 1 8 0v4' fill='none' stroke='#9B2D19' stroke-width='2' stroke-linecap='round'/></svg>"),
+                        !(ThisItem.IsLimited || ThisItem.NameSaysLtd) && ThisItem.PermsBroken,
+                        "data:image/svg+xml," & EncodeUrl("<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='20' height='20'><path d='M4 20 L4 16 L15 5 L19 9 L8 20 Z' fill='none' stroke='#AB7A1E' stroke-width='2' stroke-linejoin='round'/><line x1='13' y1='7' x2='17' y2='11' stroke='#AB7A1E' stroke-width='2'/></svg>"),
+                        "data:image/svg+xml," & EncodeUrl("<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='20' height='20'><path d='M12 3 L22 20 L2 20 Z' fill='#FDECEA' stroke='#C0392B' stroke-width='2' stroke-linejoin='round'/><line x1='12' y1='9' x2='12' y2='14' stroke='#C0392B' stroke-width='2' stroke-linecap='round'/><circle cx='12' cy='17' r='1.2' fill='#C0392B'/></svg>")
+                    )
+                  ImagePosition: =ImagePosition.Center
+                  Visible: =ThisItem.RowType = "Library" && (ThisItem.IsLimited || ThisItem.NameSaysLtd || ThisItem.PermsBroken)
+                  Width: =24
+                  X: =56
+                  Y: =21
+            - btnOpenFromHeader_1:
+                Control: ModernButton@1.0.0
+                Properties:
+                  Align: =Align.Left
+                  BasePaletteColor: =RGBA(227, 106, 244, 1)
+                  Height: =36
+                  Icon: ="Open"
+                  OnSelect: =Launch(varTenantHost & ThisItem.LibraryUrl)
+                  Text: ="Open"
+                  Tooltip: ="Open in new tab"
+                  Visible: =ThisItem.RowType = "Library"
+                  Width: =100
+                  X: =1157
+                  Y: =18
+      - btnRequestLibraryStats:
+          Control: ModernButton@1.0.0
+          Properties:
+            DisplayMode: =If(varStatsStatusError || IsBlank(varStatsControl.Id) || varRequestStatsBusy || varExportReportBusy || varStatsControl.ScanState in ["Running", "Exporting"], DisplayMode.Disabled, DisplayMode.Edit)
+            Height: =36
+            OnSelect: |-
+              =Set(varShowStatsWarning, true)
+            Text: ="Rebuild library stats"
+            Visible: =varIsAdmin
+            Width: =200
+            X: =684
+            Y: =218
+      - btnExportLibraryReport:
+          Control: ModernButton@1.0.0
+          Properties:
+            DisplayMode: =If(varStatsStatusError || IsBlank(varStatsControl.Id) || varRequestStatsBusy || varExportReportBusy || varStatsControl.ScanState in ["Running", "Exporting"] || varStatsControl.ScanState <> "Succeeded" || IsBlank(varStatsControl.LastSuccessAt), DisplayMode.Disabled, DisplayMode.Edit)
+            Height: =36
+            OnSelect: |-
+              =Set(varExportReportBusy, true);
+              Set(varExportReportError, false);
+              IfError(
+                  Set(varLibraryReportResponse, 'FP-ExportLibraryReport(App)'.Run()),
+                  Set(varExportReportError, true)
+              );
+              Set(varExportReportBusy, false);
+              If(
+                  varExportReportError,
+                  Notify("Report request failed or timed out. Reload status and check Last report before trying again.", NotificationType.Error),
+                  If(
+                      varLibraryReportResponse.started && !IsBlank(varLibraryReportResponse.reporturl),
+                      Notify(varLibraryReportResponse.message, NotificationType.Success);
+                      Launch(varLibraryReportResponse.reporturl),
+                      Notify(varLibraryReportResponse.message, NotificationType.Warning)
+                  )
+              );
+              Set(varStatsStatusError, false);
+              IfError(
+                  Refresh(LibraryStatsControl);
+                  Set(varStatsControl, LookUp(LibraryStatsControl, Title = "LibraryStats")),
+                  Set(varStatsStatusError, true)
+              )
+            Text: ="Export CSV report"
+            Visible: =varIsAdmin
+            Width: =210
+            X: =900
+            Y: =218
+      - btnOpenLastLibraryReport:
+          Control: ModernButton@1.0.0
+          Properties:
+            DisplayMode: =If(varStatsStatusError || IsBlank(varStatsControl.ReportUrl), DisplayMode.Disabled, DisplayMode.Edit)
+            Height: =36
+            OnSelect: |-
+              =Launch(varStatsControl.ReportUrl)
+            Text: ="Last report"
+            Visible: =varIsAdmin
+            Width: =180
+            X: =1126
+            Y: =218
+      - lblSharedStatsStatus:
+          Control: Label@2.5.1
+          Properties:
+            Color: =If(varStatsStatusError || varStatsControl.ScanState = "Failed", RGBA(170, 40, 40, 1), RGBA(80, 80, 100, 1))
+            Font: =Font.'Open Sans'
+            Height: =40
+            Size: =11
+            Text: '=If(varStatsStatusError, "Stats status unavailable. Reload before starting or exporting.", IsBlank(varStatsControl.Id), "Set up LibraryStatsControl before starting or exporting.", "Stats: " & Coalesce(varStatsControl.ScanState, "Unknown") & " | Last completed: " & If(IsBlank(varStatsControl.LastSuccessAt), "not recorded", Text(varStatsControl.LastSuccessAt, "dd mmm yyyy HH:mm")) & If(varStatsControl.ScanState = "Succeeded", " | Reload saved stats for latest figures", ""))'
+            Visible: =varIsAdmin
+            Width: =430
+            X: =232
+            Y: =212
+      - tmrLibraryStatsStatus:
+          Control: Timer@2.1.0
+          Properties:
+            AutoStart: =true
+            Duration: =30000
+            OnTimerEnd: |-
+              =Set(varStatsStatusError, false);
+              IfError(
+                  Refresh(LibraryStatsControl);
+                  Set(varStatsControl, LookUp(LibraryStatsControl, Title = "LibraryStats")),
+                  Set(varStatsStatusError, true)
+              )
+            Repeat: =true
+            Start: =varIsAdmin
+            Visible: =false
+      - recOverlayBg_1:
+          Control: Classic/Button@2.2.0
+          Properties:
+            BorderThickness: =0
+            DisplayMode: =DisplayMode.View
+            Fill: =RGBA(0, 0, 0, 0.4)
+            Height: =768
+            HoverFill: =Self.Fill
+            PressedFill: =Self.Fill
+            Text: =""
+            Visible: =varConfirmOverrideVisible
+            Width: =1318
+      - recConfirmBox:
+          Control: Classic/Button@2.2.0
+          Properties:
+            BorderColor: =RGBA(210, 150, 150, 1)
+            BorderThickness: =1
+            DisplayMode: =DisplayMode.View
+            Fill: =RGBA(255, 255, 255, 1)
+            Height: =360
+            HoverFill: =Self.Fill
+            PressedFill: =Self.Fill
+            RadiusBottomLeft: =12
+            RadiusBottomRight: =12
+            RadiusTopLeft: =12
+            RadiusTopRight: =12
+            Text: =""
+            Visible: =varConfirmOverrideVisible
+            Width: =480
+            X: =419
+            Y: =270
+      - lblConfirmTitle:
+          Control: Label@2.5.1
+          Properties:
+            Color: =RGBA(140, 40, 40, 1)
+            Font: =Font.'Open Sans'
+            FontWeight: =FontWeight.Semibold
+            Height: =32
+            Size: =16
+            Text: =CountRows(colDeleteSkipped) & " librar" & If(CountRows(colDeleteSkipped) = 1, "y contains", "ies contain") & " files"
+            Visible: =varConfirmOverrideVisible
+            Width: =432
+            X: =443
+            Y: =294
+      - lblConfirmBody:
+          Control: Label@2.5.1
+          Properties:
+            Color: =RGBA(60, 60, 80, 1)
+            Font: =Font.'Open Sans'
+            Height: =180
+            Size: =12
+            Text: =Concat(colDeleteSkipped, Title & " (" & ItemCount & " item" & If(ItemCount = 1, "", "s") & ")", Char(10))
+            Visible: =varConfirmOverrideVisible
+            Width: =432
+            X: =443
+            Y: =334
+      - lblConfirmNote:
+          Control: Label@2.5.1
+          Properties:
+            Color: =RGBA(120, 120, 135, 1)
+            Font: =Font.'Open Sans'
+            Size: =11
+            Text: ="Everything else you selected has already been deleted. These were skipped because they aren't empty."
+            Visible: =varConfirmOverrideVisible
+            Width: =432
+            X: =443
+            Y: =522
+      - btnConfirmCancel:
+          Control: ModernButton@1.0.0
+          Properties:
+            Height: =40
+            OnSelect: |-
+              =Set(varConfirmOverrideVisible, false);
+              Set(varDeleteStatus, "Deleted " & varDeletedCount & " librar" & If(varDeletedCount = 1, "y", "ies") & ". " & CountRows(colDeleteSkipped) & " left alone (not empty).");
+              Notify(varDeleteStatus, NotificationType.Success);
+              ClearCollect(colFilePlan, LibraryFilePlan);
+              ClearCollect(colFilePlanFiltered, AddColumns(colFilePlan, TeamName, If(IsBlank(Team.Value) || Team.Value = "", "Uncategorised", Team.Value), SubTeamName, Coalesce(SubTeam.Value, ""), EffectiveName, If(IsBlank(PrettyName) || PrettyName = "", Title, PrettyName)));
+              ClearCollect(colTeamGroups, Sort(AddColumns(GroupBy(colFilePlanFiltered, TeamName, GroupedItems), ItemCount, CountRows(GroupedItems), TeamSortKey, If(TeamName = "Uncategorised", "zzz_" & TeamName, TeamName)), TeamSortKey, SortOrder.Ascending));
+              ClearCollect(colSubTeamGroups, AddColumns(GroupBy(Filter(colFilePlanFiltered, !IsBlank(SubTeamName) && SubTeamName <> ""), TeamName, SubTeamName, GroupedItems), ItemCount, CountRows(GroupedItems)));
+              Clear(colFlatSource);
+              Collect(colFlatSource, AddColumns(colTeamGroups, RowType, "Team", SortKey, TeamSortKey, SubSortKey, "", RankInGroup, 0));
+              Collect(colFlatSource, AddColumns(colSubTeamGroups, RowType, "SubTeam", SortKey, If(TeamName = "Uncategorised", "zzz_" & TeamName, TeamName), SubSortKey, SubTeamName, RankInGroup, 1));
+              Collect(colFlatSource, AddColumns(colFilePlanFiltered, RowType, "Library", SortKey, If(TeamName = "Uncategorised", "zzz_" & TeamName, TeamName), SubSortKey, If(IsBlank(SubTeamName) || SubTeamName = "", "zzz_none", SubTeamName), RankInGroup, If(IsBlank(SubTeamName) || SubTeamName = "", 1, 2)));
+              ClearCollect(
+                  colManageFiltered,
+                  AddColumns(
+                      Filter(
+                          colFilePlanFiltered,
+                          (IsBlank(Trim(txtSearch_2.Text)) || txtSearch_2.Text in EffectiveName) && (Coalesce(drpTeamFilter.Selected.TeamName, "All Teams") = "All Teams" || TeamName = drpTeamFilter.Selected.TeamName) && (Switch(Coalesce(drpMgmtFileCount.Selected.Value, "All file counts"), "0 files", !IsBlank(LibraryFileCount) && LibraryFileCount = 0, "5 or fewer files", !IsBlank(LibraryFileCount) && LibraryFileCount <= 5, "10 or fewer files", !IsBlank(LibraryFileCount) && LibraryFileCount <= 10, "Stats missing", IsBlank(LibraryFileCount) || IsBlank(LibraryCreated), true)) && (Switch(Coalesce(drpMgmtAge.Selected.Value, "Any library age"), "6+ months old", !IsBlank(LibraryCreated) && LibraryCreated <= DateAdd(Today(), -6, TimeUnit.Months), "1+ year old", !IsBlank(LibraryCreated) && LibraryCreated <= DateAdd(Today(), -12, TimeUnit.Months), true))
+                      ),
+                      NameSaysLtd, "_LTD" in Upper(LibraryUrl) || "(LTD)" in Upper(EffectiveName), PermsBroken, LibraryUrl in colPermissionIndex.LibraryUrl
+                  )
+              );
+              ClearCollect(colManageTeamGroups, Sort(AddColumns(GroupBy(colManageFiltered, TeamName, GroupedItems), ItemCount, CountRows(GroupedItems), TeamSortKey, If(TeamName = "Uncategorised", "zzz_" & TeamName, TeamName)), TeamSortKey, SortOrder.Ascending));
+              ClearCollect(colManageSubTeamGroups, AddColumns(GroupBy(Filter(colManageFiltered, !IsBlank(SubTeamName) && SubTeamName <> ""), TeamName, SubTeamName, GroupedItems), ItemCount, CountRows(GroupedItems)));
+              Clear(colManageFlatSource);
+              Collect(colManageFlatSource, AddColumns(colManageTeamGroups, RowType, "Team", SortKey, TeamSortKey, SubSortKey, "", RankInGroup, 0));
+              Collect(colManageFlatSource, AddColumns(colManageSubTeamGroups, RowType, "SubTeam", SortKey, If(TeamName = "Uncategorised", "zzz_" & TeamName, TeamName), SubSortKey, SubTeamName, RankInGroup, 1));
+              Collect(colManageFlatSource, AddColumns(colManageFiltered, RowType, "Library", SortKey, If(TeamName = "Uncategorised", "zzz_" & TeamName, TeamName), SubSortKey, If(IsBlank(SubTeamName) || SubTeamName = "", "zzz_none", SubTeamName), RankInGroup, If(IsBlank(SubTeamName) || SubTeamName = "", 1, 2)));
+              Clear(colSelectedLibraries)
+            Text: ="Leave Them"
+            Visible: =varConfirmOverrideVisible
+            Width: =190
+            X: =443
+            Y: =570
+      - btnClearSelection:
+          Control: ModernButton@1.0.0
+          Properties:
+            BasePaletteColor: =RGBA(168, 110, 235, 1)
+            Height: =36
+            OnSelect: =Clear(colSelectedLibraries)
+            Text: ="Clear Selection"
+            Visible: =varIsAdmin
+            Width: =150
+            X: =836
+            Y: =6
+      - btnSelectAll:
+          Control: ModernButton@1.0.0
+          Properties:
+            BasePaletteColor: =RGBA(168, 110, 235, 1)
+            Height: =36
+            OnSelect: |-
+              =Collect(
+                  colSelectedLibraries,
+                  ShowColumns(Filter(colManageFiltered, !(LibraryUrl in colSelectedLibraries.LibraryUrl)), LibraryUrl)
+              )
+            Text: ="Select All Visible"
+            Visible: =varIsAdmin
+            Width: =160
+            X: =668
+            Y: =6
+      - btnEditSelected:
+          Control: ModernButton@1.0.0
+          Properties:
+            DisplayMode: =If(CountRows(colSelectedLibraries) = 0, DisplayMode.Disabled, DisplayMode.Edit)
+            Height: =36
+            OnSelect: |-
+              =ClearCollect(
+                  colEditQueue,
+                  Filter(colFilePlanFiltered, LibraryUrl in colSelectedLibraries.LibraryUrl)
+              );
+              Navigate(scrEditLibraries, ScreenTransition.Cover)
+            Text: ="Edit Selected"
+            Visible: =varIsAdmin
+            Width: =150
+            X: =996
+            Y: =6
+      - btnDeleteSelected:
+          Control: ModernButton@1.0.0
+          Properties:
+            BasePaletteColor: =RGBA(190, 50, 50, 1)
+            DisplayMode: =If(CountRows(colSelectedLibraries) = 0 || varDeleteBusy, DisplayMode.Disabled, DisplayMode.Edit)
+            Height: =36
+            OnSelect: |-
+              =Set(varDeleteBusy, true);
+              Set(varDeleteStatus, "");
+              Set(
+                  varDeleteResp,
+                  'FP-DeleteLibraries(App)'.Run(
+                      "[" & Concat(colSelectedLibraries, """" & LibraryUrl & """", ",") & "]",
+                      "Delete",
+                      {Force: false}
+                  )
+              );
+              Set(varDeleteBusy, false);
+              ClearCollect(colDeleteSkipped, Filter(varDeleteResp.Results, Deleted = false));
+              Set(varDeletedCount, CountRows(Filter(varDeleteResp.Results, Deleted = true)));
+              If(
+                  CountRows(colDeleteSkipped) > 0,
+                  Set(varConfirmOverrideVisible, true);
+                  Notify(CountRows(colDeleteSkipped) & " librar" & If(CountRows(colDeleteSkipped) = 1, "y", "ies") & " skipped (not empty) — review below.", NotificationType.Warning),
+                  Set(varDeleteStatus, "Deleted " & varDeletedCount & " librar" & If(varDeletedCount = 1, "y", "ies") & ".");
+                  Notify(varDeleteStatus, NotificationType.Success);
+                  ClearCollect(colFilePlan, LibraryFilePlan);
+                  ClearCollect(colFilePlanFiltered, AddColumns(colFilePlan, TeamName, If(IsBlank(Team.Value) || Team.Value = "", "Uncategorised", Team.Value), SubTeamName, Coalesce(SubTeam.Value, ""), EffectiveName, If(IsBlank(PrettyName) || PrettyName = "", Title, PrettyName)));
+                  ClearCollect(colTeamGroups, Sort(AddColumns(GroupBy(colFilePlanFiltered, TeamName, GroupedItems), ItemCount, CountRows(GroupedItems), TeamSortKey, If(TeamName = "Uncategorised", "zzz_" & TeamName, TeamName)), TeamSortKey, SortOrder.Ascending));
+                  ClearCollect(colSubTeamGroups, AddColumns(GroupBy(Filter(colFilePlanFiltered, !IsBlank(SubTeamName) && SubTeamName <> ""), TeamName, SubTeamName, GroupedItems), ItemCount, CountRows(GroupedItems)));
+                  Clear(colFlatSource);
+                  Collect(colFlatSource, AddColumns(colTeamGroups, RowType, "Team", SortKey, TeamSortKey, SubSortKey, "", RankInGroup, 0));
+                  Collect(colFlatSource, AddColumns(colSubTeamGroups, RowType, "SubTeam", SortKey, If(TeamName = "Uncategorised", "zzz_" & TeamName, TeamName), SubSortKey, SubTeamName, RankInGroup, 1));
+                  Collect(colFlatSource, AddColumns(colFilePlanFiltered, RowType, "Library", SortKey, If(TeamName = "Uncategorised", "zzz_" & TeamName, TeamName), SubSortKey, If(IsBlank(SubTeamName) || SubTeamName = "", "zzz_none", SubTeamName), RankInGroup, If(IsBlank(SubTeamName) || SubTeamName = "", 1, 2)));
+                  ClearCollect(
+                      colManageFiltered,
+                      AddColumns(
+                          Filter(
+                              colFilePlanFiltered,
+                              (IsBlank(Trim(txtSearch_2.Text)) || txtSearch_2.Text in EffectiveName) && (Coalesce(drpTeamFilter.Selected.TeamName, "All Teams") = "All Teams" || TeamName = drpTeamFilter.Selected.TeamName) && (Switch(Coalesce(drpMgmtFileCount.Selected.Value, "All file counts"), "0 files", !IsBlank(LibraryFileCount) && LibraryFileCount = 0, "5 or fewer files", !IsBlank(LibraryFileCount) && LibraryFileCount <= 5, "10 or fewer files", !IsBlank(LibraryFileCount) && LibraryFileCount <= 10, "Stats missing", IsBlank(LibraryFileCount) || IsBlank(LibraryCreated), true)) && (Switch(Coalesce(drpMgmtAge.Selected.Value, "Any library age"), "6+ months old", !IsBlank(LibraryCreated) && LibraryCreated <= DateAdd(Today(), -6, TimeUnit.Months), "1+ year old", !IsBlank(LibraryCreated) && LibraryCreated <= DateAdd(Today(), -12, TimeUnit.Months), true))
+                          ),
+                          NameSaysLtd, "_LTD" in Upper(LibraryUrl) || "(LTD)" in Upper(EffectiveName), PermsBroken, LibraryUrl in colPermissionIndex.LibraryUrl
+                      )
+                  );
+                  ClearCollect(colManageTeamGroups, Sort(AddColumns(GroupBy(colManageFiltered, TeamName, GroupedItems), ItemCount, CountRows(GroupedItems), TeamSortKey, If(TeamName = "Uncategorised", "zzz_" & TeamName, TeamName)), TeamSortKey, SortOrder.Ascending));
+                  ClearCollect(colManageSubTeamGroups, AddColumns(GroupBy(Filter(colManageFiltered, !IsBlank(SubTeamName) && SubTeamName <> ""), TeamName, SubTeamName, GroupedItems), ItemCount, CountRows(GroupedItems)));
+                  Clear(colManageFlatSource);
+                  Collect(colManageFlatSource, AddColumns(colManageTeamGroups, RowType, "Team", SortKey, TeamSortKey, SubSortKey, "", RankInGroup, 0));
+                  Collect(colManageFlatSource, AddColumns(colManageSubTeamGroups, RowType, "SubTeam", SortKey, If(TeamName = "Uncategorised", "zzz_" & TeamName, TeamName), SubSortKey, SubTeamName, RankInGroup, 1));
+                  Collect(colManageFlatSource, AddColumns(colManageFiltered, RowType, "Library", SortKey, If(TeamName = "Uncategorised", "zzz_" & TeamName, TeamName), SubSortKey, If(IsBlank(SubTeamName) || SubTeamName = "", "zzz_none", SubTeamName), RankInGroup, If(IsBlank(SubTeamName) || SubTeamName = "", 1, 2)));
+                  Clear(colSelectedLibraries)
+              )
+            Text: ="Delete Selected"
+            Visible: =varIsAdmin
+            Width: =150
+            X: =1157
+            Y: =6
+      - btnConfirmDeleteAnyway:
+          Control: ModernButton@1.0.0
+          Properties:
+            BasePaletteColor: =RGBA(190, 50, 50, 1)
+            Height: =40
+            OnSelect: |-
+              =Set(varDeleteBusy, true);
+              Set(
+                  varDeleteResp2,
+                  'FP-DeleteLibraries(App)'.Run(
+                      "[" & Concat(colDeleteSkipped, """" & LibraryUrl & """", ",") & "]",
+                      "Delete",
+                      {Force: true}
+                  )
+              );
+              Set(varDeleteBusy, false);
+              Set(varConfirmOverrideVisible, false);
+              Set(varDeleteStatus, "Deleted " & (varDeletedCount + CountRows(colDeleteSkipped)) & " libraries.");
+              Notify(varDeleteStatus, NotificationType.Success);
+              ClearCollect(colFilePlan, LibraryFilePlan);
+              ClearCollect(colFilePlanFiltered, AddColumns(colFilePlan, TeamName, If(IsBlank(Team.Value) || Team.Value = "", "Uncategorised", Team.Value), SubTeamName, Coalesce(SubTeam.Value, ""), EffectiveName, If(IsBlank(PrettyName) || PrettyName = "", Title, PrettyName)));
+              ClearCollect(colTeamGroups, Sort(AddColumns(GroupBy(colFilePlanFiltered, TeamName, GroupedItems), ItemCount, CountRows(GroupedItems), TeamSortKey, If(TeamName = "Uncategorised", "zzz_" & TeamName, TeamName)), TeamSortKey, SortOrder.Ascending));
+              ClearCollect(colSubTeamGroups, AddColumns(GroupBy(Filter(colFilePlanFiltered, !IsBlank(SubTeamName) && SubTeamName <> ""), TeamName, SubTeamName, GroupedItems), ItemCount, CountRows(GroupedItems)));
+              Clear(colFlatSource);
+              Collect(colFlatSource, AddColumns(colTeamGroups, RowType, "Team", SortKey, TeamSortKey, SubSortKey, "", RankInGroup, 0));
+              Collect(colFlatSource, AddColumns(colSubTeamGroups, RowType, "SubTeam", SortKey, If(TeamName = "Uncategorised", "zzz_" & TeamName, TeamName), SubSortKey, SubTeamName, RankInGroup, 1));
+              Collect(colFlatSource, AddColumns(colFilePlanFiltered, RowType, "Library", SortKey, If(TeamName = "Uncategorised", "zzz_" & TeamName, TeamName), SubSortKey, If(IsBlank(SubTeamName) || SubTeamName = "", "zzz_none", SubTeamName), RankInGroup, If(IsBlank(SubTeamName) || SubTeamName = "", 1, 2)));
+              ClearCollect(
+                  colManageFiltered,
+                  AddColumns(
+                      Filter(
+                          colFilePlanFiltered,
+                          (IsBlank(Trim(txtSearch_2.Text)) || txtSearch_2.Text in EffectiveName) && (Coalesce(drpTeamFilter.Selected.TeamName, "All Teams") = "All Teams" || TeamName = drpTeamFilter.Selected.TeamName) && (Switch(Coalesce(drpMgmtFileCount.Selected.Value, "All file counts"), "0 files", !IsBlank(LibraryFileCount) && LibraryFileCount = 0, "5 or fewer files", !IsBlank(LibraryFileCount) && LibraryFileCount <= 5, "10 or fewer files", !IsBlank(LibraryFileCount) && LibraryFileCount <= 10, "Stats missing", IsBlank(LibraryFileCount) || IsBlank(LibraryCreated), true)) && (Switch(Coalesce(drpMgmtAge.Selected.Value, "Any library age"), "6+ months old", !IsBlank(LibraryCreated) && LibraryCreated <= DateAdd(Today(), -6, TimeUnit.Months), "1+ year old", !IsBlank(LibraryCreated) && LibraryCreated <= DateAdd(Today(), -12, TimeUnit.Months), true))
+                      ),
+                      NameSaysLtd, "_LTD" in Upper(LibraryUrl) || "(LTD)" in Upper(EffectiveName), PermsBroken, LibraryUrl in colPermissionIndex.LibraryUrl
+                  )
+              );
+              ClearCollect(colManageTeamGroups, Sort(AddColumns(GroupBy(colManageFiltered, TeamName, GroupedItems), ItemCount, CountRows(GroupedItems), TeamSortKey, If(TeamName = "Uncategorised", "zzz_" & TeamName, TeamName)), TeamSortKey, SortOrder.Ascending));
+              ClearCollect(colManageSubTeamGroups, AddColumns(GroupBy(Filter(colManageFiltered, !IsBlank(SubTeamName) && SubTeamName <> ""), TeamName, SubTeamName, GroupedItems), ItemCount, CountRows(GroupedItems)));
+              Clear(colManageFlatSource);
+              Collect(colManageFlatSource, AddColumns(colManageTeamGroups, RowType, "Team", SortKey, TeamSortKey, SubSortKey, "", RankInGroup, 0));
+              Collect(colManageFlatSource, AddColumns(colManageSubTeamGroups, RowType, "SubTeam", SortKey, If(TeamName = "Uncategorised", "zzz_" & TeamName, TeamName), SubSortKey, SubTeamName, RankInGroup, 1));
+              Collect(colManageFlatSource, AddColumns(colManageFiltered, RowType, "Library", SortKey, If(TeamName = "Uncategorised", "zzz_" & TeamName, TeamName), SubSortKey, If(IsBlank(SubTeamName) || SubTeamName = "", "zzz_none", SubTeamName), RankInGroup, If(IsBlank(SubTeamName) || SubTeamName = "", 1, 2)));
+              Clear(colSelectedLibraries);
+              Clear(colDeleteSkipped)
+            Text: ="Delete Anyway"
+            Visible: =varConfirmOverrideVisible
+            Width: =190
+            X: =685
+            Y: =570
+      - recStatsWarningShade:
+          Control: Classic/Button@2.2.0
+          Properties:
+            BorderThickness: =0
+            DisplayMode: =DisplayMode.View
+            Fill: =RGBA(0, 0, 0, 0.4)
+            Height: =Parent.Height
+            Text: =""
+            Visible: =varIsAdmin && varShowStatsWarning
+            Width: =Parent.Width
+      - recStatsWarningPanel:
+          Control: Classic/Button@2.2.0
+          Properties:
+            BorderThickness: =0
+            DisplayMode: =DisplayMode.View
+            Fill: =RGBA(255, 255, 255, 1)
+            Height: =260
+            Text: =""
+            Visible: =varIsAdmin && varShowStatsWarning
+            Width: =620
+            X: =(Parent.Width - Self.Width) / 2
+            Y: =(Parent.Height - Self.Height) / 2
+      - lblStatsWarningTitle:
+          Control: Label@2.5.1
+          Properties:
+            Font: =Font.'Open Sans'
+            FontWeight: =FontWeight.Semibold
+            Height: =36
+            Size: =20
+            Text: ="Rebuild library stats?"
+            Visible: =varIsAdmin && varShowStatsWarning
+            Width: =556
+            X: =(Parent.Width - 620) / 2 + 32
+            Y: =(Parent.Height - 260) / 2 + 20
+      - lblStatsWarningText:
+          Control: Label@2.5.1
+          Properties:
+            Font: =Font.'Open Sans'
+            Height: =130
+            Size: =13
+            Text: ="This scans the main site and CCF and normally takes 15 minutes or longer. You can continue using the app. Spreadsheet exports are blocked until the scan finishes successfully. Counts update gradually; click Reload saved stats after completion."
+            Visible: =varIsAdmin && varShowStatsWarning
+            Width: =556
+            X: =(Parent.Width - 620) / 2 + 32
+            Y: =(Parent.Height - 260) / 2 + 60
+      - btnCancelStatsScan:
+          Control: ModernButton@1.0.0
+          Properties:
+            Height: =36
+            OnSelect: =Set(varShowStatsWarning, false)
+            Text: ="Cancel"
+            Visible: =varIsAdmin && varShowStatsWarning
+            Width: =130
+            X: =(Parent.Width - 620) / 2 + 310
+            Y: =(Parent.Height - 260) / 2 + 204
+      - btnConfirmStatsScan:
+          Control: ModernButton@1.0.0
+          Properties:
+            DisplayMode: =If(varRequestStatsBusy, DisplayMode.Disabled, DisplayMode.Edit)
+            Height: =36
+            OnSelect: |-
+              =Set(varShowStatsWarning, false);
+              Set(varRequestStatsBusy, true);
+              Set(varRequestStatsError, false);
+              IfError(
+                  Set(varStatsStartResponse, RebuildLibraryStats.Run()),
+                  Set(varRequestStatsError, true)
+              );
+              Set(varRequestStatsBusy, false);
+              If(
+                  varRequestStatsError,
+                  Notify("Could not confirm whether the scan started. Reload status and check flow history before trying again.", NotificationType.Error),
+                  Notify(varStatsStartResponse.message, If(varStatsStartResponse.started, NotificationType.Information, NotificationType.Warning))
+              );
+              Set(varStatsStatusError, false);
+              IfError(
+                  Refresh(LibraryStatsControl);
+                  Set(varStatsControl, LookUp(LibraryStatsControl, Title = "LibraryStats")),
+                  Set(varStatsStatusError, true)
+              )
+            Text: ="Start scan"
+            Visible: =varIsAdmin && varShowStatsWarning
+            Width: =130
+            X: =(Parent.Width - 620) / 2 + 458
+            Y: =(Parent.Height - 260) / 2 + 204
