@@ -111,7 +111,15 @@
       main { padding: 18px; }
       table { display: block; overflow-x: auto; }
     }
-  </style>
+      .update-pill {
+      display: inline-flex; align-items: center; gap: 4px;
+      margin-left: 8px; padding: 2px 8px; border-radius: 999px;
+      background: var(--callout-ok-bg); color: var(--green);
+      font-size: .72rem; font-weight: 800; white-space: nowrap;
+    }
+    .update-pill::before { content: "●"; font-size: .6rem; }
+.code-stamp { display: inline-block; color: var(--muted); font-size: .8rem; padding: 8px 12px; }
+</style>
 </head>
 <body>
   <button id="theme-toggle" type="button" aria-label="Toggle dark mode" title="Toggle dark mode">&#127769;</button>
@@ -129,11 +137,11 @@
   <div class="shell">
     <aside>
       <h2>Library &amp; File Plan Manager</h2>
-      <p>v5.6 build guide. Existing users: start with scan controls and CSV reporting.</p>
+      <p>v5.7 build guide. Start with the single-button CSV download test.</p>
       <nav>
         <a href="https://powerapps.pages.dev/">&larr; Guide library</a>
         <a href="yaml.html" style="font-weight:800;">📋 Screen YAML Vault</a>
-        <a href="#report-controls" style="font-weight:800;color:var(--green);">Scan button and CSV reports</a>
+        <a href="#report-controls" style="font-weight:800;color:var(--green);">Single-button CSV test</a>
         <a href="#housekeeping-restore">Original housekeeping setup</a>
         <a href="#action-items" style="font-weight:800;color:var(--green);">▶ Everything Left To Do</a>
         <a href="#lists">1. SharePoint Lists</a>
@@ -155,7 +163,7 @@
 
     <main>
       <div class="topline">
-        <span class="pill">v5.6</span>
+        <span class="pill">v5.7</span>
         <span class="pill">Updated 21 Oct 2026</span>
         <span class="pill">5 screens live</span>
         <span class="pill warn">1 designed, never built</span>
@@ -165,41 +173,22 @@
       <p class="lead">SharePoint permissions map (file-plan style, grouped by team) + an admin screen that creates document libraries correctly and registers them automatically, so nothing gets forgotten again.</p>
 
       <section id="report-controls">
-        <h2>Manage Libraries v3.0: scan button and CSV report</h2>
-        <p><strong>Current update, 21 October:</strong> adds <strong>Rebuild library stats</strong> with a 15-minute-or-longer confirmation, shared Running / Succeeded / Failed status, <strong>Export CSV report</strong>, and a link to the last report. Based on your confirmed-pasted v2.9 screen; its existing filters, row highlighting, selection, delete/edit actions and Limited badges are retained.</p>
-        <div class="callout ok"><strong>CSV uses only your existing SharePoint connection.</strong> No Excel connector, Office Scripts, workbook template, premium HTTP connector or external processing service is required. CSV opens in Excel but does not store colours, frozen panes or formatted Excel tables.</div>
-        <p>The export contains <strong>all tracked libraries</strong>, regardless of the app's filters or collapsed groups: Library, Team, Sub-Team, LTD, Created, Files, Empty, Review, Library link and Successful scan (UTC). Missing counts remain <strong>Not checked</strong>. Review means <strong>zero files and created at least six calendar months ago</strong>. LTD means flagged or named LTD, not a fresh audit of actual permissions. File counts come from the last completed scan, not from a new scan during export.</p>
-        <h3>1. Create the shared status list</h3>
-        <p>On the <strong>main site</strong>, create a blank SharePoint list named exactly <code>LibraryStatsControl</code>. Keep its built-in Title column. Create these columns with the exact names shown; do not import the schema from Excel.</p>
-        <table><thead><tr><th>Column</th><th>Type</th><th>Setting</th></tr></thead><tbody>
-          <tr><td>ScanState</td><td>Single line of text</td><td>Default: Idle</td></tr>
-          <tr><td>StartedAt</td><td>Date and Time</td><td>Include time; optional, no default</td></tr>
-          <tr><td>LastSuccessAt</td><td>Date and Time</td><td>Include time; optional, no default</td></tr>
-          <tr><td>ScanMessage</td><td>Single line of text</td><td>Optional</td></tr>
-          <tr><td>ReportUrl</td><td>Single line of text</td><td>Optional; do not use Hyperlink type</td></tr>
-        </tbody></table>
-        <p>Add <strong>one row only</strong>: Title = <code>LibraryStats</code>, ScanState = <code>Idle</code>. Leave the other values blank. The flows find the row by Title; its numeric ID does not matter.</p>
-        <h3>2. Create the report library</h3>
-        <p>On the main site, create a document library named exactly <code>LibraryReports</code> so its URL ends <code>/teams/1598/LibraryReports</code>. No special columns or template files are needed. Restrict this library and the status list to the existing authorised app admins: reports include Limited-library metadata and must not inherit broader access accidentally. Keep flow run-only access restricted to those authorised users too. The app's hidden admin buttons are not a substitute for SharePoint/flow permissions.</p>
-        <h3>3. Update the existing stats flow</h3>
-        <p><a href="downloads/RebuildLibraryStats_Status_flow_import.zip"><strong>Download RebuildLibraryStats_Status_flow_import.zip</strong></a>. Power Automate &rarr; My flows &rarr; Import &rarr; Import Package (Legacy). Choose <strong>Update</strong> the existing <strong>FP - Rebuild Library Stats</strong>, select your existing SharePoint connection and import. This replaces the previous version; do not create a second stats flow. It retains the real exported resource ID and the already-working file-count logic, and adds locking, an early app response and completion/failure recording. Do not re-import the older FileCounts package after this update.</p>
-        <h3>4. Import the new CSV export flow</h3>
-        <p><a href="downloads/ExportLibraryReport_CSV_flow_import.zip"><strong>Download ExportLibraryReport_CSV_flow_import.zip</strong></a>. Import Package (Legacy), this time choose <strong>Create as new</strong>, using your existing SharePoint connection. Keep the exact flow name <code>FP-ExportLibraryReport(App)</code>. This is a genuinely new flow; it does not replace the stats flow. It is fully populated and has no Excel/script placeholder actions to configure.</p>
-        <h3>5. Add the connections and paste the complete screen</h3>
+        <h2>Test a direct CSV download with one button</h2>
+        <p><strong>Keep your working Manage Libraries v2.9 screen.</strong> The previous v3.0 status-list, report-library and export-flow setup has been withdrawn. Do not follow it or paste v3.0 for this test.</p>
         <ol>
-          <li>In Studio, add <strong>LibraryStatsControl</strong> as a SharePoint data source on the main site. Keep LibraryFilePlan and PermissionIndex.</li>
-          <li>In Studio's Power Automate panel, refresh/re-add the updated stats flow and add <strong>FP-ExportLibraryReport(App)</strong>. The YAML uses the stats data-source identifier <code>RebuildLibraryStats</code>, already confirmed for this app. Refreshing its connection is necessary so Studio sees the new <code>started</code>, <code>message</code> and <code>reporturl</code> response fields. If Studio gives a different identifier, report it rather than guessing a rename.</li>
-          <li><a href="screens/scrManageLibraries.html?v=3.0"><strong>Open the v3.0 full-screen copy page</strong></a>. Copy, delete the current <code>scrManageLibraries</code>, and paste the whole copied YAML. Studio recreates and names it. No App.OnStart change is needed.</li>
+          <li>Open <strong>scrManageLibraries</strong> in Power Apps Studio.</li>
+          <li>Insert a button and set its Text to <strong>Test CSV download</strong>.</li>
+          <li>Select its <strong>OnSelect</strong> property and paste the formula below.</li>
+          <li>Enter <strong>Play</strong> mode and click the button. Check whether your browser downloads a CSV containing the headings Library,Files and one row Export test,0.</li>
+          <li>Tell me whether it downloads, does nothing, opens a tab, or displays an error. Include the exact error text if there is one.</li>
         </ol>
-        <h3>6. First scan and report</h3>
-        <ol>
-          <li>Open Manage Libraries in app Play mode. Click <strong>Rebuild library stats</strong>, read the 15-minute-or-longer warning and confirm. The app gets a short start response; it does not wait for the whole scan.</li>
-          <li>Status refreshes every 30 seconds while this screen is active. You can leave and return. Exports are disabled during Running or Exporting. The server also enforces the lock, including simultaneous requests from different admins.</li>
-          <li>Wait for <strong>Succeeded</strong> and a recorded completion time. Your previous successful scan was before shared status tracking existed, so one new scan is required to initialise this status properly. Click <strong>Reload saved stats</strong> to refresh the gallery.</li>
-          <li>Click <strong>Export CSV report</strong>. It creates a uniquely named UTF-8 CSV in LibraryReports and opens its link. <strong>Last report</strong> opens the previous generated report without rerunning anything. In Excel, filter Empty to Yes, or Review to <strong>Empty, 6+ months old</strong>. To add Excel formatting, save a copy as .xlsx after opening.</li>
-        </ol>
-        <div class="callout warn"><strong>If a run fails or is cancelled:</strong> inspect its run history. Failed scans block exports because some counts may be partially updated. Cancellation can leave shared status at Running or Exporting; after confirming the run has actually stopped, set that row's ScanState to <strong>Failed</strong>, then start a fresh scan. Never clear a lock while a run is still active. If the app request times out, reload status and inspect Last report before retrying.</div>
-        <p><strong>Verification:</strong> screen YAML passes the real Microsoft parser, property corpus check, layout check and formula-structure check. Packages pass structural, expression/reference, locking and CSV-only contract checks. Import, runtime connector behaviour, actual CSV output and Studio appearance still require your tenant test. The screen and flows are deployed drafts, not confirmed applied.</p>
+        <div class="code-card">
+          <div class="code-toolbar"><span>Test button &middot; OnSelect</span><button onclick="copyCode(this)">Copy formula</button></div>
+          <span class="code-stamp" data-updated="2026-10-21T08:57:09Z">v1 &middot; 21 Oct 2026 09:57 BST</span>
+          <pre>Download(&quot;data:text/csv;charset=utf-8,&quot; &amp; EncodeUrl(&quot;Library,Files&quot; &amp; Char(13) &amp; Char(10) &amp; &quot;Export test,0&quot;))</pre>
+        </div>
+        <div class="callout warn"><strong>Unverified browser test.</strong> The real Microsoft YAML parser accepts the test control, but that does not verify downloading an inline CSV. Microsoft's Download documentation describes downloading a web resource; this data-URI behaviour still needs your browser test. This uses harmless sample data, not your real library records. No list, library, flow or data-source change is required.</div>
+        <p>If the test downloads successfully, the next change is to replace the sample with the library collection already loaded in Manage Libraries. This test is not yet the full library export.</p>
       </section>
 
       <section id="housekeeping-restore">
@@ -681,7 +670,7 @@ ItemCount: item()?['ItemCount']</pre>
               <span class="ver">v3.16 &mdash; 01 Oct 2026 &mdash; draft, not yet pasted (v3.15 is already live; this is a follow-up fix)</span></div>
             <div class="open">Copy YAML &rarr;</div>
           </a>
-          <a class="link-card" href="screens/scrManageLibraries.html?v=3.0">
+          <a class="link-card" href="screens/scrManageLibraries-v2.9.html?v=2.9">
             <div><span class="pill">Screen 4</span><strong style="margin-top:8px;display:block">scrManageLibraries</strong>
               <p>Restricted to admins. Tick libraries, bulk-delete them (empty ones go straight away, non-empty ones get an override prompt) or send the selection to the edit cart. Team &rarr; Sub-Team &rarr; Library accordion, Team filter dropdown, "Sub-Team: None" shown explicitly. Every library row shows its creation date and current file count, empty libraries flagged in red, plus a Refresh Library Stats button. Delete Selected/Leave Them/Delete Anyway show a proper <code>Notify()</code> banner on success (v2.7). v2.8: the Limited badge is now three honest states &mdash; red padlock (genuinely Limited), amber pencil (permissions customised, not marked Limited), red triangle (flagged/named Limited but permissions are still fully inherited &mdash; a real inconsistency worth checking).</p>
               <span class="ver">v2.8 &mdash; confirmed pasted and live, per Allan 01 Oct 2026</span></div>
@@ -1239,5 +1228,32 @@ async function copyCode(btn) {
   }
 }
 </script>
+  <script>
+    (function () {
+      var RECENT_WINDOW_MS = 48 * 60 * 60 * 1000; // 48 hours - past this, no pill, just the plain stamp
+      var now = Date.now();
+
+      function formatAge(ms) {
+        var mins = Math.round(ms / 60000);
+        if (mins < 1) return 'just now';
+        if (mins < 60) return mins + 'm ago';
+        var hours = Math.round(mins / 60);
+        if (hours < 24) return hours + 'h ago';
+        return Math.round(hours / 24) + 'd ago';
+      }
+
+      document.querySelectorAll('.code-stamp[data-updated]').forEach(function (stamp) {
+        var updated = new Date(stamp.getAttribute('data-updated')).getTime();
+        if (isNaN(updated)) return;
+        var age = now - updated;
+        if (age >= 0 && age < RECENT_WINDOW_MS) {
+          var pill = document.createElement('span');
+          pill.className = 'update-pill';
+          pill.textContent = 'Updated ' + formatAge(age);
+          stamp.after(pill);
+        }
+      });
+    })();
+  </script>
 </body>
 </html>
