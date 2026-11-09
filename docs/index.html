@@ -137,7 +137,7 @@
   <div class="shell">
     <aside>
       <h2>Library &amp; File Plan Manager</h2>
-      <p>v5.9 build guide. Rename-a-library-URL test added.</p>
+      <p>v5.10 build guide. Rename-a-library-URL test added.</p>
       <nav>
         <a href="https://powerapps.pages.dev/">&larr; Guide library</a>
         <a href="yaml.html" style="font-weight:800;">📋 Screen YAML Vault</a>
@@ -164,7 +164,7 @@
 
     <main>
       <div class="topline">
-        <span class="pill">v5.9</span>
+        <span class="pill">v5.10</span>
         <span class="pill">Updated 21 Oct 2026</span>
         <span class="pill">5 screens live</span>
         <span class="pill warn">1 designed, never built</span>
@@ -202,13 +202,14 @@
         <div class="callout warn"><strong>Not proven yet.</strong> Renaming a library's root folder is the method community sources report working (through PowerShell). I found no documented example of doing it through the SharePoint folder-move call a flow uses, so the first run on a throwaway library is the real test. If SharePoint refuses it, the flow stops with an error before changing anything in the app, and I need the exact error text.</div>
         <h3>Try it on a throwaway library</h3>
         <ol>
-          <li>In the app, create a throwaway library (for example <code>14_test_oldname</code>) so it is tracked in the file plan.</li>
+          <li>Create a throwaway library directly in SharePoint (for example <code>14_test_oldname</code>), <strong>not</strong> through the app, so it never appears in the file plan. <strong>This version of the flow only renames libraries that are tracked in the file plan</strong>, so for an untracked test library you must first make the two quick edits in the box below. Without them the run still shows a green tick, because the flow answers &ldquo;Success: false, not tracked&rdquo; politely instead of failing. Open the last step of the run to see the message.</li>
           <li>Download <a href="downloads/RenameLibraryUrl_flow_import.zip"><strong>RenameLibraryUrl_flow_import.zip</strong></a>. Power Automate &rarr; My flows &rarr; Import &rarr; <strong>Import Package (Legacy)</strong>, leave it on <strong>Create as new</strong>, choose your SharePoint connection, import. Make sure the new flow is <strong>turned on</strong>.</li>
           <li>Open the flow &rarr; <strong>Test</strong> &rarr; <strong>Manually</strong> &rarr; <strong>Test</strong>. Fill in <strong>Current library URL</strong> as <code>/teams/1598/14_test_oldname</code> and <strong>New URL name</strong> as <code>14_test_newname</code>. Leave the third box empty and run it. The run should succeed and its last step should say it was a dry run, showing the new URL it would use.</li>
           <li>Run it again with the third box set to exactly <code>RENAME</code>. This is the real rename.</li>
           <li>Check: the library opens at the new address, the old address no longer works, and after <strong>Reload saved stats</strong> on Manage Libraries (or reopening the app) the library shows the new URL. Then press <strong>Refresh Index</strong> on Group Search so permission rows pick up the new address.</li>
           <li>Tell me what happened, including the exact error text if any step failed.</li>
         </ol>
+        <div class="callout danger"><strong>Testing on an untracked library: two quick edits, no re-import.</strong> Power Automate &rarr; <strong>FP-RenameLibraryUrl(App)</strong> &rarr; <strong>Edit</strong>. (1) Click the <strong>If_Allowed</strong> condition and delete its <strong>middle row</strong> (the one that says <code>length(...Get_Tracked_Row...)</code> is greater than 0); leave the other two rows. (2) Open <strong>If_Confirmed</strong> &rarr; Yes branch and delete the <strong>Update_Tracked_Row</strong> step (there is no tracked row to update); check <strong>Response_Renamed</strong> still sits after <strong>Rename_Library_Folder</strong>. Save, then Test &rarr; Manually with Confirm set to <code>RENAME</code>. The renamed library stays invisible to the app. Once the rename is proven, import the final version of the flow, which will handle both tracked and untracked libraries.</div>
         <div class="callout ok"><strong>What the flow refuses to do:</strong> rename anything not tracked in LibraryFilePlan, use a name with spaces, slashes or other unsafe characters, use a reserved name (such as Forms or Lists), or rename a library to its own current name. It only changes the last part of the address, never which site the library lives on.</div>
         <div class="callout danger"><strong>What a real rename breaks, so plan for it:</strong> bookmarks and links that use the old address stop working, anyone syncing the library to their computer will need to set the sync up again, pages with a web part pointing at the library and other flows that use the old address need updating, and permission rows in the app stay stale until Refresh Index is run.</div>
         <h3>Why there is no on-screen flag yet</h3>
