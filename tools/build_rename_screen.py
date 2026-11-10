@@ -49,9 +49,10 @@ on_visible = ("      OnVisible: |-\n" + indent(
 text = text[:a] + on_visible + text[b:]
 
 # ---- 2) suggestion expression (keeps the file-plan number code, tidies the words)
-def suggestion(rec):
+def suggestion(rec, name=None):
+    name = name or (rec + '.EffectiveName')
     return (
-        'With({_seg: Substitute(Last(Split(' + rec + '.LibraryUrl, "/")).Value, "%20", " "), _nm: Trim(' + rec + '.EffectiveName)}, '
+        'With({_seg: Substitute(Last(Split(' + rec + '.LibraryUrl, "/")).Value, "%20", " "), _nm: Trim(' + name + ')}, '
         'With({_code: Coalesce(Match(_seg, "^[0-9]([0-9_\\-]*[0-9])?").FullMatch, ""), '
         '_words: Mid(_nm, Len(Coalesce(Match(_nm, "^[0-9]([0-9_\\-\\. ]*[0-9])?[ _\\-\\.]*").FullMatch, "")) + 1)}, '
         'With({_slug: Concat(MatchAll(Substitute(Substitute(Trim(_words), "&", "and"), " ", "_"), "[A-Za-z0-9_\\-]"), FullMatch)}, '
@@ -138,7 +139,7 @@ dialog += """      - recRenameOverlay:
             BorderThickness: =1
             DisplayMode: =DisplayMode.View
             Fill: =RGBA(255, 255, 255, 1)
-            Height: =520
+            Height: =580
             HoverFill: =Self.Fill
             PressedFill: =Self.Fill
             RadiusBottomLeft: =12
@@ -149,15 +150,16 @@ dialog += """      - recRenameOverlay:
             Visible: =varRenameVisible
             Width: =680
             X: =319
-            Y: =120
+            Y: =100
 """
 T = {"Font": "=Font.'Open Sans'", "Width": "=632", "X": "=343"}
-dialog += label("lblRenameTitle", {**T, "Color": "=RGBA(30, 30, 45, 1)", "FontWeight": "=FontWeight.Semibold", "Height": "=32", "Size": "=18", "Text": '="Change web address"', "Y": "=136"})
-dialog += block_text("lblRenameLib", '"Library: " & varRenameTarget.EffectiveName', {**T, "Color": "=RGBA(30, 30, 45, 1)", "FontWeight": "=FontWeight.Semibold", "Height": "=24", "Size": "=13", "Y": "=176"}).rstrip('\n') + "\n            Visible: =varRenameVisible\n"
-dialog += block_text("lblRenameCurrent", '"Current address: " & ' + HOST + ' & varRenameTarget.LibraryUrl', {**T, "Color": GREY, "Height": "=40", "Size": "=12", "Y": "=204"}).rstrip('\n') + "\n            Visible: =varRenameVisible\n"
-dialog += label("lblRenameNewLbl", {**T, "Color": "=RGBA(30, 30, 45, 1)", "FontWeight": "=FontWeight.Semibold", "Height": "=24", "Size": "=13", "Text": '="New last part of the address"', "Y": "=252"})
+dialog += label("lblRenameTitle", {**T, "Color": "=RGBA(30, 30, 45, 1)", "FontWeight": "=FontWeight.Semibold", "Height": "=32", "Size": "=18", "Text": '="Change web address"', "Y": "=116"})
+dialog += block_text("lblRenameLib", '"Name in the file plan:  " & varRenameTarget.EffectiveName', {**T, "Color": "=RGBA(30, 30, 45, 1)", "FontWeight": "=FontWeight.Semibold", "Height": "=24", "Size": "=13", "Y": "=156"}).rstrip('\n') + "\n            Visible: =varRenameVisible\n"
+dialog += block_text("lblRenameLibName", '"Library name in SharePoint:  " & If(IsBlank(varRenameTarget.Name), "(not recorded)", varRenameTarget.Name)', {**T, "Color": "=RGBA(30, 30, 45, 1)", "FontWeight": "=FontWeight.Semibold", "Height": "=24", "Size": "=13", "Y": "=180"}).rstrip('\n') + "\n            Visible: =varRenameVisible\n"
+dialog += block_text("lblRenameCurrent", '"Current address: " & ' + HOST + ' & varRenameTarget.LibraryUrl', {**T, "Color": GREY, "Height": "=40", "Size": "=12", "Y": "=206"}).rstrip('\n') + "\n            Visible: =varRenameVisible\n"
+dialog += label("lblRenameNewLbl", {**T, "Color": "=RGBA(30, 30, 45, 1)", "FontWeight": "=FontWeight.Semibold", "Height": "=24", "Size": "=13", "Text": '="New last part of the address"', "Y": "=254"})
 dialog += label("lblRenameHelp", {**T, "Color": GREY, "Height": "=52", "Size": "=12",
-                                   "Text": '="Only the last part of the address changes. Use letters, numbers, hyphens and underscores, with no spaces. The suggestion keeps the file plan number code at the front and tidies the name after it. Edit it if you like."', "Y": "=276"})
+                                   "Text": '="Only the last part of the address changes. Use letters, numbers, hyphens and underscores, with no spaces. The suggestion keeps the file plan number code at the front and tidies the name after it. Edit it if you like, or press one of the buttons below the box to start from a different name."', "Y": "=278"})
 dialog += """      - txtRenameNew:
           Control: ModernTextInput@1.1.2
           Properties:
@@ -172,12 +174,45 @@ dialog += """      - txtRenameNew:
             X: =343
             Y: =334
 """
+dialog += f"""      - btnRenameUsePlanName:
+          Control: ModernButton@1.0.0
+          Properties:
+            Appearance: =ButtonAppearance.Outline
+            DisplayMode: =If(varRenameBusy, DisplayMode.Disabled, DisplayMode.Edit)
+            Height: =32
+            OnSelect: |-
+              =Set(varRenameSuggestion, {suggestion('varRenameTarget', 'varRenameTarget.EffectiveName')});
+              Set(varRenameChecked, "");
+              Set(varRenameStatus, "");
+              Reset(txtRenameNew)
+            Text: ="Use the file plan name"
+            Visible: =varRenameVisible
+            Width: =230
+            X: =343
+            Y: =384
+      - btnRenameUseLibName:
+          Control: ModernButton@1.0.0
+          Properties:
+            Appearance: =ButtonAppearance.Outline
+            DisplayMode: =If(varRenameBusy || IsBlank(varRenameTarget.Name), DisplayMode.Disabled, DisplayMode.Edit)
+            Height: =32
+            OnSelect: |-
+              =Set(varRenameSuggestion, {suggestion('varRenameTarget', 'varRenameTarget.Name')});
+              Set(varRenameChecked, "");
+              Set(varRenameStatus, "");
+              Reset(txtRenameNew)
+            Text: ="Use the SharePoint library name"
+            Visible: =varRenameVisible
+            Width: =260
+            X: =583
+            Y: =384
+"""
 dialog += block_text("lblRenameInline", 'If(IsBlank(' + NEWNAME + '), "", If(!IsMatch(' + NEWNAME + ', "[A-Za-z0-9][A-Za-z0-9_\\-]*"), "Use letters, numbers, hyphens and underscores only, with no spaces.", If(Lower(' + NEWNAME + ') = Lower(' + CURSEG + '), "That is the same as the current name.", "")))',
-                     {**T, "Color": "=RGBA(176, 40, 30, 1)", "Height": "=22", "Size": "=12", "Y": "=382"}).rstrip('\n') + "\n            Visible: =varRenameVisible\n"
-dialog += block_text("lblRenamePreview", '"New address: " & ' + HOST + ' & ' + PARENT + ' & ' + NEWNAME, {**T, "Color": "=RGBA(21, 62, 53, 1)", "FontWeight": "=FontWeight.Semibold", "Height": "=40", "Size": "=12", "Y": "=406"}).rstrip('\n') + "\n            Visible: =varRenameVisible && " + VALID.replace('\n', ' ') + "\n"
+                     {**T, "Color": "=RGBA(176, 40, 30, 1)", "Height": "=22", "Size": "=12", "Y": "=422"}).rstrip('\n') + "\n            Visible: =varRenameVisible\n"
+dialog += block_text("lblRenamePreview", '"New address: " & ' + HOST + ' & ' + PARENT + ' & ' + NEWNAME, {**T, "Color": "=RGBA(21, 62, 53, 1)", "FontWeight": "=FontWeight.Semibold", "Height": "=40", "Size": "=12", "Y": "=446"}).rstrip('\n') + "\n            Visible: =varRenameVisible && " + VALID.replace('\n', ' ') + "\n"
 dialog += label("lblRenameWarn", {**T, "Color": "=RGBA(120, 70, 0, 1)", "Fill": "=RGBA(255, 244, 222, 1)", "Height": "=64", "Size": "=12",
-                                   "Text": '="Heads up: old links and bookmarks to this library will stop working, and anyone syncing it to their computer will need to set the sync up again. Check with the library owner first."', "Y": "=452"})
-dialog += block_text("lblRenameStatus", 'varRenameStatus', {**T, "Color": "=If(varRenameStatusOk, RGBA(21, 62, 53, 1), RGBA(176, 40, 30, 1))", "FontWeight": "=FontWeight.Semibold", "Height": "=52", "Size": "=12", "Y": "=522"}).rstrip('\n') + "\n            Visible: =varRenameVisible && !IsBlank(varRenameStatus)\n"
+                                   "Text": '="Heads up: old links and bookmarks to this library will stop working, and anyone syncing it to their computer will need to set the sync up again. Check with the library owner first."', "Y": "=492"})
+dialog += block_text("lblRenameStatus", 'varRenameStatus', {**T, "Color": "=If(varRenameStatusOk, RGBA(21, 62, 53, 1), RGBA(176, 40, 30, 1))", "FontWeight": "=FontWeight.Semibold", "Height": "=52", "Size": "=12", "Y": "=562"}).rstrip('\n') + "\n            Visible: =varRenameVisible && !IsBlank(varRenameStatus)\n"
 
 btn_common = "          Control: ModernButton@1.0.0\n          Properties:\n"
 dialog += f"""      - btnRenameCancel:
@@ -189,7 +224,7 @@ dialog += f"""      - btnRenameCancel:
             Visible: =varRenameVisible
             Width: =140
             X: =343
-            Y: =580
+            Y: =620
       - btnRenameCheck:
 {btn_common}            DisplayMode: =If(varRenameBusy || !{VALID}, DisplayMode.Disabled, DisplayMode.Edit)
             Height: =40
@@ -215,7 +250,7 @@ dialog += f"""      - btnRenameCancel:
             Visible: =varRenameVisible
             Width: =200
             X: =503
-            Y: =580
+            Y: =620
       - btnRenameNow:
 {btn_common}            BasePaletteColor: =RGBA(190, 50, 50, 1)
             DisplayMode: =If(varRenameBusy || {NEWNAME} <> varRenameChecked || IsBlank(varRenameChecked), DisplayMode.Disabled, DisplayMode.Edit)
@@ -249,7 +284,7 @@ dialog += f"""      - btnRenameCancel:
             Visible: =varRenameVisible
             Width: =200
             X: =775
-            Y: =580
+            Y: =620
 """
 
 text = text.rstrip('\n') + '\n' + dialog

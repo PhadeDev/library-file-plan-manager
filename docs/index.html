@@ -137,13 +137,13 @@
   <div class="shell">
     <aside>
       <h2>Library &amp; File Plan Manager</h2>
-      <p>v5.12 build guide. Create Library wizard and rename from the app.</p>
+      <p>v5.13 build guide. Create Library wizard and rename from the app.</p>
       <nav>
         <a href="https://powerapps.pages.dev/">&larr; Guide library</a>
         <a href="yaml.html" style="font-weight:800;">📋 Screen YAML Vault</a>
-        <a href="#create-wizard" style="font-weight:800;color:var(--green);">Create Library wizard (v2.0)</a>
+        <a href="#create-wizard" style="font-weight:800;color:var(--green);">Create Library wizard (v2.1)</a>
         <a href="#report-controls" style="font-weight:800;color:var(--green);">Email CSV button (v2.10)</a>
-        <a href="#rename-url-test" style="font-weight:800;color:var(--green);">Rename a library URL (v2.11)</a>
+        <a href="#rename-url-test" style="font-weight:800;color:var(--green);">Rename a library URL (v2.12)</a>
         <a href="#housekeeping-restore">Original housekeeping setup</a>
         <a href="#action-items" style="font-weight:800;color:var(--green);">▶ Everything Left To Do</a>
         <a href="#lists">1. SharePoint Lists</a>
@@ -165,7 +165,7 @@
 
     <main>
       <div class="topline">
-        <span class="pill">v5.12</span>
+        <span class="pill">v5.13</span>
         <span class="pill">Updated 21 Oct 2026</span>
         <span class="pill">5 screens live</span>
         <span class="pill warn">1 designed, never built</span>
@@ -175,21 +175,21 @@
       <p class="lead">SharePoint permissions map (file-plan style, grouped by team) + an admin screen that creates document libraries correctly and registers them automatically, so nothing gets forgotten again.</p>
 
       <section id="create-wizard">
-        <h2>Create Library, rebuilt as a three-step wizard (v2.0)</h2>
-        <p>The old Create Library screen put every box on one page, so it was hard to see what each one was for. v2.0 asks for one thing at a time, with plain-English help text printed under every box (not hidden in tooltips), and a live preview of exactly what will be created.</p>
+        <h2>Create Library, rebuilt as a three-step wizard (v2.1)</h2>
+        <p>The old Create Library screen put every box on one page, so it was hard to see what each one was for. The wizard asks for one thing at a time, with plain-English help text printed under every box (not hidden in tooltips), and a live preview of exactly what will be created.</p>
         <ol>
-          <li><strong>Where it belongs:</strong> choose <em>Create a new library</em> or <em>Add one that already exists</em>, then the Team, an optional Sub-Team and an optional Extra prefix. Each has a short explanation, and a line shows how the name and web address will start.</li>
-          <li><strong>Name it:</strong> type the library name once. The web address is made from it automatically (spaces become underscores, symbols are dropped, &amp; becomes &ldquo;and&rdquo;), so the name and address now match. A preview card shows both. There is an optional box to type a different web address name if you want something shorter.</li>
+          <li><strong>Where it belongs:</strong> nothing is selected to start with. You pick <em>Create a new library</em> or <em>Add one that already exists</em>, and only then does the rest of the form appear: the Team, an optional Sub-Team and an optional Extra prefix, each with a short explanation and a line showing how the name and web address will start.</li>
+          <li><strong>Name it:</strong> type the library name once. The <strong>web address name</strong> is filled in for you in its own box, for example <code>14_Information_Testing</code>, and you can edit it straight away, for example to <code>14_InfoTest</code>. A preview card shows the name people will see and the full web address.</li>
           <li><strong>Options and review:</strong> the Limited switch and optional category choices, each explained, then a review box before you press <strong>Add to list</strong>.</li>
         </ol>
-        <p>The list of libraries waiting to be created is on the right, with <strong>Create</strong> underneath it, and the Permission Index refresh sits at the bottom of that panel. Nothing is created until you press Create. The Register toggle that used to sit in the top bar is now the first choice on step 1.</p>
+        <p>The list of libraries waiting to be created is on the right, with <strong>Create</strong> underneath it. Nothing is created until you press Create. At the bottom of that panel, the <strong>Permission Index</strong> button now has a plain explanation: Group Search reads a saved list of who can access each Limited library, the button rebuilds that list from SharePoint (about two minutes, in the background), and you press it after creating a Limited library or after changing who has access to one.</p>
         <div class="callout ok"><strong>Same behaviour underneath:</strong> it uses the same <strong>Create Library (App)</strong> flow as before and sends it the same details, so no flow change or re-import is needed. The name and web address still start with the team number and the optional extra prefix (for example Team 04 with extra prefix 04_03 gives 04_04_03_...).</div>
         <h3>Apply it</h3>
         <ol>
-          <li><a href="screens/scrAdminCreateLibrary-v2.0.html?v=2.0"><strong>Open the v2.0 full-screen copy page</strong></a>, copy its YAML, delete <code>scrAdminCreateLibrary</code>, then paste the whole copied YAML as you normally do. No App.OnStart change and nothing to add in the Data pane.</li>
+          <li><a href="screens/scrAdminCreateLibrary-v2.1.html?v=2.1"><strong>Open the v2.1 full-screen copy page</strong></a>, copy its YAML, delete <code>scrAdminCreateLibrary</code>, then paste the whole copied YAML as you normally do. No App.OnStart change and nothing to add in the Data pane.</li>
           <li>Open Create Library and try it with a <strong>test library</strong> from start to finish. Check the preview shows the name and web address you expect before pressing Create.</li>
         </ol>
-        <div class="callout warn"><strong>Not yet seen on screen.</strong> I cannot see the layout in Power Apps Studio. The YAML passes the real Microsoft parser and the formula checks, and I checked by arithmetic that no controls overlap and everything fits inside the card. If anything looks cramped, cut off or misaligned, send me a screenshot of each step and I will adjust. The Back and Next buttons should disable correctly when something required is missing. Tell me if they do not.</div>
+        <div class="callout warn"><strong>Seen working by you on 10/11/2026 (v2.0):</strong> the steps, preview and layout looked right. v2.1 changes only what you asked for: no default choice on step 1, the pre-filled editable web address name, and the Permission Index explanation. Tell me if anything looks off.</div>
       </section>
 
       <section id="report-controls">
@@ -202,7 +202,7 @@
           <li>Download <a href="downloads/EmailLibraryCsv_flow_import.zip"><strong>EmailLibraryCsv_flow_import.zip</strong></a>. Power Automate &rarr; My flows &rarr; Import &rarr; <strong>Import Package (Legacy)</strong>. Leave the flow on <strong>Create as new</strong>, choose your <strong>Office 365 Outlook</strong> connection when asked, then import. It is a brand new flow called <strong>FP-EmailLibraryCsv(App)</strong>; it does not replace any existing flow.</li>
           <li>Open the new flow in My flows and make sure it is <strong>turned on</strong>. Imported flows can arrive switched off, which is what caused the earlier <code>WorkflowTriggerIsNotEnabled</code> error.</li>
           <li>In Power Apps Studio, open the <strong>Data</strong> pane &rarr; <strong>Add data</strong> &rarr; search for <strong>FP-EmailLibraryCsv(App)</strong> and add it. Do this <strong>before</strong> pasting the screen, otherwise the new button shows an error.</li>
-          <li><a href="screens/scrManageLibraries-v2.11.html?v=2.11"><strong>Open the v2.11 full-screen copy page</strong></a> (it already includes this button plus the rename feature below), copy its YAML, delete <code>scrManageLibraries</code>, then paste the whole copied YAML as you normally do. No App.OnStart change is needed.</li>
+          <li><a href="screens/scrManageLibraries-v2.12.html?v=2.12"><strong>Open the v2.12 full-screen copy page</strong></a> (it already includes this button plus the rename feature below), copy its YAML, delete <code>scrManageLibraries</code>, then paste the whole copied YAML as you normally do. No App.OnStart change is needed.</li>
           <li>Press <strong>Play</strong> and click <strong>Email CSV (current view)</strong> (right-hand end of the row just above the list). The button greys out and reads &ldquo;Sending...&rdquo; with a line beside it saying who it is going to. After a few seconds you get a green banner, and a status line stays on screen beside the button, for example &ldquo;Sent to you@... at 10:42 (212 libraries)&rdquo;, so you can still see it after the banner fades. If it fails you get a red banner and a red status line instead. The email should arrive within a minute or two. Open the attachment in Excel and check a library you know has zero files shows Empty = Yes.</li>
         </ol>
         <div class="callout ok"><strong>Who gets it:</strong> the email goes from your own Outlook to your own address (whoever pressed the button), so each admin receives their own copy. It lists the names of Limited libraries, so only forward it to people who are allowed to see them. File counts come from the last saved stats scan, so run the stats flow and press Reload saved stats first if you need fresh numbers.</div>
@@ -216,17 +216,20 @@
       </section>
 
       <section id="rename-url-test">
-        <h2>Rename a library's web address from the app (Manage Libraries v2.11)</h2>
-        <p>The rename was proven on a test library on 09/11/2026, so it is now built into Manage Libraries. Every library row has a <strong>Rename URL</strong> button. It opens a small window that shows the current address, suggests a new last part (it keeps the file plan number code at the front and tidies the words after it), and lets you edit it. You press <strong>1. Check</strong> first, which changes nothing and tells you what it would do, and only then does <strong>2. Rename now</strong> unlock. It works for libraries tracked in the file plan and, if one is not tracked, it still renames it. After a rename the flow updates the file plan row and the Group Search permission rows, and the screen reloads itself.</p>
-        <p><strong>Also fixed in v2.11:</strong> Manage Libraries now loads and shows every library as soon as you open it, so you no longer have to press Reload saved stats first. The filters are reset each time you open the screen. Reload saved stats is still there if you want to refresh after running the stats flow.</p>
-        <h3>Apply these steps in order</h3>
+        <h2>Rename a library's web address from the app (Manage Libraries v2.12)</h2>
+        <p>Every library row on Manage Libraries has a <strong>Rename URL</strong> button. It opens a window that shows the library's <strong>name in the file plan</strong> and its <strong>name in SharePoint</strong>, the current address, and a suggested new last part of the address (it keeps the file plan number code at the front and tidies the words after it). Two buttons under the box, <strong>Use the file plan name</strong> and <strong>Use the SharePoint library name</strong>, rebuild the suggestion from whichever name you want the address to match. You can also type your own. Press <strong>1. Check</strong> first, which changes nothing and tells you what it would do, and only then does <strong>2. Rename now</strong> unlock. After a rename the flow updates the file plan row and the Group Search permission rows, and the screen reloads itself.</p>
+        <p>Manage Libraries also loads and shows every library as soon as you open it, so you no longer have to press Reload saved stats first. The filters are reset each time you open the screen. Reload saved stats is still there if you want to refresh after running the stats flow.</p>
+        <p class="muted"><strong>Seen working by you on 10/11/2026 (v2.11):</strong> the window, the live validation and the Check button. v2.12 adds the second name line and the two suggestion buttons.</p>
+        <h3>If you have not set the flow up yet</h3>
         <ol>
-          <li>Download <a href="downloads/RenameLibrary_flow_import.zip"><strong>RenameLibrary_flow_import.zip</strong></a>. Power Automate &rarr; My flows &rarr; Import &rarr; <strong>Import Package (Legacy)</strong>, leave it on <strong>Create as new</strong>, choose your SharePoint connection, import. It is a new flow called <strong>FP-RenameLibrary(App)</strong>. Make sure it is <strong>turned on</strong>. You can delete the earlier test flow <strong>FP-RenameLibraryUrl(App)</strong>, nothing uses it.</li>
+          <li>Download <a href="downloads/RenameLibrary_flow_import.zip"><strong>RenameLibrary_flow_import.zip</strong></a>. Power Automate &rarr; My flows &rarr; Import &rarr; <strong>Import Package (Legacy)</strong>, choose <strong>Create as new</strong> (not Update), choose your SharePoint connection, import. It is a new flow called <strong>FP-RenameLibrary(App)</strong>. Make sure it is <strong>turned on</strong>. You can delete the earlier test flow <strong>FP-RenameLibraryUrl(App)</strong>.</li>
           <li>In Power Apps Studio, open <strong>Data</strong> &rarr; <strong>Add data</strong> &rarr; search for <strong>FP-RenameLibrary(App)</strong> and add it <strong>before</strong> pasting the screen.</li>
-          <li><a href="screens/scrManageLibraries-v2.11.html?v=2.11"><strong>Open the v2.11 full-screen copy page</strong></a>, copy its YAML, delete <code>scrManageLibraries</code>, then paste the whole copied YAML as you normally do. v2.11 already contains the Email CSV button, so you do not need to paste v2.10 as well. No App.OnStart change is needed.</li>
-          <li>Open Manage Libraries. The list should fill by itself. Find a <strong>test library</strong> first, press <strong>Rename URL</strong>, check the suggestion, press <strong>1. Check</strong>, read the message, then <strong>2. Rename now</strong>.</li>
         </ol>
-        <div class="callout warn"><strong>Not yet run in your tenant:</strong> the flow's new checks and its updating of the Group Search rows, the dialog, and the open-and-load fix. The screen passes the real Microsoft parser and the formula checks, and the underlying rename is the one you proved. Tell me the exact message if anything errors.</div>
+        <h3>Update the screen</h3>
+        <ol>
+          <li><a href="screens/scrManageLibraries-v2.12.html?v=2.12"><strong>Open the v2.12 full-screen copy page</strong></a>, copy its YAML, delete <code>scrManageLibraries</code>, then paste the whole copied YAML as you normally do. It already contains the Email CSV button. No App.OnStart change is needed.</li>
+          <li>Try <strong>Rename URL</strong> on a test library, and check the suggestion buttons fill the box as you expect.</li>
+        </ol>
         <div class="callout danger"><strong>What a real rename breaks, so plan for it:</strong> bookmarks and links that use the old address stop working, anyone syncing the library to their computer will need to set the sync up again, and pages with a web part pointing at the library, or other flows that use the old address, need updating. Group Search may keep showing the old address until you reopen the app.</div>
         <div class="callout ok"><strong>What the flow refuses to do:</strong> change anything that is not a library directly under the main site or the CCF site, use a name with spaces, slashes or other unsafe characters, use a reserved name (such as Forms or Lists), or rename a library to its own current name. It never moves a library to a different site.</div>
       </section>
@@ -698,10 +701,10 @@ ItemCount: item()?['ItemCount']</pre>
               <span class="ver">v2.12 &mdash; 30 Sep 2026 &mdash; draft, not yet pasted</span></div>
             <div class="open">Copy YAML &rarr;</div>
           </a>
-          <a class="link-card" href="screens/scrAdminCreateLibrary-v2.0.html?v=2.0">
+          <a class="link-card" href="screens/scrAdminCreateLibrary-v2.1.html?v=2.1">
             <div><span class="pill">Screen 2</span><strong style="margin-top:8px;display:block">scrAdminCreateLibrary</strong>
-              <p>Restricted to the admin email list. v2.0 is a three-step wizard (Where it belongs, Name it, Options and review) with visible plain-English help text under every box and a live preview. You type the library name once and the web address is made from it (with an optional override). Libraries wait in a list on the right and are created together with one button. A choice on step 1 switches between creating a new library and adding one that already exists. The Permission Index refresh sits at the bottom of the list panel. Same Create Library (App) flow underneath, so no flow change.</p>
-              <span class="ver">v2.0 &mdash; 09 Nov 2026 &mdash; draft, not yet pasted (not yet seen on screen, send a screenshot if anything looks off)</span></div>
+              <p>Restricted to the admin email list. A three-step wizard (Where it belongs, Name it, Options and review) with visible plain-English help text under every box and a live preview. Nothing is selected at the start: you choose between creating a new library and adding an existing one, and the form appears. You type the library name once and the web address name is filled in for you, ready to edit. Libraries wait in a list on the right and are created together with one button. The Permission Index button has a plain explanation of what it does and when to press it. Same Create Library (App) flow underneath, so no flow change.</p>
+              <span class="ver">v2.1 &mdash; 10 Nov 2026 &mdash; v2.0 layout seen working by you; v2.1 adds no default choice, pre-filled web address and Permission Index help; draft, not yet pasted</span></div>
             <div class="open">Copy YAML &rarr;</div>
           </a>
           <a class="link-card" href="screens/scrGroupSearch.html?v=3.16">
@@ -710,10 +713,10 @@ ItemCount: item()?['ItemCount']</pre>
               <span class="ver">v3.16 &mdash; 01 Oct 2026 &mdash; draft, not yet pasted (v3.15 is already live; this is a follow-up fix)</span></div>
             <div class="open">Copy YAML &rarr;</div>
           </a>
-          <a class="link-card" href="screens/scrManageLibraries-v2.11.html?v=2.11">
+          <a class="link-card" href="screens/scrManageLibraries-v2.12.html?v=2.12">
             <div><span class="pill">Screen 4</span><strong style="margin-top:8px;display:block">scrManageLibraries</strong>
-              <p>Restricted to admins. Tick libraries, bulk-delete them (empty ones go straight away, non-empty ones get an override prompt) or send the selection to the edit cart. Team &rarr; Sub-Team &rarr; Library accordion, Team filter dropdown, "Sub-Team: None" shown explicitly. Every library row shows its creation date and current file count, empty libraries flagged in red, plus a Refresh Library Stats button. Delete Selected/Leave Them/Delete Anyway show a proper <code>Notify()</code> banner on success (v2.7). v2.11: loads automatically on open and adds a per-library <strong>Rename URL</strong> button. v2.10: an <strong>Email CSV (current view)</strong> button attaches the libraries on screen as a CSV to an email to you. v2.9: file counts, age filters and Reload saved stats. v2.8: the Limited badge is now three honest states &mdash; red padlock (genuinely Limited), amber pencil (permissions customised, not marked Limited), red triangle (flagged/named Limited but permissions are still fully inherited &mdash; a real inconsistency worth checking).</p>
-              <span class="ver">v2.11 &mdash; 09 Nov 2026 &mdash; opens with all libraries loaded, adds Rename URL per library, includes Email CSV; draft, not yet pasted (needs the FP-RenameLibrary(App) flow added first)</span></div>
+              <p>Restricted to admins. Tick libraries, bulk-delete them (empty ones go straight away, non-empty ones get an override prompt) or send the selection to the edit cart. Team &rarr; Sub-Team &rarr; Library accordion, Team filter dropdown, "Sub-Team: None" shown explicitly. Every library row shows its creation date and current file count, empty libraries flagged in red, plus a Refresh Library Stats button. Delete Selected/Leave Them/Delete Anyway show a proper <code>Notify()</code> banner on success (v2.7). v2.12: the Rename URL window shows both the file plan name and the SharePoint library name and can suggest an address from either. v2.11: loads automatically on open and adds a per-library <strong>Rename URL</strong> button. v2.10: an <strong>Email CSV (current view)</strong> button attaches the libraries on screen as a CSV to an email to you. v2.9: file counts, age filters and Reload saved stats. v2.8: the Limited badge is now three honest states &mdash; red padlock (genuinely Limited), amber pencil (permissions customised, not marked Limited), red triangle (flagged/named Limited but permissions are still fully inherited &mdash; a real inconsistency worth checking).</p>
+              <span class="ver">v2.12 &mdash; 10 Nov 2026 &mdash; adds both names and suggestion buttons to the Rename URL window (v2.11 confirmed working); draft, not yet pasted</span></div>
             <div class="open">Copy YAML &rarr;</div>
           </a>
           <a class="link-card" href="screens/scrEditLibraries.html?v=2.4">

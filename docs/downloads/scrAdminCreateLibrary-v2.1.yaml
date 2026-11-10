@@ -1,0 +1,1114 @@
+Screens:
+  scrAdminCreateLibrary:
+    Properties:
+      Fill: =RGBA(245, 246, 250, 1)
+      OnVisible: |-
+        =Set(varCreateStep, 1);
+        Set(varRegisterOnly, false);
+        Set(varModeChosen, false);
+        Set(varWebDefault, "");
+        Reset(drpTeam);
+        Reset(txtSubTeam);
+        Reset(txtExtraPrefix);
+        Reset(txtDisplayName);
+        Reset(txtWebAddress);
+        Reset(txtExistingLibraryTitle);
+        Reset(txtExistingDisplayName);
+        Reset(txtCategories);
+        Reset(tglIsLimited)
+    Children:
+      - lblTitle_1:
+          Control: Label@2.5.1
+          Properties:
+            Color: =RGBA(30, 30, 45, 1)
+            Font: =Font.'Open Sans'
+            FontWeight: =FontWeight.Semibold
+            Height: =36
+            Size: =22
+            Text: ="Create a library"
+            Visible: =true
+            Width: =700
+            X: =32
+            Y: =84
+      - lblWizardIntro:
+          Control: Label@2.5.1
+          Properties:
+            Color: =RGBA(120, 120, 135, 1)
+            Font: =Font.'Open Sans'
+            Height: =24
+            Size: =12
+            Text: ="Answer three short steps for each library. Add as many as you like to the list on the right, then create them all at once."
+            Visible: =varIsAdmin
+            Width: =1100
+            X: =32
+            Y: =120
+      - recAccessDeniedBg:
+          Control: Classic/Button@2.2.0
+          Properties:
+            BorderColor: =RGBA(210, 150, 150, 1)
+            BorderThickness: =1
+            DisplayMode: =DisplayMode.View
+            Fill: =RGBA(250, 235, 235, 1)
+            Height: =60
+            HoverFill: =RGBA(250, 235, 235, 1)
+            PressedFill: =RGBA(250, 235, 235, 1)
+            Text: =""
+            Visible: =!varIsAdmin
+            Width: =600
+            X: =32
+            Y: =150
+      - lblAccessDenied:
+          Control: Label@2.5.1
+          Properties:
+            Color: =RGBA(140, 40, 40, 1)
+            Font: =Font.'Open Sans'
+            Height: =60
+            Text: ="This screen is restricted. Your account (" & User().Email & ") isn't on the admin list."
+            Visible: =!varIsAdmin
+            Width: =560
+            X: =52
+            Y: =150
+      - recWizardCard:
+          Control: Classic/Button@2.2.0
+          Properties:
+            BorderColor: =RGBA(220, 222, 232, 1)
+            BorderThickness: =1
+            DisplayMode: =DisplayMode.View
+            Fill: =RGBA(255, 255, 255, 1)
+            Height: =584
+            HoverFill: =Self.Fill
+            PressedFill: =Self.Fill
+            RadiusBottomLeft: =12
+            RadiusBottomRight: =12
+            RadiusTopLeft: =12
+            RadiusTopRight: =12
+            Text: =""
+            Visible: =varIsAdmin
+            Width: =720
+            X: =32
+            Y: =156
+      - lblPill1:
+          Control: Label@2.5.1
+          Properties:
+            Align: =Align.Center
+            Color: =If(varCreateStep = 1, RGBA(255, 255, 255, 1), If(varCreateStep > 1, RGBA(21, 62, 53, 1), RGBA(90, 90, 105, 1)))
+            Fill: =If(varCreateStep = 1, RGBA(83, 42, 69, 1), If(varCreateStep > 1, RGBA(225, 240, 232, 1), RGBA(236, 238, 244, 1)))
+            Font: =Font.'Open Sans'
+            FontWeight: =FontWeight.Semibold
+            Height: =34
+            Size: =12
+            Text: =If(varCreateStep > 1, "✓  ", "1   ") & "Where it belongs"
+            Visible: =varIsAdmin
+            Width: =212
+            X: =56
+            Y: =172
+      - lblPill2:
+          Control: Label@2.5.1
+          Properties:
+            Align: =Align.Center
+            Color: =If(varCreateStep = 2, RGBA(255, 255, 255, 1), If(varCreateStep > 2, RGBA(21, 62, 53, 1), RGBA(90, 90, 105, 1)))
+            Fill: =If(varCreateStep = 2, RGBA(83, 42, 69, 1), If(varCreateStep > 2, RGBA(225, 240, 232, 1), RGBA(236, 238, 244, 1)))
+            Font: =Font.'Open Sans'
+            FontWeight: =FontWeight.Semibold
+            Height: =34
+            Size: =12
+            Text: =If(varCreateStep > 2, "✓  ", "2   ") & "Name it"
+            Visible: =varIsAdmin
+            Width: =212
+            X: =286
+            Y: =172
+      - lblPill3:
+          Control: Label@2.5.1
+          Properties:
+            Align: =Align.Center
+            Color: =If(varCreateStep = 3, RGBA(255, 255, 255, 1), If(varCreateStep > 3, RGBA(21, 62, 53, 1), RGBA(90, 90, 105, 1)))
+            Fill: =If(varCreateStep = 3, RGBA(83, 42, 69, 1), If(varCreateStep > 3, RGBA(225, 240, 232, 1), RGBA(236, 238, 244, 1)))
+            Font: =Font.'Open Sans'
+            FontWeight: =FontWeight.Semibold
+            Height: =34
+            Size: =12
+            Text: =If(varCreateStep > 3, "✓  ", "3   ") & "Options"
+            Visible: =varIsAdmin
+            Width: =212
+            X: =516
+            Y: =172
+      - lblStepTitle:
+          Control: Label@2.5.1
+          Properties:
+            Color: =RGBA(30, 30, 45, 1)
+            Font: =Font.'Open Sans'
+            FontWeight: =FontWeight.Semibold
+            Height: =30
+            Size: =18
+            Text: =Switch(varCreateStep, 1, "Where does it belong?", 2, If(varRegisterOnly, "Which library already exists?", "What is it called?"), "Options and review")
+            Visible: =varIsAdmin
+            Width: =672
+            X: =56
+            Y: =222
+      - lblStepIntro:
+          Control: Label@2.5.1
+          Properties:
+            Color: =RGBA(90, 90, 105, 1)
+            Font: =Font.'Open Sans'
+            Height: =40
+            Size: =12
+            Text: =Switch(varCreateStep, 1, "Choose whether you are creating a new library or adding one that already exists. The rest of the form appears once you choose.", 2, If(varRegisterOnly, "Tell the app which existing library to add to the file plan.", "Type the name people will see. The web address is filled in for you, and you can change it."), "Last checks. Then add it to the list on the right.")
+            Visible: =varIsAdmin
+            Width: =672
+            X: =56
+            Y: =254
+      - btnModeNew:
+          Control: ModernButton@1.0.0
+          Properties:
+            Appearance: =If(varModeChosen && !varRegisterOnly, ButtonAppearance.Primary, ButtonAppearance.Outline)
+            Height: =44
+            OnSelect: =Set(varRegisterOnly, false); Set(varModeChosen, true)
+            Text: ="Create a new library"
+            Visible: =varIsAdmin && varCreateStep = 1
+            Width: =328
+            X: =56
+            Y: =302
+      - btnModeExisting:
+          Control: ModernButton@1.0.0
+          Properties:
+            Appearance: =If(varModeChosen && varRegisterOnly, ButtonAppearance.Primary, ButtonAppearance.Outline)
+            Height: =44
+            OnSelect: =Set(varRegisterOnly, true); Set(varModeChosen, true)
+            Text: ="Add one that already exists"
+            Visible: =varIsAdmin && varCreateStep = 1
+            Width: =328
+            X: =400
+            Y: =302
+      - lblModeHint:
+          Control: Label@2.5.1
+          Properties:
+            Color: =RGBA(83, 42, 69, 1)
+            Font: =Font.'Open Sans'
+            FontWeight: =FontWeight.Semibold
+            Height: =24
+            Size: =13
+            Text: ="Pick one of the two options above to continue."
+            Visible: =varIsAdmin && varCreateStep = 1 && !varModeChosen
+            Width: =672
+            X: =56
+            Y: =362
+      - lblTeamLbl:
+          Control: Label@2.5.1
+          Properties:
+            Color: =RGBA(30, 30, 45, 1)
+            Font: =Font.'Open Sans'
+            FontWeight: =FontWeight.Semibold
+            Height: =22
+            Size: =13
+            Text: ="Team"
+            Visible: =varIsAdmin && varCreateStep = 1 && varModeChosen
+            Width: =672
+            X: =56
+            Y: =362
+      - lblTeamHelp:
+          Control: Label@2.5.1
+          Properties:
+            Color: =RGBA(90, 90, 105, 1)
+            Font: =Font.'Open Sans'
+            Height: =36
+            Size: =12
+            Text: ="Which team owns this library? The team number, for example 04, becomes the start of the library name and web address."
+            Visible: =varIsAdmin && varCreateStep = 1 && varModeChosen
+            Width: =672
+            X: =56
+            Y: =384
+      - drpTeam:
+          Control: ModernDropdown@1.0.3
+          Properties:
+            BorderColor: =RGBA(200, 202, 214, 1)
+            BorderThickness: =1
+            Color: =RGBA(30, 30, 45, 1)
+            Fill: =RGBA(255, 255, 255, 1)
+            Height: =44
+            ItemDisplayText: =ThisItem.Value
+            Items: =Choices(LibraryFilePlan.Team)
+            Visible: =varIsAdmin && varCreateStep = 1 && varModeChosen
+            Width: =672
+            X: =56
+            Y: =422
+      - lblSubTeamLbl:
+          Control: Label@2.5.1
+          Properties:
+            Color: =RGBA(30, 30, 45, 1)
+            Font: =Font.'Open Sans'
+            FontWeight: =FontWeight.Semibold
+            Height: =22
+            Size: =13
+            Text: ="Sub-Team (optional)"
+            Visible: =varIsAdmin && varCreateStep = 1 && varModeChosen
+            Width: =328
+            X: =56
+            Y: =482
+      - lblSubTeamHelp:
+          Control: Label@2.5.1
+          Properties:
+            Color: =RGBA(90, 90, 105, 1)
+            Font: =Font.'Open Sans'
+            Height: =56
+            Size: =12
+            Text: ="A grouping inside the team, such as Training Wing, used only to keep the File Plan tidy. It does not change the web address. Leave blank if unsure."
+            Visible: =varIsAdmin && varCreateStep = 1 && varModeChosen
+            Width: =328
+            X: =56
+            Y: =504
+      - txtSubTeam:
+          Control: ModernTextInput@1.1.2
+          Properties:
+            BorderColor: =RGBA(200, 202, 214, 1)
+            BorderThickness: =1
+            Color: =RGBA(30, 30, 45, 1)
+            Fill: =RGBA(255, 255, 255, 1)
+            Height: =44
+            Placeholder: ="e.g. Training Wing (optional)"
+            Visible: =varIsAdmin && varCreateStep = 1 && varModeChosen
+            Width: =328
+            X: =56
+            Y: =564
+      - lblExtraPrefixLbl:
+          Control: Label@2.5.1
+          Properties:
+            Color: =RGBA(30, 30, 45, 1)
+            Font: =Font.'Open Sans'
+            FontWeight: =FontWeight.Semibold
+            Height: =22
+            Size: =13
+            Text: ="Extra prefix (optional)"
+            Visible: =varIsAdmin && varCreateStep = 1 && varModeChosen && !varRegisterOnly
+            Width: =328
+            X: =400
+            Y: =482
+      - lblExtraPrefixHelp:
+          Control: Label@2.5.1
+          Properties:
+            Color: =RGBA(90, 90, 105, 1)
+            Font: =Font.'Open Sans'
+            Height: =56
+            Size: =12
+            Text: ="The rest of the file plan code after the team number. Under Team 04, typing 04_03 makes the name start 04_04_03. Leave blank if unsure."
+            Visible: =varIsAdmin && varCreateStep = 1 && varModeChosen && !varRegisterOnly
+            Width: =328
+            X: =400
+            Y: =504
+      - txtExtraPrefix:
+          Control: ModernTextInput@1.1.2
+          Properties:
+            BorderColor: =RGBA(200, 202, 214, 1)
+            BorderThickness: =1
+            Color: =RGBA(30, 30, 45, 1)
+            Fill: =RGBA(255, 255, 255, 1)
+            Height: =44
+            Placeholder: ="e.g. 04_03 (optional)"
+            Visible: =varIsAdmin && varCreateStep = 1 && varModeChosen && !varRegisterOnly
+            Width: =328
+            X: =400
+            Y: =564
+      - lblPrefixPreview:
+          Control: Label@2.5.1
+          Properties:
+            Color: =RGBA(21, 62, 53, 1)
+            Font: =Font.'Open Sans'
+            FontWeight: =FontWeight.Semibold
+            Height: =24
+            Size: =12
+            Text: |-
+              =If(IsBlank(drpTeam.Selected.Value), "", "Name and web address will start with:  " & (IfError(Left(drpTeam.Selected.Value, Find("_", drpTeam.Selected.Value) - 1), "") & If(IsBlank(Trim(txtExtraPrefix.Text)), "", "_" & Trim(txtExtraPrefix.Text))) & "_")
+            Visible: =varIsAdmin && varCreateStep = 1 && varModeChosen && !varRegisterOnly
+            Width: =672
+            X: =56
+            Y: =616
+      - lblNameLbl:
+          Control: Label@2.5.1
+          Properties:
+            Color: =RGBA(30, 30, 45, 1)
+            Font: =Font.'Open Sans'
+            FontWeight: =FontWeight.Semibold
+            Height: =22
+            Size: =13
+            Text: ="Library name"
+            Visible: =varIsAdmin && varCreateStep = 2 && !varRegisterOnly
+            Width: =672
+            X: =56
+            Y: =302
+      - lblNameHelp:
+          Control: Label@2.5.1
+          Properties:
+            Color: =RGBA(90, 90, 105, 1)
+            Font: =Font.'Open Sans'
+            Height: =36
+            Size: =12
+            Text: ="The name people will see, for example Standard Operating Procedures. Do not type the team number or prefix, the app adds those for you."
+            Visible: =varIsAdmin && varCreateStep = 2 && !varRegisterOnly
+            Width: =672
+            X: =56
+            Y: =324
+      - txtDisplayName:
+          Control: ModernTextInput@1.1.2
+          Properties:
+            BorderColor: =RGBA(200, 202, 214, 1)
+            BorderThickness: =1
+            Color: =RGBA(30, 30, 45, 1)
+            Fill: =RGBA(255, 255, 255, 1)
+            Height: =44
+            OnChange: |-
+              =Set(varWebDefault, If(IsBlank(Trim(txtDisplayName.Text)), "", (IfError(Left(drpTeam.Selected.Value, Find("_", drpTeam.Selected.Value) - 1), "") & If(IsBlank(Trim(txtExtraPrefix.Text)), "", "_" & Trim(txtExtraPrefix.Text))) & "_" & Concat(MatchAll(Substitute(Substitute(Trim(txtDisplayName.Text), "&", "and"), " ", "_"), "[A-Za-z0-9_\-]"), FullMatch)));
+              Reset(txtWebAddress)
+            Placeholder: ="e.g. Standard Operating Procedures"
+            Visible: =varIsAdmin && varCreateStep = 2 && !varRegisterOnly
+            Width: =672
+            X: =56
+            Y: =362
+      - lblWebLbl:
+          Control: Label@2.5.1
+          Properties:
+            Color: =RGBA(30, 30, 45, 1)
+            Font: =Font.'Open Sans'
+            FontWeight: =FontWeight.Semibold
+            Height: =22
+            Size: =13
+            Text: ="Web address name"
+            Visible: =varIsAdmin && varCreateStep = 2 && !varRegisterOnly
+            Width: =672
+            X: =56
+            Y: =418
+      - lblWebHelp:
+          Control: Label@2.5.1
+          Properties:
+            Color: =RGBA(90, 90, 105, 1)
+            Font: =Font.'Open Sans'
+            Height: =54
+            Size: =12
+            Text: ="The last part of the library's web address, for example 14_Information_Testing. It is filled in for you from the library name. Change it if you want something shorter, such as 14_InfoTest. Letters, numbers, hyphens and underscores only, no spaces."
+            Visible: =varIsAdmin && varCreateStep = 2 && !varRegisterOnly
+            Width: =672
+            X: =56
+            Y: =440
+      - txtWebAddress:
+          Control: ModernTextInput@1.1.2
+          Properties:
+            BorderColor: =RGBA(200, 202, 214, 1)
+            BorderThickness: =1
+            Color: =RGBA(30, 30, 45, 1)
+            Default: =varWebDefault
+            Fill: =RGBA(255, 255, 255, 1)
+            Height: =44
+            Placeholder: ="Filled in from the library name"
+            Visible: =varIsAdmin && varCreateStep = 2 && !varRegisterOnly
+            Width: =672
+            X: =56
+            Y: =498
+      - recPreviewCard:
+          Control: Classic/Button@2.2.0
+          Properties:
+            BorderColor: =RGBA(215, 200, 235, 1)
+            BorderThickness: =1
+            DisplayMode: =DisplayMode.View
+            Fill: =RGBA(243, 237, 250, 1)
+            Height: =92
+            HoverFill: =Self.Fill
+            PressedFill: =Self.Fill
+            RadiusBottomLeft: =8
+            RadiusBottomRight: =8
+            RadiusTopLeft: =8
+            RadiusTopRight: =8
+            Text: =""
+            Visible: =varIsAdmin && varCreateStep = 2 && !varRegisterOnly
+            Width: =672
+            X: =56
+            Y: =556
+      - lblPreviewHead:
+          Control: Label@2.5.1
+          Properties:
+            Color: =RGBA(83, 42, 69, 1)
+            Font: =Font.'Open Sans'
+            FontWeight: =FontWeight.Semibold
+            Height: =22
+            Size: =12
+            Text: ="How it will look"
+            Visible: =varIsAdmin && varCreateStep = 2 && !varRegisterOnly
+            Width: =300
+            X: =72
+            Y: =561
+      - lblPreviewName:
+          Control: Label@2.5.1
+          Properties:
+            Color: =RGBA(30, 30, 45, 1)
+            Font: =Font.'Open Sans'
+            Height: =24
+            Size: =13
+            Text: |-
+              ="Name people see:   " & If(IsBlank(Trim(txtDisplayName.Text)), "(type a name above)", ((IfError(Left(drpTeam.Selected.Value, Find("_", drpTeam.Selected.Value) - 1), "") & If(IsBlank(Trim(txtExtraPrefix.Text)), "", "_" & Trim(txtExtraPrefix.Text))) & "_" & Trim(txtDisplayName.Text)))
+            Visible: =varIsAdmin && varCreateStep = 2 && !varRegisterOnly
+            Width: =640
+            X: =72
+            Y: =583
+      - lblPreviewUrl:
+          Control: Label@2.5.1
+          Properties:
+            Color: =RGBA(30, 30, 45, 1)
+            Font: =Font.'Open Sans'
+            Height: =24
+            Size: =13
+            Text: |-
+              ="Full web address:   " & varTenantHost & "/teams/1598/" & If(IsBlank(Trim(txtWebAddress.Text)), "(filled in from the name)", Trim(txtWebAddress.Text))
+            Visible: =varIsAdmin && varCreateStep = 2 && !varRegisterOnly
+            Width: =640
+            X: =72
+            Y: =610
+      - lblWebError:
+          Control: Label@2.5.1
+          Properties:
+            Color: =If((IsMatch(Trim(txtWebAddress.Text), "[A-Za-z0-9][A-Za-z0-9_\-]*") && Len(Trim(txtWebAddress.Text)) <= 100), RGBA(150, 90, 0, 1), RGBA(176, 40, 30, 1))
+            Font: =Font.'Open Sans'
+            Height: =32
+            Size: =12
+            Text: |-
+              =If(IsBlank(Trim(txtDisplayName.Text)), "", If((IsMatch(Trim(txtWebAddress.Text), "[A-Za-z0-9][A-Za-z0-9_\-]*") && Len(Trim(txtWebAddress.Text)) <= 100), If(Lower(Left(Trim(txtWebAddress.Text), Len((IfError(Left(drpTeam.Selected.Value, Find("_", drpTeam.Selected.Value) - 1), "") & If(IsBlank(Trim(txtExtraPrefix.Text)), "", "_" & Trim(txtExtraPrefix.Text)))) + 1)) <> Lower((IfError(Left(drpTeam.Selected.Value, Find("_", drpTeam.Selected.Value) - 1), "") & If(IsBlank(Trim(txtExtraPrefix.Text)), "", "_" & Trim(txtExtraPrefix.Text))) & "_"), "Tip: web addresses normally start with " & (IfError(Left(drpTeam.Selected.Value, Find("_", drpTeam.Selected.Value) - 1), "") & If(IsBlank(Trim(txtExtraPrefix.Text)), "", "_" & Trim(txtExtraPrefix.Text))) & "_ so the library sorts into the file plan.", ""), "The web address name must use only letters, numbers, hyphens and underscores, and be between 1 and 100 characters."))
+            Visible: =varIsAdmin && varCreateStep = 2 && !varRegisterOnly
+            Width: =672
+            X: =56
+            Y: =652
+      - lblExistingLbl:
+          Control: Label@2.5.1
+          Properties:
+            Color: =RGBA(30, 30, 45, 1)
+            Font: =Font.'Open Sans'
+            FontWeight: =FontWeight.Semibold
+            Height: =22
+            Size: =13
+            Text: ="Existing library title"
+            Visible: =varIsAdmin && varCreateStep = 2 && varRegisterOnly
+            Width: =672
+            X: =56
+            Y: =302
+      - lblExistingHelp:
+          Control: Label@2.5.1
+          Properties:
+            Color: =RGBA(90, 90, 105, 1)
+            Font: =Font.'Open Sans'
+            Height: =36
+            Size: =12
+            Text: ="Type the title exactly as it appears in SharePoint (Site contents). It is added to the file plan only. Nothing is created or changed in SharePoint."
+            Visible: =varIsAdmin && varCreateStep = 2 && varRegisterOnly
+            Width: =672
+            X: =56
+            Y: =324
+      - txtExistingLibraryTitle:
+          Control: ModernTextInput@1.1.2
+          Properties:
+            BorderColor: =RGBA(200, 202, 214, 1)
+            BorderThickness: =1
+            Color: =RGBA(30, 30, 45, 1)
+            Fill: =RGBA(255, 255, 255, 1)
+            Height: =44
+            Placeholder: ="e.g. 07 PolicyANDPersonnel Pers Forms"
+            Visible: =varIsAdmin && varCreateStep = 2 && varRegisterOnly
+            Width: =672
+            X: =56
+            Y: =362
+      - lblExistingNameLbl:
+          Control: Label@2.5.1
+          Properties:
+            Color: =RGBA(30, 30, 45, 1)
+            Font: =Font.'Open Sans'
+            FontWeight: =FontWeight.Semibold
+            Height: =22
+            Size: =13
+            Text: ="Name to show in the file plan (optional)"
+            Visible: =varIsAdmin && varCreateStep = 2 && varRegisterOnly
+            Width: =672
+            X: =56
+            Y: =430
+      - lblExistingNameHelp:
+          Control: Label@2.5.1
+          Properties:
+            Color: =RGBA(90, 90, 105, 1)
+            Font: =Font.'Open Sans'
+            Height: =36
+            Size: =12
+            Text: ="Leave blank to use the library title as it is. Fill this in if you want a tidier name to appear in the File Plan."
+            Visible: =varIsAdmin && varCreateStep = 2 && varRegisterOnly
+            Width: =672
+            X: =56
+            Y: =452
+      - txtExistingDisplayName:
+          Control: ModernTextInput@1.1.2
+          Properties:
+            BorderColor: =RGBA(200, 202, 214, 1)
+            BorderThickness: =1
+            Color: =RGBA(30, 30, 45, 1)
+            Fill: =RGBA(255, 255, 255, 1)
+            Height: =44
+            Placeholder: ="e.g. Personnel Forms (optional)"
+            Visible: =varIsAdmin && varCreateStep = 2 && varRegisterOnly
+            Width: =672
+            X: =56
+            Y: =490
+      - tglIsLimited:
+          Control: ModernToggle@1.0.1
+          Properties:
+            Height: =32
+            Label: ="Limited library"
+            LabelPosition: ="After"
+            Visible: =varIsAdmin && varCreateStep = 3
+            Width: =672
+            X: =56
+            Y: =302
+      - lblLimitedHelp:
+          Control: Label@2.5.1
+          Properties:
+            Color: =RGBA(90, 90, 105, 1)
+            Font: =Font.'Open Sans'
+            Height: =52
+            Size: =12
+            Text: =If(varRegisterOnly, "Switch on if this existing library is a Limited one. This only records it in the file plan. It does not change the library permissions.", "Switch on for a library that only a small group should see. Permissions are locked down so only SG_Cadets-Admin-Ltd_MEM and SG_IHUB get access. Leave off for a normal library.")
+            Visible: =varIsAdmin && varCreateStep = 3
+            Width: =672
+            X: =56
+            Y: =336
+      - lblCategoriesLbl:
+          Control: Label@2.5.1
+          Properties:
+            Color: =RGBA(30, 30, 45, 1)
+            Font: =Font.'Open Sans'
+            FontWeight: =FontWeight.Semibold
+            Height: =22
+            Size: =13
+            Text: ="Category (CAT) choices (optional)"
+            Visible: =varIsAdmin && varCreateStep = 3 && !varRegisterOnly
+            Width: =672
+            X: =56
+            Y: =396
+      - lblCategoriesHelp:
+          Control: Label@2.5.1
+          Properties:
+            Color: =RGBA(90, 90, 105, 1)
+            Font: =Font.'Open Sans'
+            Height: =36
+            Size: =12
+            Text: ="One choice per line, for example Policy, Guidance, Forms. People pick from these in the CAT column. Leave blank to add choices later."
+            Visible: =varIsAdmin && varCreateStep = 3 && !varRegisterOnly
+            Width: =672
+            X: =56
+            Y: =418
+      - txtCategories:
+          Control: ModernTextInput@1.1.2
+          Properties:
+            BorderColor: =RGBA(200, 202, 214, 1)
+            BorderThickness: =1
+            Color: =RGBA(30, 30, 45, 1)
+            Fill: =RGBA(255, 255, 255, 1)
+            Height: =72
+            Placeholder: |-
+              ="Optional: one category per line"
+            Type: =TextInputType.Multiline
+            Visible: =varIsAdmin && varCreateStep = 3 && !varRegisterOnly
+            Width: =672
+            X: =56
+            Y: =456
+      - recReviewCard:
+          Control: Classic/Button@2.2.0
+          Properties:
+            BorderColor: =RGBA(215, 200, 235, 1)
+            BorderThickness: =1
+            DisplayMode: =DisplayMode.View
+            Fill: =RGBA(243, 237, 250, 1)
+            Height: =112
+            HoverFill: =Self.Fill
+            PressedFill: =Self.Fill
+            RadiusBottomLeft: =8
+            RadiusBottomRight: =8
+            RadiusTopLeft: =8
+            RadiusTopRight: =8
+            Text: =""
+            Visible: =varIsAdmin && varCreateStep = 3
+            Width: =672
+            X: =56
+            Y: =540
+      - lblReviewHead:
+          Control: Label@2.5.1
+          Properties:
+            Color: =RGBA(83, 42, 69, 1)
+            Font: =Font.'Open Sans'
+            FontWeight: =FontWeight.Semibold
+            Height: =22
+            Size: =12
+            Text: ="Review"
+            Visible: =varIsAdmin && varCreateStep = 3
+            Width: =300
+            X: =72
+            Y: =546
+      - lblReview:
+          Control: Label@2.5.1
+          Properties:
+            Color: =RGBA(30, 30, 45, 1)
+            Font: =Font.'Open Sans'
+            Height: =80
+            Size: =13
+            Text: |-
+              =If(varRegisterOnly, "Adds existing library:  " & Trim(txtExistingLibraryTitle.Text) & Char(10) & "Team:  " & drpTeam.Selected.Value & If(IsBlank(Trim(txtSubTeam.Text)), "", " / " & Trim(txtSubTeam.Text)) & Char(10) & "Limited:  " & If(tglIsLimited.Checked, "Yes", "No") & Char(10) & "Nothing in SharePoint is changed.", "Team:  " & drpTeam.Selected.Value & If(IsBlank(Trim(txtSubTeam.Text)), "", " / " & Trim(txtSubTeam.Text)) & Char(10) & "Name people see:  " & ((IfError(Left(drpTeam.Selected.Value, Find("_", drpTeam.Selected.Value) - 1), "") & If(IsBlank(Trim(txtExtraPrefix.Text)), "", "_" & Trim(txtExtraPrefix.Text))) & "_" & Trim(txtDisplayName.Text)) & Char(10) & "Web address name:  " & Trim(txtWebAddress.Text) & Char(10) & "Limited:  " & If(tglIsLimited.Checked, "Yes", "No"))
+            Visible: =varIsAdmin && varCreateStep = 3
+            Width: =640
+            X: =72
+            Y: =568
+      - btnBack:
+          Control: ModernButton@1.0.0
+          Properties:
+            Appearance: =ButtonAppearance.Outline
+            Height: =44
+            OnSelect: =Set(varCreateStep, varCreateStep - 1)
+            Text: ="Back"
+            Visible: =varIsAdmin && varCreateStep > 1
+            Width: =140
+            X: =56
+            Y: =690
+      - btnNext:
+          Control: ModernButton@1.0.0
+          Properties:
+            DisplayMode: =If(If(varCreateStep = 1, (varModeChosen && !IsBlank(drpTeam.Selected.Value)), If(varRegisterOnly, !IsBlank(Trim(txtExistingLibraryTitle.Text)), !IsBlank(Trim(txtDisplayName.Text)) && (IsMatch(Trim(txtWebAddress.Text), "[A-Za-z0-9][A-Za-z0-9_\-]*") && Len(Trim(txtWebAddress.Text)) <= 100))), DisplayMode.Edit, DisplayMode.Disabled)
+            Height: =44
+            OnSelect: |-
+              =If(varCreateStep = 1 && !varRegisterOnly, Set(varWebDefault, If(IsBlank(Trim(txtDisplayName.Text)), "", (IfError(Left(drpTeam.Selected.Value, Find("_", drpTeam.Selected.Value) - 1), "") & If(IsBlank(Trim(txtExtraPrefix.Text)), "", "_" & Trim(txtExtraPrefix.Text))) & "_" & Concat(MatchAll(Substitute(Substitute(Trim(txtDisplayName.Text), "&", "and"), " ", "_"), "[A-Za-z0-9_\-]"), FullMatch))); Reset(txtWebAddress));
+              Set(varCreateStep, varCreateStep + 1)
+            Text: ="Next"
+            Visible: =varIsAdmin && varCreateStep < 3
+            Width: =140
+            X: =588
+            Y: =690
+      - btnAddToQueue:
+          Control: ModernButton@1.0.0
+          Properties:
+            Height: =44
+            OnSelect: |-
+              =If(
+                  varRegisterOnly,
+                  Collect(colQueue, {TechnicalName: "", DisplayName: Trim(txtExistingDisplayName.Text), Team: drpTeam.Selected.Value, SubTeam: Trim(txtSubTeam.Text), IsLimited: tglIsLimited.Checked, Categories: "", RegisterOnly: true, ExistingLibraryTitle: Trim(txtExistingLibraryTitle.Text)}),
+                  Collect(colQueue, {TechnicalName: Trim(txtWebAddress.Text), DisplayName: ((IfError(Left(drpTeam.Selected.Value, Find("_", drpTeam.Selected.Value) - 1), "") & If(IsBlank(Trim(txtExtraPrefix.Text)), "", "_" & Trim(txtExtraPrefix.Text))) & "_" & Trim(txtDisplayName.Text)), Team: drpTeam.Selected.Value, SubTeam: Trim(txtSubTeam.Text), IsLimited: tglIsLimited.Checked, Categories: Trim(txtCategories.Text), RegisterOnly: false, ExistingLibraryTitle: ""})
+              );
+              Reset(drpTeam);
+              Reset(txtSubTeam);
+              Reset(txtExtraPrefix);
+              Reset(txtDisplayName);
+              Reset(txtWebAddress);
+              Reset(txtExistingLibraryTitle);
+              Reset(txtExistingDisplayName);
+              Reset(txtCategories);
+              Reset(tglIsLimited);
+              Set(varCreateStep, 1);
+              Set(varRegisterOnly, false);
+              Set(varModeChosen, false);
+              Set(varWebDefault, "");
+              Notify("Added to the list. Add another, or press Create on the right.", NotificationType.Success)
+            Text: ="Add to list"
+            Visible: =varIsAdmin && varCreateStep = 3
+            Width: =220
+            X: =508
+            Y: =690
+      - recQueueCard:
+          Control: Classic/Button@2.2.0
+          Properties:
+            BorderColor: =RGBA(220, 222, 232, 1)
+            BorderThickness: =1
+            DisplayMode: =DisplayMode.View
+            Fill: =RGBA(255, 255, 255, 1)
+            Height: =584
+            HoverFill: =Self.Fill
+            PressedFill: =Self.Fill
+            RadiusBottomLeft: =12
+            RadiusBottomRight: =12
+            RadiusTopLeft: =12
+            RadiusTopRight: =12
+            Text: =""
+            Visible: =varIsAdmin
+            Width: =554
+            X: =780
+            Y: =156
+      - lblQueueHeading:
+          Control: Label@2.5.1
+          Properties:
+            Color: =RGBA(30, 30, 45, 1)
+            Font: =Font.'Open Sans'
+            FontWeight: =FontWeight.Semibold
+            Height: =28
+            Size: =16
+            Text: ="Ready to create (" & CountRows(colQueue) & ")"
+            Visible: =varIsAdmin
+            Width: =400
+            X: =804
+            Y: =172
+      - lblQueueHelp:
+          Control: Label@2.5.1
+          Properties:
+            Color: =RGBA(120, 120, 135, 1)
+            Font: =Font.'Open Sans'
+            Height: =36
+            Size: =12
+            Text: =If(CountRows(colQueue) = 0, "Nothing here yet. Finish the steps on the left and press Add to list.", "Nothing is created until you press the Create button below.")
+            Visible: =varIsAdmin
+            Width: =506
+            X: =804
+            Y: =202
+      - galQueue:
+          Control: Gallery@2.15.0
+          Variant: Vertical
+          Properties:
+            Height: =250
+            Items: =colQueue
+            LoadingSpinner: =LoadingSpinner.None
+            TemplatePadding: =4
+            TemplateSize: =72
+            Visible: =varIsAdmin
+            Width: =506
+            X: =804
+            Y: =244
+          Children:
+            - recQueueRowBg:
+                Control: Classic/Button@2.2.0
+                Properties:
+                  BorderColor: =RGBA(238, 239, 245, 1)
+                  BorderThickness: =1
+                  DisplayMode: =DisplayMode.View
+                  Fill: =RGBA(250, 250, 252, 1)
+                  Height: =68
+                  HoverFill: =Self.Fill
+                  PressedFill: =Self.Fill
+                  RadiusBottomLeft: =6
+                  RadiusBottomRight: =6
+                  RadiusTopLeft: =6
+                  RadiusTopRight: =6
+                  Text: =""
+                  Width: =498
+            - lblQueueDisplayName:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(30, 30, 45, 1)
+                  Font: =Font.'Open Sans'
+                  FontWeight: =FontWeight.Semibold
+                  Height: =24
+                  Size: =13
+                  Text: =If(IsBlank(ThisItem.DisplayName) || ThisItem.DisplayName = "", ThisItem.ExistingLibraryTitle, ThisItem.DisplayName)
+                  Width: =300
+                  X: =14
+                  Y: =4
+            - lblQueueTeam:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(120, 120, 135, 1)
+                  Font: =Font.'Open Sans'
+                  Height: =20
+                  Size: =11
+                  Text: =ThisItem.Team & If(IsBlank(ThisItem.SubTeam) || ThisItem.SubTeam = "", "", " / " & ThisItem.SubTeam)
+                  Width: =360
+                  X: =14
+                  Y: =28
+            - lblQueueUrl:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(120, 120, 135, 1)
+                  Font: =Font.'Open Sans'
+                  Height: =20
+                  Size: =11
+                  Text: |-
+                    =If(ThisItem.RegisterOnly, "Adds existing library: " & ThisItem.ExistingLibraryTitle, "Web address ends: " & ThisItem.TechnicalName)
+                  Width: =372
+                  X: =14
+                  Y: =46
+            - lblQueueRegisterBadge:
+                Control: Label@2.5.1
+                Properties:
+                  Align: =Align.Center
+                  Color: =RGBA(60, 90, 155, 1)
+                  Fill: =RGBA(225, 233, 250, 1)
+                  Font: =Font.'Open Sans'
+                  FontWeight: =FontWeight.Bold
+                  Height: =22
+                  Size: =10
+                  Text: ="EXISTING"
+                  Visible: =ThisItem.RegisterOnly
+                  Width: =74
+                  X: =330
+                  Y: =6
+            - lblQueueLtdBadge:
+                Control: Label@2.5.1
+                Properties:
+                  Align: =Align.Center
+                  Color: =RGBA(155, 45, 25, 1)
+                  Fill: =RGBA(250, 225, 218, 1)
+                  Font: =Font.'Open Sans'
+                  FontWeight: =FontWeight.Bold
+                  Height: =22
+                  Size: =10
+                  Text: ="LTD"
+                  Visible: =ThisItem.IsLimited
+                  Width: =44
+                  X: =410
+                  Y: =6
+            - btnRemoveFromQueue:
+                Control: ModernButton@1.0.0
+                Properties:
+                  Appearance: =ButtonAppearance.Outline
+                  Height: =32
+                  OnSelect: =Remove(colQueue, ThisItem)
+                  Text: ="Remove"
+                  Width: =84
+                  X: =402
+                  Y: =34
+      - btnRunQueue:
+          Control: ModernButton@1.0.0
+          Properties:
+            DisplayMode: =If(varQueueRunning, DisplayMode.Disabled, DisplayMode.Edit)
+            Height: =48
+            OnSelect: |-
+              =Set(varQueueRunning, true);
+              Set(varQueueTotal, CountRows(colQueue));
+              ForAll(
+                  colQueue,
+                  'CreateLibrary(App)'.Run(
+                      TechnicalName,
+                      DisplayName,
+                      Team,
+                      {
+                          SiteUrl: "https://modgovuk.sharepoint.com/teams/1598",
+                          IsLimited: IsLimited,
+                          Categories: Categories,
+                          SubTeam: SubTeam,
+                          RegisterOnly: RegisterOnly,
+                          ExistingLibraryTitle: ExistingLibraryTitle
+                      }
+                  )
+              );
+              Clear(colQueue);
+              ClearCollect(colFilePlan, LibraryFilePlan);
+              ClearCollect(colFilePlanFiltered, AddColumns(colFilePlan, TeamName, If(IsBlank(Team.Value) || Team.Value = "", "Uncategorised", Team.Value), SubTeamName, Coalesce(SubTeam.Value, ""), EffectiveName, If(IsBlank(PrettyName) || PrettyName = "", Title, PrettyName)));
+              ClearCollect(colTeamGroups, Sort(AddColumns(GroupBy(colFilePlanFiltered, TeamName, GroupedItems), ItemCount, CountRows(GroupedItems), TeamSortKey, If(TeamName = "Uncategorised", "zzz_" & TeamName, TeamName)), TeamSortKey, SortOrder.Ascending));
+              ClearCollect(colSubTeamGroups, AddColumns(GroupBy(Filter(colFilePlanFiltered, !IsBlank(SubTeamName) && SubTeamName <> ""), TeamName, SubTeamName, GroupedItems), ItemCount, CountRows(GroupedItems)));
+              Clear(colFlatSource);
+              Collect(colFlatSource, AddColumns(colTeamGroups, RowType, "Team", SortKey, TeamSortKey, SubSortKey, "", RankInGroup, 0));
+              Collect(colFlatSource, AddColumns(colSubTeamGroups, RowType, "SubTeam", SortKey, If(TeamName = "Uncategorised", "zzz_" & TeamName, TeamName), SubSortKey, SubTeamName, RankInGroup, 1));
+              Collect(colFlatSource, AddColumns(colFilePlanFiltered, RowType, "Library", SortKey, If(TeamName = "Uncategorised", "zzz_" & TeamName, TeamName), SubSortKey, If(IsBlank(SubTeamName) || SubTeamName = "", "zzz_none", SubTeamName), RankInGroup, If(IsBlank(SubTeamName) || SubTeamName = "", 1, 2)));
+              Notify(varQueueTotal & " librar" & If(varQueueTotal = 1, "y", "ies") & " created.", NotificationType.Success);
+              Set(varQueueRunning, false)
+            Text: =If(varQueueRunning, "Creating...", "Create " & CountRows(colQueue) & " librar" & If(CountRows(colQueue) = 1, "y", "ies"))
+            Visible: =varIsAdmin && CountRows(colQueue) > 0
+            Width: =506
+            X: =804
+            Y: =506
+      - recIndexDivider:
+          Control: Classic/Button@2.2.0
+          Properties:
+            BorderColor: =RGBA(225, 226, 235, 1)
+            BorderThickness: =1
+            DisplayMode: =DisplayMode.View
+            Fill: =RGBA(225, 226, 235, 1)
+            Height: =1
+            HoverFill: =Self.Fill
+            PressedFill: =Self.Fill
+            RadiusBottomLeft: =0
+            RadiusBottomRight: =0
+            RadiusTopLeft: =0
+            RadiusTopRight: =0
+            Text: =""
+            Visible: =varIsAdmin
+            Width: =506
+            X: =804
+            Y: =566
+      - lblMaintenanceHeading:
+          Control: Label@2.5.1
+          Properties:
+            Color: =RGBA(30, 30, 45, 1)
+            Font: =Font.'Open Sans'
+            FontWeight: =FontWeight.Semibold
+            Height: =24
+            Size: =14
+            Text: ="Permission Index"
+            Visible: =varIsAdmin
+            Width: =270
+            X: =804
+            Y: =578
+      - btnRebuildIndex:
+          Control: ModernButton@1.0.0
+          Properties:
+            Appearance: =ButtonAppearance.Outline
+            Height: =36
+            OnSelect: |-
+              =Set(varIndexRunError, false);
+              IfError(
+                  RebuildPermissionIndex.Run({SiteUrl: "https://modgovuk.sharepoint.com/teams/1598"}),
+                  Set(varIndexRunError, true)
+              );
+              Notify(
+                  If(varIndexRunError, "Started — the connection closed before confirming, but the rebuild keeps running on its own. Check back in a few minutes.", "Started — check back in a few minutes."),
+                  NotificationType.Success
+              )
+            Text: ="Rebuild Permission Index"
+            Visible: =varIsAdmin
+            Width: =210
+            X: =1100
+            Y: =574
+      - lblIndexHelp:
+          Control: Label@2.5.1
+          Properties:
+            Color: =RGBA(90, 90, 105, 1)
+            Font: =Font.'Open Sans'
+            Height: =74
+            Size: =12
+            Text: ="Group Search reads a saved list of who can access each Limited library. This button rebuilds that list from SharePoint. It takes about two minutes, runs in the background, and you can keep working. Press it after creating a Limited library, or after changing who has access to a library, so Group Search shows the latest."
+            Visible: =varIsAdmin
+            Width: =506
+            X: =804
+            Y: =612
+      - lblIndexStatus:
+          Control: Label@2.5.1
+          Properties:
+            Size: =12
+            Color: =RGBA(90, 90, 105, 1)
+            Font: =Font.'Open Sans'
+            Height: =22
+            Text: |-
+              =With({_last: If(CountRows(colPermissionIndex) = 0, Blank(), Max(colPermissionIndex, Created))}, If(IsBlank(_last), "Permission index has never been rebuilt.", With({_hrs: DateDiff(_last, Now(), "Hours")}, "Last rebuilt " & If(_hrs < 1, "less than an hour ago", If(_hrs < 24, _hrs & " hour" & If(_hrs = 1, "", "s") & " ago", RoundDown(_hrs / 24, 0) & " day" & If(RoundDown(_hrs / 24, 0) = 1, "", "s") & " ago")))))
+            Visible: =varIsAdmin
+            Width: =506
+            X: =804
+            Y: =690
+      - lblIndexStaleness:
+          Control: Label@2.5.1
+          Properties:
+            Color: =RGBA(180, 120, 30, 1)
+            Font: =Font.'Open Sans'
+            FontWeight: =FontWeight.Semibold
+            Height: =22
+            Size: =12
+            Text: |-
+              =With({_last: If(CountRows(colPermissionIndex) = 0, Blank(), Max(colPermissionIndex, Created))}, With({_staleCount: If(IsBlank(_last), 0, CountRows(Filter(colFilePlan, IsLimited = true && Created > _last)))}, If(_staleCount > 0, _staleCount & " Limited librar" & If(_staleCount = 1, "y", "ies") & " created since — index may be out of date.", "")))
+            Visible: =varIsAdmin && CountRows(colPermissionIndex) > 0
+            Width: =506
+            X: =804
+            Y: =712
+      - recOverlayBg:
+          Control: Classic/Button@2.2.0
+          Properties:
+            BorderThickness: =0
+            DisplayMode: =DisplayMode.View
+            Fill: =RGBA(20, 20, 30, 0.65)
+            Height: =Parent.Height
+            HoverFill: =RGBA(20, 20, 30, 0.65)
+            PressedFill: =RGBA(20, 20, 30, 0.65)
+            Text: =""
+            Visible: =varQueueRunning
+            Width: =Parent.Width
+      - recOverlayCard:
+          Control: Classic/Button@2.2.0
+          Properties:
+            BorderThickness: =0
+            DisplayMode: =DisplayMode.View
+            Fill: =RGBA(255, 255, 255, 1)
+            Height: =190
+            HoverFill: =RGBA(255, 255, 255, 1)
+            PressedFill: =RGBA(255, 255, 255, 1)
+            RadiusBottomLeft: =14
+            RadiusBottomRight: =14
+            RadiusTopLeft: =14
+            RadiusTopRight: =14
+            Text: =""
+            Visible: =varQueueRunning
+            Width: =360
+            X: =(Parent.Width - 360) / 2
+            Y: =(Parent.Height - 190) / 2
+      - icoOverlaySpinner:
+          Control: ModernSpinner@1.1.0
+          Properties:
+            FontWeight: =""
+            Height: =40
+            PaddingBottom: =4
+            PaddingLeft: =4
+            PaddingRight: =4
+            PaddingTop: =4
+            Visible: =varQueueRunning
+            Width: =40
+            X: =(Parent.Width - 40) / 2
+            Y: =(Parent.Height - 190) / 2 + 20
+      - lblOverlayText:
+          Control: Label@2.5.1
+          Properties:
+            Align: =Align.Center
+            Color: =RGBA(30, 30, 45, 1)
+            Font: =Font.'Open Sans'
+            FontWeight: =FontWeight.Semibold
+            Size: =15
+            Text: ="Creating " & varQueueTotal & " librar" & If(varQueueTotal = 1, "y", "ies") & "..."
+            Visible: =varQueueRunning
+            Width: =320
+            X: =(Parent.Width - 320) / 2
+            Y: =(Parent.Height - 190) / 2 + 70
+      - lblOverlaySub:
+          Control: Label@2.5.1
+          Properties:
+            Align: =Align.Center
+            Color: =RGBA(120, 120, 135, 1)
+            Font: =Font.'Open Sans'
+            Height: =30
+            Size: =11
+            Text: ="Please don't close the app or navigate away."
+            Visible: =varQueueRunning
+            Width: =320
+            X: =(Parent.Width - 320) / 2
+            Y: =(Parent.Height - 190) / 2 + 110
+      - recNavBarBg_1:
+          Control: Classic/Button@2.2.0
+          Properties:
+            BorderThickness: =0
+            DisplayMode: =DisplayMode.View
+            Fill: =RGBA(30, 30, 45, 1)
+            Height: =48
+            HoverFill: =RGBA(30, 30, 45, 1)
+            PressedFill: =RGBA(30, 30, 45, 1)
+            RadiusBottomLeft: =5
+            RadiusBottomRight: =5
+            RadiusTopLeft: =5
+            RadiusTopRight: =5
+            Text: =""
+            Width: =1127
+            X: =20
+            Y: =20
+      - btnNavFilePlan_1:
+          Control: ModernButton@1.0.0
+          Properties:
+            Height: =36
+            OnSelect: =Navigate(scrFilePlan)
+            Text: ="File Plan"
+            Width: =140
+            X: =36
+            Y: =26
+      - btnNavGroupSearch_1:
+          Control: ModernButton@1.0.0
+          Properties:
+            Height: =36
+            OnSelect: =Navigate(scrGroupSearch)
+            Text: ="Group Search"
+            Width: =160
+            X: =184
+            Y: =26
+      - btnNavCreateLibrary_1:
+          Control: ModernButton@1.0.0
+          Properties:
+            Height: =36
+            OnSelect: =Navigate(scrAdminCreateLibrary)
+            Text: ="Create Library"
+            Visible: =varIsAdmin
+            Width: =160
+            X: =352
+            Y: =26
+      - btnNavManageLibraries_1:
+          Control: ModernButton@1.0.0
+          Properties:
+            Height: =36
+            OnSelect: =Navigate(scrManageLibraries)
+            Text: ="Manage Libraries"
+            Visible: =varIsAdmin
+            Width: =160
+            X: =520
+            Y: =26
